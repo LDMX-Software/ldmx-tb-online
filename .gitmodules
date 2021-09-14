@@ -1,0 +1,3 @@
+[submodule "software/rogue"]
+	path = software/rogue
+	url = https://github.com/slaclab/rogue.git
