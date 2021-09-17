@@ -1,10 +1,20 @@
 import pyrogue
 import rogue
 import time
+
+
+import socket
+import ipaddress
 import pyrogue.utilities.prbs
 import rogue.interfaces.stream
 
-class LmdxRceRoot(pyrogue.Root):
+pyrogue.addLibraryPath('/mnt/hps/heavy-photon-daq/firmware/common/HpsDaq/python')
+pyrogue.addLibraryPath('/mnt/hps/heavy-photon-daq/firmware/submodules/surf/python')
+pyrogue.addLibraryPath('/mnt/hps/heavy-photon-daq/firmware/submodules/rce-gen3-fw-lib/python')
+
+import RceG3
+
+class RceRoot(pyrogue.Root):
     def __init__(self, memBase, **kwargs):
         super().__init__(**kwargs)
         print('Building RceRoot')
@@ -28,13 +38,15 @@ class LmdxRceTcpServer(object):
         # Define the memory map
         self.memMap = rogue.hardware.axi.AxiMemMap('/dev/rce_memmap')
 
-        # Memory server on port 9000
-        self.memServer = rogue.interfaces.memory.TcpServer('*', hps.constants.RCE_MEM_MAP_PORT)
+        # Memory server on port 12000
+        ##MAKE IT CONFIGURABLE##
+        RCE_MEM_MAP_PORT = 12000
+        self.memServer = rogue.interfaces.memory.TcpServer('*', RCE_MEM_MAP_PORT)
         pyrogue.busConnect(self.memServer, self.memMap)
-        print(f'Opened Memory TcpServer on port {hps.constants.RCE_MEM_MAP_PORT}')
+        print(f'Opened Memory TcpServer on port {RCE_MEM_MAP_PORT}')
 
         # Spin up a Root to querry the BSI and set the IP address for firmware
-        with LdmxRceRoot(memBase=self.memMap) as root:
+        with RceRoot(memBase=self.memMap) as root:
             # Set the IP address
             buildStamp = root.RceVersion.BuildStamp.get(read=True)
             time.sleep(1)
@@ -67,4 +79,15 @@ class LmdxRceTcpServer(object):
             
 
             
+if __name__ == "__main__":
 
+    tcpServer = LmdxRceTcpServer()
+    print("LdmxRceTcpServer is up")
+    try:
+        while True:
+            tcpServer.prbs_src.genFrame(1000)
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Stopping LdmxRceTcpServer")
+
+    
