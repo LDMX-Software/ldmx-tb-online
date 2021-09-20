@@ -4,7 +4,6 @@
 #include <iostream>
 #include <thread>
 
-
 //---< rogue >---//
 #include "rogue/utilities/Prbs.h"
 #include "rogue/interfaces/stream/TcpServer.h" 
@@ -26,11 +25,12 @@ int main(int argc, char **argv) {
   // Send frames at a constant rate
   while(true) {
     std::cout << "Sending frame" << std::endl;
-    prbs->genFrame(100); 
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
+    prbs->genFrame(1000); 
+    std::cout << "Tx count: " << prbs->getTxCount() << " "
+	      << "Tx bytes: " << prbs->getTxBytes() << " "
+	      << "Tx errors: " << prbs->getTxErrors()
+	      << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   }
-
   return EXIT_SUCCESS; 
-
 }
