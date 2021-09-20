@@ -19,3 +19,10 @@ target_link_libraries(rce_prbs_tcp_server
 	              PRIVATE Rogue::Rogue)
 
 install(TARGETS rce_prbs_tcp_server DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
+add_executable(rce_prbs_tcp_client ${PROJECT_SOURCE_DIR}/src/emulators/rce_prbs_tcp_client.cxx)
+
+target_link_libraries(rce_prbs_tcp_client
+	              PRIVATE Rogue::Rogue)
+
+install(TARGETS rce_prbs_tcp_client DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
