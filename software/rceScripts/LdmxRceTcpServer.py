@@ -23,6 +23,30 @@ class RceRoot(pyrogue.Root):
         self.add(RceG3.RceEthernet(memBase=memBase, offset=0xB0000000))
 
 
+class TcpCommandSlave(rogue.interfaces.stream.Slave):
+    # Init method must call the parent class init
+    def __init__(self):
+        super().__init__()
+
+    def _acceptFrame(self,frame):
+
+        # First it is good practice to hold a lock on the frame data.
+        with frame.lock():
+            # Next we can get the size of the frame payload
+            size = frame.getPayload()
+            print("Message payload " + str(size))
+            # To access the data we need to create a byte array to hold the data
+            fullData = bytearray(size)
+
+            # Next we read the frame data into the byte array, from offset 0
+            frame.read(fullData,0)
+
+
+        msg = fullData.decode('UTF-8')
+        print("Message: "+ msg)
+        
+
+        
 class LmdxRceTcpServer(object):
 
     def __init__(self):
@@ -68,6 +92,12 @@ class LmdxRceTcpServer(object):
                 #Connect the trasmitter to the TcpServer
                 self.prbs_src >> self.dpmPrbsDataTcpServer
                 
+                #Create the local receiver
+                self.tcp_rcv = TcpCommandSlave()
+
+                #Connect the tcp receiver and the tcp bridge
+
+                self.dpmPrbsDataTcpServer >> self.tcp_rcv
                 
                 #Connect the dpmDataDmaChannel to tcp
                 
@@ -85,7 +115,7 @@ if __name__ == "__main__":
     print("LdmxRceTcpServer is up")
     try:
         while True:
-            tcpServer.prbs_src.genFrame(1000)
+           # tcpServer.prbs_src.genFrame(1000)
             time.sleep(1)
     except KeyboardInterrupt:
         print("Stopping LdmxRceTcpServer")
