@@ -7,18 +7,28 @@ project(emulators
 	DESCRIPTION "Module containing all emulator classes." 
 	LANGUAGES CXX)
 
+# Search for Boost
+find_package(
+  Boost REQUIRED
+  COMPONENTS program_options)
+
 # Setup the Rogue CMake target
 setup_rogue()
 
+# Find all of the source files we want to add to the emulators library.
+# Note, this excludes all executables which have '_' in the name.
+file(GLOB SRC_FILES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/emulators/[A-Z]*.cxx)
+
 # Build the emulator library
-#setup_library(module emulators dependencies Rogue::Rogue)
+setup_library(module emulators dependencies Rogue::Rogue
+	sources ${SRC_FILES})
 
-add_executable(rce_prbs_tcp_server ${PROJECT_SOURCE_DIR}/src/emulators/rce_prbs_tcp_server.cxx)
+add_executable(emulator ${PROJECT_SOURCE_DIR}/src/emulators/emulator.cxx)
 
-target_link_libraries(rce_prbs_tcp_server
-	              PRIVATE Rogue::Rogue)
+target_link_libraries(emulator
+	              PRIVATE Boost::program_options Rogue::Rogue emulators::emulators)
 
-install(TARGETS rce_prbs_tcp_server DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(TARGETS emulator DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 add_executable(rce_prbs_tcp_client ${PROJECT_SOURCE_DIR}/src/emulators/rce_prbs_tcp_client.cxx)
 
