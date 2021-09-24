@@ -27,6 +27,29 @@ class TcpCommandSlave(rogue.interfaces.stream.Slave):
     # Init method must call the parent class init
     def __init__(self):
         super().__init__()
+        
+        self.state = "idle"
+
+
+    def _configure(self):
+        
+        #Protect against sending configuration if already running
+        if (self.state != "idle" and self.state != "configured"):
+            return
+            
+        if (self.state == "configured"):
+            print("Hardware already configured.. Will re-send configuration")
+        else:
+            print("Sending configuration to hardware...")
+        
+        self.state = "configured"
+
+
+    def _run(self):
+        self.state = "run"
+
+    def _stop(self):
+        self.state = "stop" 
 
     def _acceptFrame(self,frame):
 
@@ -41,22 +64,31 @@ class TcpCommandSlave(rogue.interfaces.stream.Slave):
             # Next we read the frame data into the byte array, from offset 0
             frame.read(fullData,0)
 
-
         msg = fullData.decode('UTF-8')
         print("Message: "+ msg)
-        
 
+        if (msg == "configure"):
+            self._configure()
+
+        if (msg == "run"):
+            self._run()
+
+        if (msg == "stop"):
+            self._stop()
         
-class LmdxRceTcpServer(object):
+class LdmxRceTcpServer(object):
 
     def __init__(self):
 
-        rogue.Logging.setFilter('pyrogue.stream.TcpCore', rogue.Logging.Debug)
-        rogue.Logging.setFilter('pyrogue.memory.TcpServer', rogue.Logging.Debug)
+        rogue.Logging.setFilter('pyrogue.stream.TcpCore', rogue.Logging.Warning)    #debug
+        rogue.Logging.setFilter('pyrogue.memory.TcpServer', rogue.Logging.Warning)
 
 
         print('Starting RceTcpServer')
 
+        #Create the local receiver
+        self.tcp_rcv = TcpCommandSlave()
+                
         #rogue.Logging.setFilter('pyrogue.stream.TcpCore', rogue.Logging.Debug)
 
         # Define the memory map
@@ -92,9 +124,6 @@ class LmdxRceTcpServer(object):
                 #Connect the trasmitter to the TcpServer
                 self.prbs_src >> self.dpmPrbsDataTcpServer
                 
-                #Create the local receiver
-                self.tcp_rcv = TcpCommandSlave()
-
                 #Connect the tcp receiver and the tcp bridge
 
                 self.dpmPrbsDataTcpServer >> self.tcp_rcv
@@ -106,17 +135,51 @@ class LmdxRceTcpServer(object):
                 #self.dpmDataDebug = rogue.interfaces.stream.Slave()
                 #pyrogue.streamConnectBiDir(self.dpmDataDmaChannel, self.dpmDataTcpServer)
                 #pyrogue.streamTap(self.dpmDataDmaChannel, self.dpmDataDebug)
-            
+    
 
+
+
+def dumpPrbsRunInfo(prbs_master):
+
+    print(" --- Run Summary ---")
+    print("Tx Frames Sent: " + str(prbs_master.getTxCount()))
+    print("Tx Rate       : " + str(prbs_master.getTxRate()))
+    print("Tx Bytes Sent : " + str(prbs_master.getTxBytes()))
+    print("Tx Bandwidth  : " + str(prbs_master.getTxBw()))
+    
             
 if __name__ == "__main__":
 
-    tcpServer = LmdxRceTcpServer()
+    tcpServer = LdmxRceTcpServer()
     print("LdmxRceTcpServer is up")
+    cfg_print = False
     try:
+        #Keep server alive
         while True:
-           # tcpServer.prbs_src.genFrame(1000)
-            time.sleep(1)
+            
+            if (tcpServer.tcp_rcv.state == "configured"):
+                if (not cfg_print):
+                    print("HW is now configured")
+                    cfg_print = True
+            
+            if (tcpServer.tcp_rcv.state == "run"):
+                tcpServer.prbs_src.genFrame(1000)
+            
+            if (tcpServer.tcp_rcv.state == "stop"):
+                print("Stopping the run...")
+                print("Setting receiver to idle state...")
+                
+                dumpPrbsRunInfo(tcpServer.prbs_src);
+                tcpServer.prbs_src.resetCount()
+                tcpServer.tcp_rcv.state = "idle"
+
+                
+            #1ms   (2kHz)
+            time.sleep(1./2000.)
+
+
+
+            
     except KeyboardInterrupt:
         print("Stopping LdmxRceTcpServer")
 
