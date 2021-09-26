@@ -36,35 +36,35 @@ public:
   uint32_t getTxErrors() {};
 
 private:
-  /// Format version
-  uint8_t format_version_{0x1};
+  /// Number of subpackets from the ROCs (NLINKS)
+  uint8_t n_links_{0x1};
+
+ /// NLINKS mask
+ uint8_t n_links_mask_{0xE};
 
   /// FPGA ID
   uint8_t fpga_id_{0x2}; 
 
   /// FPGA ID Mask
-  uint8_t fpga_id_mask_{0x4};
+  uint8_t fpga_id_mask_{0x14};
 
-  /// Number of subpackets from the ROCs (NLINKS)
-  uint8_t n_links_{0x1};
+  /// Format version
+  uint8_t format_version_{0x1};
 
- /// NLINKS mask
- uint8_t n_links_mask_{0xC};
-
- /// LEN mask
- uint8_t len_mask_{0x14};
-
- /// The bunch ID
- uint16_t bunch_id_{0}; 
-
- /// Readout request mask
- uint8_t rr_mask_{0xC}; 
+  /// Format version mask
+  uint8_t format_version_mask_{0x1C}; 
 
  /// Orbit counter
  uint16_t orbit_counter_{0}; 
 
+ /// Readout request mask
+ uint8_t rr_mask_{0xA}; 
+
+ /// The bunch ID
+ uint16_t bunch_id_{0}; 
+
  /// Orbit counter mask
- uint8_t orbit_counter_mask_{0x16}; 
+ uint8_t bunch_id_mask_{0x14}; 
 
 };
 

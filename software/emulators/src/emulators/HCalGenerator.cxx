@@ -15,40 +15,41 @@ void HCalGenerator::genFrame(uint32_t size) {
   frame = reqFrame(8, true); 
   frame->setPayload(8);
 
-  uint32_t header{format_version_};
-  header |= (fpga_id_ << fpga_id_mask_);
-  header |= (n_links_ << n_links_mask_);
 
   // TODO: fix this calc
   uint16_t len = 4 + n_links_*10;
-  header |= (len << len_mask_); 
+  uint32_t header{len}; 
+  header |= (n_links_ << n_links_mask_);
+  header |= (fpga_id_ << fpga_id_mask_);
+  header |= (format_version_ << format_version_mask_);
+
   std::cout << "len: " << len << std::endl; 
-  std::cout << "[ HCalGenerator ]: Header [0:31]: " 
-	    << std::bitset<32>(header) << std::endl;   
+  std::cout << "[ HCalGenerator ]: Header [31:0]: " 
+	        << std::bitset<32>(header) << std::endl;   
 
   toFrame(it, 4, &header);
 
-  header = bunch_id_;
+  header = orbit_counter_; 
   header |= (0x1 << rr_mask_); 
-  header |= (orbit_counter_ << orbit_counter_mask_);   
+  header |= (bunch_id_ << bunch_id_mask_);   
 
-  std::cout << "[ HCalGenerator ]: Header [32:63]: " 
-	    << std::bitset<32>(header) << std::endl;   
+  std::cout << "[ HCalGenerator ]: Header [63:32]: " 
+	        << std::bitset<32>(header) << std::endl;   
 
   toFrame(it, 4, &header);
 
   // Increment the bunch ID
   bunch_id_ += 1; 
 
-  // Build the ROC subpackets for each link
-
   // Assume 10 bunches per train
   if ((bunch_id_ + 1)%10 == 0) orbit_counter_ += 1; 
+
+  // Build the ROC subpackets for each link
 
   // The CRC-32 tail -- Not currently used
   uint32_t tail{0}; 
   std::cout << "[ HCalGenerator ]: Tail: " 
-	    << std::bitset<32>(tail) << std::endl;   
+	        << std::bitset<32>(tail) << std::endl;   
   toFrame(it, 4, &tail); 
 
   sendFrame(frame);  
