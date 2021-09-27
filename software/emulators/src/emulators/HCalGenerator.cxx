@@ -45,6 +45,10 @@ void HCalGenerator::genFrame(uint32_t size) {
   if ((bunch_id_ + 1)%10 == 0) orbit_counter_ += 1; 
 
   // Build the ROC subpackets for each link
+  std::vector<uint32_t> subpackets{buildRocSubpackets(int(n_links_))}; 
+  for (auto &subpacket : subpackets) {
+    toFrame(it, 4, &subpacket); 
+  }
 
   // The CRC-32 tail -- Not currently used
   uint32_t tail{0}; 
@@ -55,4 +59,11 @@ void HCalGenerator::genFrame(uint32_t size) {
   sendFrame(frame);  
 
 }
+
+std::vector<uint32_t> HCalGenerator::buildRocSubpackets(int n_links) {
+  std::vector<uint32_t> packet{int(n_links*42), 0x0};
+
+  return packet;  
+}
+
 }

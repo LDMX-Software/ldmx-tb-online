@@ -36,6 +36,11 @@ public:
   uint32_t getTxErrors() {};
 
 private:
+  /**
+   */
+  std::vector<uint32_t> buildRocSubpackets(int n_links); 
+
+
   /// Number of subpackets from the ROCs (NLINKS)
   uint8_t n_links_{0x1};
 
