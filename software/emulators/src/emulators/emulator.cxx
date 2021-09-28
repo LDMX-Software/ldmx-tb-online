@@ -9,8 +9,8 @@
 #include <boost/program_options.hpp>
 
 //---< rogue >---//
-#include "rogue/interfaces/stream/TcpCore.h" 
 #include "rogue/interfaces/stream/TcpServer.h" 
+#include "rogue/interfaces/stream/TcpClient.h" 
 
 //---< emulators >---//
 #include "emulators/Generator.h"
@@ -30,11 +30,11 @@ int main(int argc, char **argv) {
   // NOTE: The same options needs to be declared here and in positionals
   po::options_description options("Available options");
   options.add_options()("help, h", "Print usage")
-	               ("addr, a", po::value<std::string>(&addr),
-	         	"The interface address for the server.")
+		       ("addr, a", po::value<std::string>(&addr),
+			"The interface address for the server.")
 		       ("port, p", po::value<int>(&port),
-		        "The port number.") 
-	               ("server, s", po::bool_switch()->default_value(false),
+			"The port number.") 
+		       ("server, s", po::bool_switch()->default_value(false),
 			"Start a server.") 
 		       ("client, c", po::bool_switch()->default_value(false), 
 			"Start a client.") 
@@ -61,10 +61,15 @@ int main(int argc, char **argv) {
   // Flag indicating if a PRBS generator/receiver should be used
   bool hcal{var_map["hcal"].as<bool>()}; 
   
-  // Print out all available commands if help is passed.
+  // Print out all available commands if help is passed or if neither 
+  // a server or client is specified.
   if (var_map.count("help") || (!server && !client)) {
     std::cout << options << std::endl;
     return EXIT_SUCCESS;
+  } else if (server && client) {
+    std::cerr << "-----< emulator > Both a server and client can't be " 
+	     << "initialized together." << std::endl;
+    return EXIT_FAILURE;
   }
 
   //  If starting a server, setup TCP bridge server and listen on all 
@@ -76,7 +81,7 @@ int main(int argc, char **argv) {
     std::shared_ptr<emulators::Generator> generator;
     
     // Start the TCP bridge server
-    auto tcp{rogue::interfaces::stream::TcpServer::create("*", 8000)};
+    auto tcp{rogue::interfaces::stream::TcpServer::create(addr, port)};
 
     // If specified, create a PRBS generator
     if (hcal) generator = emulators::HCalGenerator::create();
@@ -88,15 +93,25 @@ int main(int argc, char **argv) {
       std::cout << "-----< emulator > Sending Frame" << std::endl;
       generator->genFrame(1000);
       std::cout << "-----< emulator > Summary -----\n"
-	        << "\tTx count: " << generator->getTxCount() << "\n"
-	        << "\tTx bytes: " << generator->getTxBytes() << "\n "
-	        << "\tTx errors: " << generator->getTxErrors()
-	        << std::endl;
+		<< "\tTx count: " << generator->getTxCount() << "\n"
+		<< "\tTx bytes: " << generator->getTxBytes() << "\n "
+		<< "\tTx errors: " << generator->getTxErrors()
+		<< std::endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       
     }
+  } else if (client) {
+    // Start a TCP bridge client and connect to the remove server at 
+    // ports 8000 & 8001. For now, this just connects to localhost.
+    auto tcp{rogue::interfaces::stream::TcpClient::create(addr, port)};
+    
+    while(true) {
+      //std::cout << "Rx count: " << receiver->getRxCount() << " "
+      //	  << "Rx bytes: " << receiver->getRxBytes() << " "
+      //	  << "Rx errors: " << receiver->getRxErrors()
+      //	  << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    } 
   }
-
   return EXIT_SUCCESS; 
-
 }
