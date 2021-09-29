@@ -15,6 +15,7 @@
 //---< emulators >---//
 #include "emulators/Generator.h"
 #include "emulators/HCalGenerator.h"
+#include "emulators/HCalReceiver.h"
 
 namespace po = boost::program_options;
 
@@ -25,6 +26,9 @@ int main(int argc, char **argv) {
 
   // The port number
   int port{8000}; 
+
+  // The rate (Hz) at which to run
+  float rate{5.}; 
 
   po::variables_map var_map;
   // NOTE: The same options needs to be declared here and in positionals
@@ -39,7 +43,9 @@ int main(int argc, char **argv) {
 		       ("client, c", po::bool_switch()->default_value(false), 
 			"Start a client.") 
 		       ("hcal", po::bool_switch()->default_value(false), 
-			"Create an HCal data emulator."); 
+			"Create an HCal data emulator.") 
+  		       ("rate, r", po::value<float>(&rate),
+			"Rate to run at in Hz."); 
 
   try {
     // Parser the command line options
@@ -78,12 +84,12 @@ int main(int argc, char **argv) {
   //  TODO: At some point, generators should be loaded dynamically
   if (server) {
 
-    std::shared_ptr<emulators::Generator> generator;
+    std::shared_ptr<emulators::Generator> generator(nullptr);
     
     // Start the TCP bridge server
     auto tcp{rogue::interfaces::stream::TcpServer::create(addr, port)};
 
-    // If specified, create a PRBS generator
+    // Create the specified generator
     if (hcal) generator = emulators::HCalGenerator::create();
 
     // Connect the generator to the TCP bridge.
@@ -97,20 +103,31 @@ int main(int argc, char **argv) {
 		<< "\tTx bytes: " << generator->getTxBytes() << "\n "
 		<< "\tTx errors: " << generator->getTxErrors()
 		<< std::endl;
-      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      std::this_thread::sleep_for(std::chrono::milliseconds(int((1/rate)*1000)));
       
     }
   } else if (client) {
+    
+    // Pointer to the receiver being used.  By default, it's null.
+    // TODO: Should this be a vector instead? 
+    std::shared_ptr<emulators::Receiver> receiver(nullptr); 
+
     // Start a TCP bridge client and connect to the remove server at 
     // ports 8000 & 8001. For now, this just connects to localhost.
     auto tcp{rogue::interfaces::stream::TcpClient::create(addr, port)};
-    
+  
+    // Create the specified receiver
+    if (hcal) receiver = emulators::HCalReceiver::create();
+
+    // Connect the TCP bridge to the receiver
+    tcp->addSlave(receiver);
+
     while(true) {
-      //std::cout << "Rx count: " << receiver->getRxCount() << " "
-      //	  << "Rx bytes: " << receiver->getRxBytes() << " "
-      //	  << "Rx errors: " << receiver->getRxErrors()
-      //	  << std::endl;
-      std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+      std::cout << "Rx count: " << receiver->getRxCount() << " "
+         	<< "Rx bytes: " << receiver->getRxBytes() << " "
+         	<< "Rx errors: " << receiver->getRxErrors()
+                << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     } 
   }
   return EXIT_SUCCESS; 
