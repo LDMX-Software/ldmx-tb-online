@@ -42,6 +42,12 @@ private:
   std::vector<uint32_t> buildRocSubpackets(int n_links, uint16_t orbit_counter,
                                            uint16_t bunch_id);
 
+  /// Header lenght in bytes
+  uint32_t header_size_{8}; 
+
+  /// ROC subpacket size in bytes
+  uint32_t roc_subpacket_size_{42*4}; 
+
   /// Number of subpackets from the ROCs (NLINKS)
   uint8_t n_links_{0x1};
 
