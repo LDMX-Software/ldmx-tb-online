@@ -16,6 +16,7 @@
 #include "emulators/Generator.h"
 #include "emulators/HCalGenerator.h"
 #include "emulators/HCalReceiver.h"
+#include "emulators/TrigScintGenerator.h"
 
 namespace po = boost::program_options;
 
@@ -44,6 +45,8 @@ int main(int argc, char **argv) {
 			"Start a client.") 
 		       ("hcal", po::bool_switch()->default_value(false), 
 			"Create an HCal data emulator.") 
+		       ("trig", po::bool_switch()->default_value(false), 
+			"Create an Trig Scint data emulator.") 
   		       ("rate, r", po::value<float>(&rate),
 			"Rate to run at in Hz."); 
 
@@ -64,9 +67,12 @@ int main(int argc, char **argv) {
   // Flag indicating that this is running client side
   bool client{var_map["client"].as<bool>()}; 
   
-  // Flag indicating if a PRBS generator/receiver should be used
+  // Flag indicating if an HCal generator/receiver should be used
   bool hcal{var_map["hcal"].as<bool>()}; 
-  
+
+  // Flag indicating if an Trigger Scintillator generator/receiver should be used
+  bool trig{var_map["trig"].as<bool>()}; 
+
   // Print out all available commands if help is passed or if neither 
   // a server or client is specified.
   if (var_map.count("help") || (!server && !client)) {
@@ -91,6 +97,7 @@ int main(int argc, char **argv) {
 
     // Create the specified generator
     if (hcal) generator = emulators::HCalGenerator::create();
+    else if (trig) generator = emulators::TrigScintGenerator::create(); 
 
     // Connect the generator to the TCP bridge.
     generator->addSlave(tcp);
@@ -118,6 +125,7 @@ int main(int argc, char **argv) {
   
     // Create the specified receiver
     if (hcal) receiver = emulators::HCalReceiver::create();
+    //else if (trig) receiver = emulators::TrigScintReceiver::create();
 
     // Connect the TCP bridge to the receiver
     tcp->addSlave(receiver);
