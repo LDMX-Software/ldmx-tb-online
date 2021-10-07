@@ -43,6 +43,9 @@ endif()
 # Emulator library 
 add_subdirectory(emulators)
 
+# eudaq library
+add_subdirectory(eudaq)
+
 # Build all test. The test are assumed to reside inside of the directory "test"
 # within each module.
 #build_test()
