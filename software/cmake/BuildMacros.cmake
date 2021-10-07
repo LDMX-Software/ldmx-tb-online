@@ -31,15 +31,47 @@ macro(setup_rogue)
   endif()
 endmacro()
 
+macro(setup_eudaq)
+
+  # If the target doesn't exist, create an imported target for eudaq
+  if(NOT TARGET EUDAQ::EUDAQ)
+    
+    # Find the eudaq libraries
+    if (DEFINED ENV{EUDAQ_DIR})
+      set(eudaq_DIR $ENV{EUDAQ_DIR}/cmake)
+    endif()
+    find_package(eudaq CONFIG REQUIRED)
+    
+    # If eudaq wasn't found, error out.
+    if (NOT eudaq_FOUND)
+      message(FATAL_ERROR "Failed to find required dependency eudaq")
+    endif()
+
+    # Create the eudaq target
+    add_library(EUDAQ::EUDAQ INTERFACE IMPORTED GLOBAL)
+
+    # Set the target properties
+    set_target_properties(EUDAQ::EUDAQ 
+	    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${EUDAQ_INCLUDE_DIRS}"
+	    INTERFACE_LINK_LIBRARIES "${EUDAQ_LIBRARIES_DIR}")
+
+  endif()
+endmacro()
+
 macro(setup_library)
 
-  set(oneValueArgs module)
+  set(oneValueArgs module name)
   set(multiValueArgs dependencies sources)
   cmake_parse_arguments(setup_library "${options}" "${oneValueArgs}"
                         "${multiValueArgs}" ${ARGN})
 
   # Build the library name and source path
-  set(library_name "${setup_library_module}")
+  if (NOT setup_library_name)
+    set(library_name "${setup_library_module}")
+  else()
+    set(library_name "${setup_library_name}")
+  endif()
+
   set(src_path "${PROJECT_SOURCE_DIR}/src/${setup_library_module}")
   set(include_path "include/${setup_library_module}")
 
