@@ -17,7 +17,7 @@ public:
   }
 
   /// Constructor
-  TcpCommandGenerator(); 
+  TcpCommandGenerator() = default; 
 
   /// Default Constructor
   ~TcpCommandGenerator() = default;
@@ -25,9 +25,9 @@ public:
   /**
    * Generate a data frame with a string command.
    *
-   * @param size The string command to send.
+   * @param command The encoded command to send.
    */
-  virtual void genFrame(char* command);
+  virtual void genFrame(uint8_t command);
 };
 } // namespace eudaq
 #endif // EUDAQ_TCPCOMMANDGENERATOR_H

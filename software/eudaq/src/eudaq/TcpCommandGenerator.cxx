@@ -9,20 +9,18 @@
 
 namespace eudaq {
 
-void TcpCommandGenerator::genFrame(char *command) {
+void TcpCommandGenerator::genFrame(uint8_t command) {
 
-  // Request a frame to store the command in
-  size_t size{sizeof(command)};
-  auto frame{reqFrame(size, true)};
+  auto frame{reqFrame(1, true)};
 
   // Update frame payload size
-  frame->setPayload(size);
+  frame->setPayload(1);
 
   // Get an iterator to the beginning of the frame
   auto it{frame->begin()};
 
   // Push the string
-  toFrame(it, size, &command);
+  toFrame(it, 1, &command);
 
   // Pass the frame to the TCP server
   sendFrame(frame);

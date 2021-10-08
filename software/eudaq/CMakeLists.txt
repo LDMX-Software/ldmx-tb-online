@@ -14,4 +14,5 @@ setup_eudaq()
 setup_rogue()
 
 # Build the emulator library
-setup_library(module eudaq name eudaq_module_dark dependencies EUDAQ::EUDAQ Rogue::Rogue)
+setup_library(module eudaq name eudaq_module_dark 
+	      dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue)
