@@ -17,6 +17,7 @@
 #include "emulators/HCalGenerator.h"
 #include "emulators/HCalReceiver.h"
 #include "emulators/TrigScintGenerator.h"
+#include "emulators/TrigScintReceiver.h"
 
 namespace po = boost::program_options;
 
@@ -125,7 +126,7 @@ int main(int argc, char **argv) {
   
     // Create the specified receiver
     if (hcal) receiver = emulators::HCalReceiver::create();
-    //else if (trig) receiver = emulators::TrigScintReceiver::create();
+    else if (trig) receiver = emulators::TrigScintReceiver::create();
 
     // Connect the TCP bridge to the receiver
     tcp->addSlave(receiver);
@@ -135,7 +136,7 @@ int main(int argc, char **argv) {
          	<< "Rx bytes: " << receiver->getRxBytes() << " "
          	<< "Rx errors: " << receiver->getRxErrors()
                 << std::endl;
-      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      std::this_thread::sleep_for(std::chrono::milliseconds(int((1/rate)*1000)));
     } 
   }
   return EXIT_SUCCESS; 
