@@ -3,6 +3,7 @@ import rogue
 import time
 
 import TsTcpCommandSlave
+import TsDataSender
 
 
 class TsTcpServer(object):
@@ -18,6 +19,12 @@ class TsTcpServer(object):
         #Connect the tcp receiver and the tcp reply sender
         self.tcp_rcv.sender >> self.tcp >> self.tcp_rcv
 
+        #Create the data reader
+        self.tcp_data_sender = TsDataSender.TsDataSender()
+        #Connect to the tcp bridge
+
+        self.tcp_data_sendre >> self.tcp
+        
         print("Server connected...")
 
 
@@ -28,8 +35,9 @@ def main():
     try:
         while True:
             if (rogueTsServer.tcp_rcv.state=="configured"):
+                print("Server configured")
                 pass    
-
+            
     except KeyboardInterrupt:
         print("Stopping TsTcpServer")
             
