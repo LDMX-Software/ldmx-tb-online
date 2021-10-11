@@ -14,7 +14,8 @@ namespace eudaq {
 RogueTcpClientProducer::RogueTcpClientProducer(const std::string &name,
                                                const std::string &runcontrol)
     : eudaq::Producer(name, runcontrol) {
-} //, m_file_lock(0), m_exit_of_run(false) {}
+
+} 
 
 void RogueTcpClientProducer::DoInitialise() {
   auto ini{GetInitConfiguration()};
@@ -30,9 +31,31 @@ void RogueTcpClientProducer::DoInitialise() {
 
   // Connect the tcp client to the tcp command generator
   tcp_command_->addSlave(tcp_);
+
+  // Set how much data to buffer before writing
+  writer_->setBufferSize(10000);
+
+  // Connect the tcp stream to the file writer
+  tcp_->addSlave(writer_->getChannel(0)); 
+
+  // Get the path to the output file
+  output_path_ = ini->Get("OUTPUT_PATH", ".");
+
+  // Get the file prefix
+  file_prefix_ = ini->Get("FILE_PREFIX", "ldmx_test"); 
+
 }
 
-void RogueTcpClientProducer::DoConfigure() {}
+void RogueTcpClientProducer::DoConfigure() {
+  
+  // First, make sure an existing file isn't open.
+  if (writer_->isOpen()) writer_->close(); 
+
+  // Open a file to write the stream
+  // TODO: Append the run number to this?
+  writer_->open(output_path_ + "/" + file_prefix_ + ".dat"); 
+
+}
 
 void RogueTcpClientProducer::DoStartRun() {
   tcp_command_->genFrame(rogue::commands::start);
@@ -40,12 +63,17 @@ void RogueTcpClientProducer::DoStartRun() {
 
 void RogueTcpClientProducer::DoStopRun() {
   tcp_command_->genFrame(rogue::commands::stop);
+
+  // If open, close the file to which data is being written to.
+  if (writer_->isOpen()) writer_->close(); 
 }
 
 void RogueTcpClientProducer::DoReset() {}
 
 void RogueTcpClientProducer::DoTerminate() {}
 
-void RogueTcpClientProducer::RunLoop() {}
+void RogueTcpClientProducer::RunLoop() {
+  auto event{eudaq::Event::MakeUnique("LDMXTestBeamRaw")};
+}
 
 } // namespace eudaq

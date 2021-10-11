@@ -6,6 +6,8 @@
 
 //---< rogue >---//
 #include "rogue/interfaces/stream/TcpClient.h"
+#include "rogue/utilities/fileio/StreamWriter.h"
+#include "rogue/utilities/fileio/StreamWriterChannel.h"
 
 //---< ldmx-eudaq >---//
 #include "eudaq/TcpCommandGenerator.h"
@@ -56,6 +58,16 @@ private:
   /// TCP command generator
   std::shared_ptr<TcpCommandGenerator> tcp_command_{
       TcpCommandGenerator::create()};
+
+  /// File writer
+  rogue::utilities::fileio::StreamWriterPtr writer_{
+      rogue::utilities::fileio::StreamWriter::create()};
+
+  /// Output file path
+  std::string output_path_{"."};
+
+  /// File prefix
+  std::string file_prefix_{"ldmx_test"}; 
 };
 } // namespace eudaq
 

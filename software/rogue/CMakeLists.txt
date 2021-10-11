@@ -20,7 +20,7 @@ setup_rogue()
 file(GLOB SRC_FILES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/rogue/[A-Z]*.cxx)
 
 # Build the emulator library
-setup_library(module rogue dependencies Rogue::Rogue
+setup_library(module rogue dependencies Rogue::Rogue emulators::emulators
 	sources ${SRC_FILES})
 
 add_executable(ldmx_rogue_server ${PROJECT_SOURCE_DIR}/src/rogue/ldmx_rogue_server.cxx)
