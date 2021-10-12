@@ -9,6 +9,9 @@
 
 ### eudaq 
  * [Documentation](https://eudaq.github.io/) 
+ * To use the monitoring, the CMake flag `-DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON` needs to be included in the cmake command.
+
+### ROOT
 
 ## Building ldmx-daq
 
@@ -113,20 +116,31 @@ start to increase.
 ## Emulation using eudaq
 
 In addition to emulation using the stand alone app, eudaq can also be 
-used.  Doing so will require starting the run control, producer and rogue 
-server in seperate terminals as follows
+used.  Doing so will require starting the run control, producer, data collector, 
+monitoring and and rogue server in seperate terminals.  This can be
+done by executing the following commands (Note the terminal ID)
 
-Terminal 1
+Terminal 1 - Run Control
 ```
 euRun -n DarkRunControl -a tcp://4000
 ```
 
-Terminal 2
+Terminal 2 - Producer
 ```
 euCliProducer -n RogueTcpClientProducer -t hcal -r tcp://localhost:4000
 ```
 
-Terminal 3
+Terminal 3 - Data Collector 
+```
+euCliCollector -n TestBeamDataCollector -t test_beam -r tcp://localhost:4000
+```
+
+Terminal 4 - Monitor
+```
+euCliMonitor -n SimpleMonitor -t mon -r tcp://localhost:4000
+```
+
+Terminal 5 - Rogue Server (HCal)
 ```
 ldmx_rogue_server --hcal --emulate
 ```
@@ -136,18 +150,19 @@ of the trigger scintillator can be done by replacing `hcal` with `trig`.   It's 
 possible to emulate a producer for the trigger scintillator by instatiating 
 an additional producer as follows
 
-Terminal 4
+Terminal 6 - Trig Scint Producer
 ```
 euCliProducer -n RogueTcpClientProducer -t trig -r tcp://localhost:4000
 ```
+
+Terminal 7 - Rogue Server (Trigger Scint)
 
 ```
 ldmx_rogue_server --trig --emulate --port 9000
 ```
 
 Once the producers and run control has been started, you can start going through 
-the state transitions. Currently, only the init file will have parameters inside.  
-An example of what is contained within an init file is as follows
+the state transitions.  An example of what is contained within an init file is as follows
 
 ```
 [Producer.hcal]
@@ -161,4 +176,19 @@ TCP_PORT = 9000
 
 The `TCP_PORT` parameter should be set to whatever value was passed to the
 rogue server. The default is 8000. 
+
+The configure stage is what is used to connect the producers to the data 
+collectors and monitoring. An example config file will look as follows
+```
+[Producer.hcal]
+EUDAQ_DC=test_beam
+
+[DataCollector.test_beam]
+EUDAQ_MN=mon
+```
+
+The variable `EUDAQ_DC` is used to tell the producer the name of the data 
+collector it should connect and send events to. Similarly, the variable
+`EUDAQ_MN` is used to tell the data collector to which monitoring app
+to connect to. 
 
