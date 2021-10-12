@@ -50,10 +50,14 @@ macro(setup_eudaq)
     # Create the eudaq target
     add_library(EUDAQ::EUDAQ INTERFACE IMPORTED GLOBAL)
 
+    foreach(eudaq_lib ${EUDAQ_LIBRARIES})
+      list(APPEND eudaq_libs "${EUDAQ_LIBRARIES_DIRS}/lib${eudaq_lib}.so")
+    endforeach()
+
     # Set the target properties
     set_target_properties(EUDAQ::EUDAQ 
 	    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${EUDAQ_INCLUDE_DIRS}"
-	    INTERFACE_LINK_LIBRARIES "${EUDAQ_LIBRARIES_DIR}")
+	    INTERFACE_LINK_LIBRARIES "${eudaq_libs}")
 
   endif()
 endmacro()
