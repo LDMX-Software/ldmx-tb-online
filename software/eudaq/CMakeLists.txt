@@ -13,6 +13,9 @@ setup_eudaq()
 # Setup the Rogue CMake target
 setup_rogue()
 
+find_package(ROOT CONFIG REQUIRED)
+
 # Build the emulator library
 setup_library(module eudaq name eudaq_module_dark 
-	      dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue)
+	      dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue
+	      ROOT::Gui)

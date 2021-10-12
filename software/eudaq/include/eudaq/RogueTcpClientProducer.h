@@ -10,6 +10,7 @@
 #include "rogue/utilities/fileio/StreamWriterChannel.h"
 
 //---< ldmx-eudaq >---//
+#include "eudaq/RogueDataSender.h"
 #include "eudaq/TcpCommandGenerator.h"
 
 namespace eudaq {
@@ -63,11 +64,14 @@ private:
   rogue::utilities::fileio::StreamWriterPtr writer_{
       rogue::utilities::fileio::StreamWriter::create()};
 
+  /// Data Sender
+  std::shared_ptr<RogueDataSender> sender_{nullptr}; 
+
   /// Output file path
   std::string output_path_{"."};
 
   /// File prefix
-  std::string file_prefix_{"ldmx_test"}; 
+  std::string file_prefix_{"ldmx_test"};
 };
 } // namespace eudaq
 

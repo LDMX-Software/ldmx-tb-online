@@ -15,6 +15,7 @@ RogueTcpClientProducer::RogueTcpClientProducer(const std::string &name,
                                                const std::string &runcontrol)
     : eudaq::Producer(name, runcontrol) {
 
+  sender_ = RogueDataSender::create(this);
 } 
 
 void RogueTcpClientProducer::DoInitialise() {
@@ -44,6 +45,8 @@ void RogueTcpClientProducer::DoInitialise() {
   // Get the file prefix
   file_prefix_ = ini->Get("FILE_PREFIX", "ldmx_test"); 
 
+  // Connect the data sender to the TCP client
+  tcp_->addSlave(sender_); 
 }
 
 void RogueTcpClientProducer::DoConfigure() {
@@ -73,7 +76,7 @@ void RogueTcpClientProducer::DoReset() {}
 void RogueTcpClientProducer::DoTerminate() {}
 
 void RogueTcpClientProducer::RunLoop() {
-  auto event{eudaq::Event::MakeUnique("LDMXTestBeamRaw")};
+  //auto event{eudaq::Event::MakeUnique("LDMXTestBeamRaw")};
 }
 
 } // namespace eudaq
