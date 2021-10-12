@@ -7,6 +7,9 @@
  * [Installng Rogue with Anaconda](https://slaclab.github.io/rogue/installing/anaconda.html)
  * [Installing Rogue on Archlinux](https://slaclab.github.io/rogue/installing/build.html#archlinux)
 
+### eudaq 
+ * [Documentation](https://eudaq.github.io/) 
+
 ## Building ldmx-daq
 
 First, clone the `ldmx-daq` repository and make a build directory
@@ -52,12 +55,21 @@ In order to run any `ldmx-daq` apps, the environment needs to be setup as
 follows
 
 ```
-export DAQ_INSTALL_PREFIX=/full/path/to/ldmx-daq/install
+export DAQ_INSTALL_PREFIX=/full/path/to/ldmx-daq/software/install
 export LD_LIBRARY_PATH=$DAQ_INSTALL_PREFIX/lib:$LD_LIBRARY_PATH
 export PATH=$DAQ_INSTALL_PREFIX/bin:$PATH
 ```
 
 Once the commands above are executed, apps (e.g. emulator) can be run. 
+
+Eudaq loads all run control, producer and data collector libraries at 
+run time.  For this reason, it needs to be made aware of the LDMX 
+specific eudaq libraries.  This can be done by creating a soft link
+of the LDMX eudaq library within the eudaq `lib` directory as follows
+
+```
+ln -s /full/path/to/ldmx-daq/software/install/lib/libeudaq_module_dark.so /full/path/to/eudaq/lib/libeudaq_module_dark.so
+```
 
 # Running the emulator
 
@@ -97,3 +109,56 @@ address should be specified as `127.0.0.1`.
  
 Once the client is started, you should begin to see the RX and TX counters
 start to increase. 
+
+## Emulation using eudaq
+
+In addition to emulation using the stand alone app, eudaq can also be 
+used.  Doing so will require starting the run control, producer and rogue 
+server in seperate terminals as follows
+
+Terminal 1
+```
+euRun -n DarkRunControl -a tcp://4000
+```
+
+Terminal 2
+```
+euCliProducer -n RogueTcpClientProducer -t hcal -r tcp://localhost:4000
+```
+
+Terminal 3
+```
+ldmx_rogue_server --hcal --emulate
+```
+
+Note, that both the `hcal` and `emulate` flags need to set on the server side.  Emulation 
+of the trigger scintillator can be done by replacing `hcal` with `trig`.   It's also 
+possible to emulate a producer for the trigger scintillator by instatiating 
+an additional producer as follows
+
+Terminal 4
+```
+euCliProducer -n RogueTcpClientProducer -t trig -r tcp://localhost:4000
+```
+
+```
+ldmx_rogue_server --trig --emulate --port 9000
+```
+
+Once the producers and run control has been started, you can start going through 
+the state transitions. Currently, only the init file will have parameters inside.  
+An example of what is contained within an init file is as follows
+
+```
+[Producer.hcal]
+TCP_ADDR = 127.0.0.1
+TCP_PORT = 8000
+
+[Producer.trig]
+TCP_ADDR = 127.0.0.1
+TCP_PORT = 9000
+```
+
+The `TCP_PORT` parameter should be set to whatever value was passed to the
+rogue server. The default is 8000. 
+
