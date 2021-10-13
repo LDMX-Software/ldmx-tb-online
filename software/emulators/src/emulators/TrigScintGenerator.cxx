@@ -82,8 +82,8 @@ void TrigScintGenerator::genFrame(uint32_t size) {
   // Generate data packet
   auto data = qie->FormPacket();
 
-  for(int i=0;i<31;i++){
-    toFrame(it,4,&data[i]);
+  for(int i=0;i<len;i++){
+    toFrame(it,1,&data[i]);
   }
   ++event_number_;
   qie->PrintQIEInfo(data);
@@ -91,6 +91,5 @@ void TrigScintGenerator::genFrame(uint32_t size) {
   // Build the QIE subpackets for each link
   sendFrame(frame);
 }
-
 
 } // namespace emulators

@@ -10,8 +10,9 @@ namespace emulators {
     void AddQIEData(int qie_id,int ts,uint8_t adc_, uint8_t tdc_);
     void SetFlags(bool CID_skipped_,bool CID_unsync_,
 		  bool CRC0_malformed_,bool CRC1_malformed_);
-    uint32_t* FormPacket();
-    void PrintQIEInfo(uint32_t* data);
+    uint8_t* FormPacket();
+    // uint32_t* FormPacket();
+    void PrintQIEInfo(uint8_t* data);
     
   private:
     /// no. of time samples considered
