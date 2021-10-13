@@ -2,6 +2,7 @@
 #define EMULATORS_QIE_DATAPACKET_H
 #include <cinttypes>
 #include <vector>
+
 namespace emulators {
   class QIE_DataPacket
   {
@@ -11,10 +12,8 @@ namespace emulators {
     void SetFlags(bool CID_skipped_,bool CID_unsync_,
 		  bool CRC0_malformed_,bool CRC1_malformed_);
     uint8_t* FormPacket();
-    // uint32_t* FormPacket();
     void PrintQIEInfo(uint8_t* data);
     
-  private:
     /// no. of time samples considered
     static const int n_ts{5};
 
@@ -27,6 +26,7 @@ namespace emulators {
     /// Collection of 8-bit TDCs
     uint8_t tdc[n_ts][n_qie]{0};
 
+  private:
     /// Trigger ID
     uint16_t trig_id;
 
