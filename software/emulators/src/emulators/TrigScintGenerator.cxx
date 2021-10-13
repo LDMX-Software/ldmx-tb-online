@@ -14,7 +14,7 @@ namespace emulators {
 
 void TrigScintGenerator::genFrame(uint32_t size) {
   rogue::interfaces::stream::FramePtr frame;
-  rogue::interfaces::stream::FrameIterator it;printf("Generator L17\n");
+  rogue::interfaces::stream::FrameIterator it;
 
   // Calculate the total size of the frame
   uint16_t len = 124;		// 31*32/8
