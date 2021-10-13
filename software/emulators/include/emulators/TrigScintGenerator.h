@@ -33,12 +33,15 @@ public:
 
   /** @return the TX count */
   uint32_t getTxCount(){};
+  // uint32_t getTxCount();
 
   /** @return the total TX bytes */
   uint32_t getTxBytes(){};
+  // uint32_t getTxBytes();
 
   /** @return the total TX errors */
   uint32_t getTxErrors(){};
+  // uint32_t getTxErrors();
 
 private:
   /**
