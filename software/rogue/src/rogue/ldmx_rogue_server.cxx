@@ -102,9 +102,11 @@ int main(int argc, char **argv) {
     } else if (tcp_command->stopRun()) {
       std::cout << "[ LDMX ] Stopping run." << std::endl;
       running = false;
+      if (emulate) generator->resetCounters(); 
     } else if (tcp_command->reset()) {
       std::cout << "[ LDMX ] Resetting run!" << std::endl;
       running = false;
+      if (emulate) generator->resetCounters(); 
     } else if (tcp_command->initialize()) {
       std::cout << "[ LDMX ] Initializing run!" << std::endl;
     } else if (tcp_command->configure()) {
