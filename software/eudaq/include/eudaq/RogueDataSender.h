@@ -13,12 +13,6 @@
 namespace eudaq {
 class RogueDataSender : public rogue::interfaces::stream::Slave {
 public:
-  static std::shared_ptr<RogueDataSender> create(eudaq::Producer *producer) {
-    static std::shared_ptr<RogueDataSender> ret =
-        std::make_shared<RogueDataSender>(producer);
-    return (ret);
-  }
-
   /// Constructor
   RogueDataSender(eudaq::Producer *producer) { producer_ = producer; }
 
@@ -38,6 +32,30 @@ public:
    */
   void acceptFrame(std::shared_ptr<rogue::interfaces::stream::Frame> frame);
 
+  /**
+   * Process the data in the frame and send it to the associated data collector.
+   *
+   * @param frame The rogue frame containing the data
+   */
+  virtual void sendEvent(std::shared_ptr<rogue::interfaces::stream::Frame> frame) = 0;
+
+protected:
+  /** 
+   * Extract a field that lies within the range high_bit to low_bit of a 
+   * 32 bit int.
+   *
+   * @param vlaue The int to extract a field from.
+   * @param high_bit The highest bit index of the field [0-31].
+   * @param low_bit The lower bit index of the field [0-31].
+   */
+  int getField(int value, int high_bit, int low_bit) {
+    int mask{static_cast<int>(pow(2, (high_bit - low_bit + 1)) - 1)};
+    return (value >> low_bit) & mask;
+  }
+
+  /// The producer to use to send data
+  eudaq::Producer *producer_{nullptr};
+
 private:
   /// RX count
   uint32_t rx_count_{0};
@@ -48,8 +66,6 @@ private:
   /// RX errors
   uint32_t rx_error_count_{0};
 
-  /// The producer to use to send data
-  eudaq::Producer *producer_{nullptr};
 };
 } // namespace eudaq
 #endif // EUDAQ_ROGUEDATASENDER_H

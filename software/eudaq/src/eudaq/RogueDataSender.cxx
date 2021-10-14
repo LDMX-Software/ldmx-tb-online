@@ -1,18 +1,14 @@
 #include "eudaq/RogueDataSender.h"
 
-//#include <bitset>
+//---< C++ StdLib >---//
 #include <iostream>
 
+//---< rogue >---//
 #include "rogue/interfaces/stream/Frame.h"
-#include "rogue/interfaces/stream/FrameIterator.h"
 
 namespace eudaq {
-
 void RogueDataSender::acceptFrame(
     std::shared_ptr<rogue::interfaces::stream::Frame> frame) {
-
-  // Get an iterator to the data in the frame
-  auto it{frame->begin()};
 
   // Check for errors. If errors are found, skip processing of the frame.
   if (frame->getError()) {
@@ -20,13 +16,10 @@ void RogueDataSender::acceptFrame(
     return;
   }
 
-  uint32_t word;
+  // Send the frame to the associated data collector
+  sendEvent(frame);
 
-  auto event{eudaq::Event::MakeUnique("LDMXTestBeamRaw")};
-  event->SetTriggerN(1); 
-  event->Print(std::cout); 
-  producer_->SendEvent(std::move(event)); 
-
+  // Increase the RX counters
   ++rx_count_;
   rx_bytes_ += frame->getPayload();
 
@@ -34,5 +27,4 @@ void RogueDataSender::acceptFrame(
             << "Rx bytes: " << getRxBytes() << " "
             << "Rx errors: " << getRxErrors() << std::endl;
 }
-
 } // namespace eudaq
