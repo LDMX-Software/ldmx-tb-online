@@ -38,6 +38,11 @@ public:
 
 private:
   /**
+   *
+   */
+  std::vector<uint32_t> buildRocInfo(int n_links); 
+  
+  /**
    */
   std::vector<uint32_t> buildRocSubpackets(int n_links, uint16_t orbit_counter,
                                            uint16_t bunch_id);
@@ -47,6 +52,9 @@ private:
 
   /// ROC subpacket size in bytes
   uint32_t roc_subpacket_size_{42*4}; 
+
+  /// tail size in bytes
+  uint32_t tail_size_{4}; 
 
   /// Number of subpackets from the ROCs (NLINKS)
   uint8_t n_links_{0x1};
@@ -68,6 +76,9 @@ private:
 
   /// Orbit counter
   uint16_t orbit_counter_{0};
+
+  /// Readout request
+  uint8_t rr_count_{0}; 
 
   /// Readout request mask
   uint8_t rr_mask_{0xA};
