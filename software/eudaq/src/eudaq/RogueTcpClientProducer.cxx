@@ -51,6 +51,9 @@ void RogueTcpClientProducer::DoInitialise() {
 
   // Connect the data sender to the TCP client
   tcp_->addSlave(sender_); 
+  
+  // Send the init command to the rogue server
+  tcp_command_->genFrame(rogue::commands::init);
 }
 
 void RogueTcpClientProducer::DoConfigure() {
@@ -74,6 +77,9 @@ void RogueTcpClientProducer::DoConfigure() {
   writer_->open(output_file);
 
   EUDAQ_INFO("Writing rogue stream to " + output_file);
+  
+  // Send the config command to the rogue server
+  tcp_command_->genFrame(rogue::commands::config);
 }
 
 void RogueTcpClientProducer::DoStartRun() {
@@ -87,7 +93,9 @@ void RogueTcpClientProducer::DoStopRun() {
   if (writer_->isOpen()) writer_->close(); 
 }
 
-void RogueTcpClientProducer::DoReset() {}
+void RogueTcpClientProducer::DoReset() {
+  tcp_command_->genFrame(rogue::commands::reset);
+}
 
 void RogueTcpClientProducer::DoTerminate() {}
 

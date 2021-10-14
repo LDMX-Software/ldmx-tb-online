@@ -1,6 +1,6 @@
 #include "rogue/TcpCommandReceiver.h"
 
-//---< StdLib >---//
+//---< C++ StdLib >---//
 #include <bitset>
 #include <iostream>
 
@@ -28,14 +28,28 @@ void TcpCommandReceiver::acceptFrame(
   // Extract the command
   uint8_t word;
   rogue::interfaces::stream::fromFrame(it, 1, &word);
-  //std::cout << "[ TcpCommandReceiver ]: command : " << std::bitset<8>(word) << std::endl;
+  // std::cout << "[ TcpCommandReceiver ]: command : " << std::bitset<8>(word)
+  // << std::endl;
 
+  resetStates();
   if (word == rogue::commands::start) {
     start_run_ = true;
-    stop_run_ = false;
   } else if (word == rogue::commands::stop) {
-    start_run_ = false;
     stop_run_ = true;
+  } else if (word == rogue::commands::reset) {
+    reset_ = true;
+  } else if (word == rogue::commands::init) {
+    init_ = true;
+  } else if (word == rogue::commands::config) {
+    config_ = true;
   }
+}
+
+void TcpCommandReceiver::resetStates() {
+  start_run_ = false;
+  stop_run_ = false;
+  reset_ = false;
+  init_ = false;
+  config_ = false;
 }
 } // namespace rogue
