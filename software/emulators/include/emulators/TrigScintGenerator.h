@@ -40,6 +40,7 @@ public:
   /** @return the total TX errors */
   uint32_t getTxErrors(){};
 
+  void resetCounters() override {}; 
 private:
   /**
    */

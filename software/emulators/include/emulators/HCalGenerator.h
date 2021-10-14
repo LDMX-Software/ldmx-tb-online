@@ -38,6 +38,14 @@ public:
 
 private:
   /**
+   * Reset the bunch id and readout request counters
+   */
+  void resetCounters() override {
+    bunch_id_ = 0; 
+    rr_count_ = 0; 
+  }
+
+  /**
    *
    */
   std::vector<uint32_t> buildRocInfo(int n_links); 
