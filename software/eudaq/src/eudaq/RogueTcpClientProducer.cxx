@@ -65,7 +65,7 @@ void RogueTcpClientProducer::DoConfigure() {
   output_path_ = conf->Get("OUTPUT_PATH", ".");
 
   // Get the file prefix
-  file_prefix_ = conf->Get("FILE_PREFIX", "ldmx_test"); 
+  file_prefix_ = conf->Get("ROGUE_FILE_PATTERN", "test"); 
 
   // Build the file name
   auto output_file{output_path_ + "/" + file_prefix_ + "_" + std::to_string(GetRunNumber()) + ".dat"}; 
