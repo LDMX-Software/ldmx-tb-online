@@ -16,23 +16,21 @@
 namespace emulators {
 
 void TrigScintGenerator::genFrame(uint32_t size) {
-  rogue::interfaces::stream::FramePtr frame;
-  rogue::interfaces::stream::FrameIterator it;
 
   // Calculate the total size of the frame
   uint16_t len = 124; // 31*32/8
 
   // Request a frame of the size above and get an iterator to the
   // beginning of the frame.
-  frame = reqFrame(len, true);
+  auto frame{reqFrame(len, true)};
   frame->setPayload(len);
-  it = frame->begin();
+  auto it{frame->begin()};
 
   // Initialize QIE DataPacket
-  auto qie{new QieDataPacket(event_number_)};
+  QieDataPacket qie(event_number_);
 
   // Set flags
-  qie->setFlags(false, false, false, false);
+  qie.setFlags(false, false, false, false);
 
   // Fill adc, tdc data (randomly)
   srand(time(NULL));
@@ -40,19 +38,17 @@ void TrigScintGenerator::genFrame(uint32_t size) {
     for (int ts{0}; ts < 5; ++ts) {
       int adc{rand() % 256};
       int tdc{rand() % 50};
-      qie->addQieData(id, ts, adc, tdc);
+      qie.addQieData(id, ts, adc, tdc);
     }
   }
 
   // Generate data packet
-  auto data = qie->formPacket();
+  auto data{qie.formPacket()};
 
-  for (int i = 0; i < len; i++) {
-    toFrame(it, 1, &data[i]);
-  }
+  for (auto &datum : data) toFrame(it, 1, &datum); 
   ++event_number_;
  
-  std::cout << qie << std::endl;
+  //std::cout << qie << std::endl;
 
   // Build the QIE subpackets for each link
   sendFrame(frame);

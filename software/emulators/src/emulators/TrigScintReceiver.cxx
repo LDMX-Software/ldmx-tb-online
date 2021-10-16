@@ -34,22 +34,22 @@ void TrigScintReceiver::acceptFrame(
   int trig_id = 255 * word;
   rogue::interfaces::stream::fromFrame(it, 1, &word);
   trig_id += word;
-  auto packet{new QieDataPacket(trig_id)};
+  QieDataPacket packet(trig_id);
 
   rogue::interfaces::stream::fromFrame(it, 1, &word);
-  packet->setFlags(((word >> 3) & 1), ((word >> 2) & 1), ((word >> 1) & 1),
+  packet.setFlags(((word >> 3) & 1), ((word >> 2) & 1), ((word >> 1) & 1),
                    (word & 1));
 
   rogue::interfaces::stream::fromFrame(it, 1, &word);
   for (int ts = 0; ts < n_ts; ts++) {
     for (int qie = 0; qie < n_qie; qie++) {
       rogue::interfaces::stream::fromFrame(it, 1, &word);
-      packet->setADC(ts, qie, word);
+      packet.setADC(ts, qie, word);
     }
 
     for (int qie = 0; qie < n_qie; qie++) {
       rogue::interfaces::stream::fromFrame(it, 1, &word);
-      packet->setTDC(ts, qie, word);
+      packet.setTDC(ts, qie, word);
     }
   }
 

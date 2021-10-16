@@ -4,6 +4,7 @@
 //---< StdLib >---//
 #include <cinttypes>
 #include <ostream>
+#include <vector>
 
 namespace emulators {
 class QieDataPacket {
@@ -24,7 +25,7 @@ public:
 
   /**
    */
-  uint8_t *formPacket();
+  std::vector<uint8_t> formPacket();
 
   /**
    * Set the ADC value
@@ -43,7 +44,7 @@ public:
    * @param[in] data The data to write out.
    * @returns A modified ostream.
    */
-  friend std::ostream &operator<<(std::ostream &o, const uint8_t* data);
+  friend std::ostream &operator<<(std::ostream &o, const QieDataPacket &packet);
 
 private:
   /// Number of time samples considered
@@ -51,6 +52,12 @@ private:
 
   /// Number of QIE's considered.
   static const int n_qie_{12};
+  
+  /// Number of words
+  int nwords_{4 + 2*n_ts_*n_qie_}; 
+
+  /// Data packet
+  std::vector<uint8_t> data;
 
   /// Collection of 8-bit ADCs
   uint8_t adc_[n_ts_][n_qie_]{0};
