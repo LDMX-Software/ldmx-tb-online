@@ -5,6 +5,7 @@
 
 //---< ldmx-eudaq >---//
 #include "eudaq/HCalDataSender.h"
+#include "eudaq/TrigScintDataSender.h"
 
 namespace {
 auto dummy0 = eudaq::Factory<eudaq::Producer>::Register<
@@ -44,6 +45,7 @@ void RogueTcpClientProducer::DoInitialise() {
   // TODO: Dynamically load these instead
   auto sender_type{ini->Get("SENDER", "HCal")}; 
   if (sender_type.compare("HCal") == 0) sender_ = HCalDataSender::create(this); 
+  else if (sender_type.compare("TrigScint") == 0) sender_ = TrigScintDataSender::create(this); 
   else {
     EUDAQ_THROW("Failed to specify SENDER");
   }
