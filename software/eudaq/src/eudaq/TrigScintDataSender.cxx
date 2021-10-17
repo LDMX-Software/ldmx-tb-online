@@ -29,6 +29,7 @@ void TrigScintDataSender::sendEvent(
   // data structure.
   auto event{eudaq::Event::MakeUnique("TrigScintTestBeamRaw")};
   event->SetTriggerN(trigger_id); 
+  event->SetDeviceN(0x2); 
 
   // Copy the data block from the rogue frame
   it = frame->begin();

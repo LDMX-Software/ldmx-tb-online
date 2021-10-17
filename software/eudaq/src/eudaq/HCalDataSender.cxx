@@ -27,7 +27,8 @@ void HCalDataSender::sendEvent(
   // the trigger number is set using the RREQ parameter in the HGCROC
   // data structure.
   auto event{eudaq::Event::MakeUnique("HCalTestBeamRaw")};
-  event->SetTriggerN(readout_req_); 
+  event->SetTriggerN(readout_req_);
+  event->SetDeviceN(0x1); 
 
   // Copy the data block from the rogue frame
   it = frame->begin();
