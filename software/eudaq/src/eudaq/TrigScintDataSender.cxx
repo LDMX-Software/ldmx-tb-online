@@ -34,7 +34,7 @@ void TrigScintDataSender::sendEvent(
   it = frame->begin();
   event->AddBlock(0x2, it.ptr(), frame->getPayload()); 
 
-  event->Print(std::cout); 
+  //event->Print(std::cout); 
   // Send the event to the data collectors
   producer_->SendEvent(std::move(event)); 
 }
