@@ -1,5 +1,7 @@
 #include "eudaq/HgcrocFileReaderProducer.h"
 
+//---< C++ >---//
+#include <chrono>
 #include <bitset>
 
 namespace {
@@ -16,11 +18,6 @@ HgcrocFileReaderProducer::HgcrocFileReaderProducer(
 
 void HgcrocFileReaderProducer::DoInitialise() {
   auto ini{GetInitConfiguration()};
-
-  // Get the TCP server address and server from the configuration
-  // Default: localhost:8000
-  // auto addr{ini->Get("TCP_ADDR", "127.0.0.1")};
-  // EUDAQ_INFO("TCP client listening on " + addr + ":" + std::to_string(port));
 }
 
 void HgcrocFileReaderProducer::DoConfigure() {
@@ -77,11 +74,10 @@ void HgcrocFileReaderProducer::RunLoop() {
     packet[0] = word;
     ifile->read(reinterpret_cast<char *>(&packet[1]),
                 sizeof(uint32_t) * (size - 1));
-    std::cout << "[ HgcrocFileReaderProducer ]:  word ( 1 ) : "
-              << std::bitset<32>(packet[0]) << std::endl;
-    std::cout << "[ HgcrocFileReaderProducer ]:  word ( 2 ) : "
-              << std::bitset<32>(packet[1]) << std::endl;
-
+    //std::cout << "[ HgcrocFileReaderProducer ]:  word ( 1 ) : "
+    //          << std::bitset<32>(packet[0]) << std::endl;
+    //std::cout << "[ HgcrocFileReaderProducer ]:  word ( 2 ) : "
+    //          << std::bitset<32>(packet[1]) << std::endl;
 
     packet.clear(); 
     ++event_count; 
