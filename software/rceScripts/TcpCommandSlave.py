@@ -14,7 +14,6 @@ class TcpCommandSlave(rogue.interfaces.stream.Slave):
         self.state = "idle"
         vxm_ = vxm()
         self.TS_power = uart.serialInterface('/dev/ttyUSB1',False)
-
         self.sender = TsSender.TsSender()
 
     def _configure(self):
@@ -63,6 +62,19 @@ class TcpCommandSlave(rogue.interfaces.stream.Slave):
 
         elif var_name == 'motorPosY' :
             print(var_value)
+            vxm_.move(0,var_value)
+            pos = vxm_.GetPos()
+            pos_string= [str(i) for i in pos ]
+            pos_string=",".join(pos_string)
+            print(pos_string)
+            self.sender.send_reply(pos_string)
+
+        elif var_name == 'motorPosXY' :
+            if (len(cmd_parts))<4:
+                print("SetVariable Command is malformed.. do nothing")
+                return
+            X = float(cmd_parts[2])
+            Y = float(cmd_parts[3])
             vxm_.move(0,var_value)
             pos = vxm_.GetPos()
             pos_string= [str(i) for i in pos ]

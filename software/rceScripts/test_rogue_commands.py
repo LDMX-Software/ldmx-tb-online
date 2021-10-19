@@ -8,8 +8,6 @@ import TsSender
 
 def main():
 
-    #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-    
     #Create a tcp bridge
     tcpServer = rogue.interfaces.stream.TcpServer('*',12345)
     
@@ -22,7 +20,6 @@ def main():
     print("Starting Server...",flush=True)
     
     while True:
-        #sys.stdout.flush()
         pass
         
 if __name__=="__main__":
