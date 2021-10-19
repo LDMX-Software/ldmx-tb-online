@@ -16,6 +16,7 @@ void TestBeamMonitor::AtConfiguration() {
   // TODO Use DAQ map to fill map
   histo_map["roc 1, channel 1"] = m_monitor->Book<TH1D>("roc 1, channel 1", "",
     "", "", 100, 0., 1000.);
+  //daq_map = getDaqMap("/daqmap/csvfile");
 
 }
 
