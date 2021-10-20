@@ -22,16 +22,33 @@ void TcpCommandReceiver::acceptFrame(
     return;
   }
 
+  resetStates();
+  
   // Get an iterator to the data in the frame
   auto it{frame->begin()};
 
-  // Extract the command
+  // Get the payload size. If it's bigger than a single byte, assume it's a
+  // string buffer.
+  auto size{frame->getPayload()};
+  if (size != 1) {
+    // Get the payload size and reserve the memory
+    buffer_.reserve(size);
+
+    // Copy the buffer
+    rogue::interfaces::stream::fromFrame(it, size, &buffer_[0]);
+
+    // Set the command flag indicating a command has been received
+    command_ = true;
+
+    return;
+  }
+
+  // Extract the first word and determine what run state we are in
   uint8_t word;
   rogue::interfaces::stream::fromFrame(it, 1, &word);
   // std::cout << "[ TcpCommandReceiver ]: command : " << std::bitset<8>(word)
   // << std::endl;
 
-  resetStates();
   if (word == rogue::commands::start) {
     start_run_ = true;
   } else if (word == rogue::commands::stop) {
@@ -42,7 +59,7 @@ void TcpCommandReceiver::acceptFrame(
     init_ = true;
   } else if (word == rogue::commands::config) {
     config_ = true;
-  }
+  } 
 }
 
 void TcpCommandReceiver::resetStates() {
@@ -51,5 +68,7 @@ void TcpCommandReceiver::resetStates() {
   reset_ = false;
   init_ = false;
   config_ = false;
+  command_ = false;
+  buffer_.clear(); 
 }
 } // namespace rogue
