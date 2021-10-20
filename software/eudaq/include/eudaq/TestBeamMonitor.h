@@ -4,6 +4,8 @@
 //---< eudaq >---//
 #include "eudaq/ROOTMonitor.hh"
 
+#include "TH2.h"
+
 namespace eudaq {
 
 class TestBeamMonitor : public eudaq::ROOTMonitor {
@@ -24,7 +26,7 @@ private:
     return (value >> low_bit) & mask;
   }
 
-  std::map<std::string, TH1D*> histo_map; 
+  std::map<std::string, TH2D*> histo_map; 
 };
 } // namespace eudaq
 #endif // EUDAQ_SIMPLEMONITOR_H
