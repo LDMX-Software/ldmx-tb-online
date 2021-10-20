@@ -69,15 +69,15 @@ void HgcrocDataPacket::createRocSubpacket(int cindex, int length,
 
   auto count{1};
   for (int i{cindex}; i < (cindex + length - 12); i += 4) {
-    if (count == 19 || count == 20) { 
-     ++count; 
-     continue;
+    if (count == 19 || count == 20) {
+      ++count;
+      continue;
     }
 
     uint32_t channel_data = packet[i] | (packet[i + 1] << 8) |
                             (packet[i + 2] << 16) | (packet[i + 3] << 24);
 
-    rs.adc.push_back(channel_data & 0x3FF);   
+    rs.adc.push_back(channel_data & 0x3FF);
     std::cout << "[ HgcrocFileReaderProducer ]:  word ( " << count
               << " ) : " << std::bitset<32>(channel_data) << std::endl;
     ++count;
