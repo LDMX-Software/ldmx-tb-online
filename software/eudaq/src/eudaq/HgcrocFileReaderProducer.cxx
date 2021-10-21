@@ -4,6 +4,9 @@
 #include <chrono>
 #include <bitset>
 
+//---< eudaq >---//
+#include "eudaq/RunControl.hh" 
+
 namespace {
 auto dummy0 = eudaq::Factory<eudaq::Producer>::Register<
     eudaq::HgcrocFileReaderProducer, const std::string &, const std::string &>(
@@ -62,6 +65,7 @@ void HgcrocFileReaderProducer::RunLoop() {
     // initial read.
     if (ifile->eof()) { 
       EUDAQ_WARN("End of file reached.");
+      SetStatus(Status::STATE_STOPPED, "Stopped");
       break; 
     }
     
