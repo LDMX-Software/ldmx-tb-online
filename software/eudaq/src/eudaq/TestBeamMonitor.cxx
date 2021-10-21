@@ -31,7 +31,6 @@ void TestBeamMonitor::AtEventReception(EventSP event) {
   auto subpackets{hcal_event->getSubpackets()};
   for (auto &subpacket : subpackets) {
     auto roc_id{subpacket.roc_id};
-    std::cout << "Samples: " << subpacket.adc.size() << std::endl;
     for (int i{0}; i < subpacket.adc.size(); ++i) {
       histo_map["ROC " + std::to_string(roc_id) + " - ADC"]->Fill(
           i, subpacket.adc[i]);

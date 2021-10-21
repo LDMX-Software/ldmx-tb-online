@@ -1,5 +1,6 @@
 #include "eudaq/HgcrocDataPacket.h"
 
+//---< C++ >---//
 #include <bitset>
 #include <math.h>
 
@@ -56,8 +57,6 @@ void HgcrocDataPacket::createRocSubpacket(int cindex, int length,
   cindex += 2; // Skip the readout map and CRC for now
 
   rs.roc_id = packet[cindex + 1] << 8 | packet[cindex];
-  std::cout << "[ HgcrocDataPacket ]: ROC ID: " << unsigned(rs.roc_id)
-            << std::endl;
 
   cindex += 6;
   uint32_t data = packet[cindex] | (packet[cindex + 1] << 8) |
@@ -78,8 +77,6 @@ void HgcrocDataPacket::createRocSubpacket(int cindex, int length,
                             (packet[i + 2] << 16) | (packet[i + 3] << 24);
 
     rs.adc.push_back(channel_data & 0x3FF);
-    std::cout << "[ HgcrocFileReaderProducer ]:  word ( " << count
-              << " ) : " << std::bitset<32>(channel_data) << std::endl;
     ++count;
   }
 
