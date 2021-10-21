@@ -79,7 +79,6 @@ void HgcrocFileReaderProducer::RunLoop() {
     //std::cout << "[ HgcrocFileReaderProducer ]:  word ( 2 ) : "
     //          << std::bitset<32>(packet[1]) << std::endl;
 
-    packet.clear(); 
     ++event_count; 
     
     // Create an eudaq event to ship to the data collector.
