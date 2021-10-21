@@ -1,11 +1,11 @@
 #include "eudaq/HgcrocFileReaderProducer.h"
 
 //---< C++ >---//
-#include <chrono>
 #include <bitset>
+#include <chrono>
 
 //---< eudaq >---//
-#include "eudaq/RunControl.hh" 
+#include "eudaq/RunControl.hh"
 
 namespace {
 auto dummy0 = eudaq::Factory<eudaq::Producer>::Register<
@@ -52,39 +52,42 @@ void HgcrocFileReaderProducer::DoReset() {}
 void HgcrocFileReaderProducer::DoTerminate() {}
 
 void HgcrocFileReaderProducer::RunLoop() {
-  auto event_count{0}; 
+  auto event_count{0};
   while (true) {
 
-    // Extract the first word to get the number of 32-bit words in the
-    // event.
-    uint32_t word{0};
-    ifile->read(reinterpret_cast<char *>(&word), sizeof word);
-  
-    // Given that the data blocks are being extracted in fixed 
+    // Extract the header. The first two words are fixed to the following
+    // 00:31: 0x11888811
+    // 32:63: 0xBEEF2021
+    std::vector<uint32_t> packet(3, 0x0);
+    ifile->read(reinterpret_cast<char *>(&packet[0]), sizeof(uint32_t));
+
+    // Given that the data blocks are being extracted in fixed
     // size blocks, the only time an EOF can occur is after the
     // initial read.
-    if (ifile->eof()) { 
+    if (ifile->eof()) {
       EUDAQ_WARN("End of file reached.");
       SetStatus(Status::STATE_STOPPED, "Stopped");
-      break; 
+      break;
     }
-    
-    // Extract the number of uint32_t words
-    auto size{word & 0xFFF};
+    ifile->read(reinterpret_cast<char *>(&packet[1]), sizeof(uint32_t));
+    ifile->read(reinterpret_cast<char *>(&packet[2]), sizeof(uint32_t));
+
+    // The 3rd word in the header contains the total number of 32-bit words
+    // in the packet
+    auto size{packet[2] & 0xFFF};
 
     // Now that the size is known, form the packet that will be sent to
-    // the data collector.
-    std::vector<uint32_t> packet(size, 0x0);
-    packet[0] = word;
-    ifile->read(reinterpret_cast<char *>(&packet[1]),
-                sizeof(uint32_t) * (size - 1));
+    // the data collector. Note, the size does not include the two initial
+    // header and two tail words. Since the first 3 words have already been
+    // copied, then we only need to copy (size - 1 header word + 2 tail words)
+    packet.resize(size + 4, 0x0);
+    ifile->read(reinterpret_cast<char *>(&packet[3]),
+                sizeof(uint32_t) * (size + 1));
+    //std::cout << "[ HgcrocFileReaderProducer ]:  word ( 0 ) : "
+    //          << std::bitset<32>(packet[3]) << std::endl;
     //std::cout << "[ HgcrocFileReaderProducer ]:  word ( 1 ) : "
-    //          << std::bitset<32>(packet[0]) << std::endl;
-    //std::cout << "[ HgcrocFileReaderProducer ]:  word ( 2 ) : "
-    //          << std::bitset<32>(packet[1]) << std::endl;
+    //          << std::bitset<32>(packet[4]) << std::endl;
 
-    ++event_count; 
-    
     // Create an eudaq event to ship to the data collector.
     auto event{eudaq::Event::MakeUnique("HGCROCRaw")};
 
@@ -93,6 +96,9 @@ void HgcrocFileReaderProducer::RunLoop() {
 
     // Send the event
     SendEvent(std::move(event));
+
+    // Increment event counter. This will be used in the future.
+    ++event_count;
   }
 }
 
