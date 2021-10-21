@@ -37,6 +37,10 @@ public:
 
   bool configure() { return config_; }
 
+  bool command() { return command_; }
+
+  std::string buffer() { return buffer_; }
+
   /**
    * Reset all states to false.
    */
@@ -57,7 +61,13 @@ private:
   bool init_{false}; 
 
   ///
-  bool config_{false}; 
+  bool config_{false};
+
+  /// 
+  bool command_{false};
+
+  /// String buffer
+  std::string buffer_;
 };
 } // namespace rogue
 #endif // ROGUE_TCPCOMMANDRECEIVERS_H
