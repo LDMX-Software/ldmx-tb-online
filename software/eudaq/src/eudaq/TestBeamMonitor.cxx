@@ -70,6 +70,7 @@ void TestBeamMonitor::AtEventReception(EventSP event) {
     auto roc_id{subpacket.roc_id};
     std::cout << "Samples: " << subpacket.adc.size() << std::endl;
     for (int i{0}; i < subpacket.adc.size(); ++i) {
+      std::cout << "Roc ID: " << std::to_string(roc_id) << "  ADC " << subpacket.adc[i] << std::endl;
       histo_map["ROC " + std::to_string(roc_id) + " - ADC"]->Fill(
           i, subpacket.adc[i]);
       if(subpacket.adc[i] >= hcal_adc_thresh){
