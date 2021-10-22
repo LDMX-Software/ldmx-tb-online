@@ -1,4 +1,4 @@
-#include "eudaq/TestBeamMonitor.h"
+#include "eudaq/HCalTestBeamMonitor.h"
 
 #include <iostream>
 
@@ -6,13 +6,13 @@
 
 namespace {
 auto dummy0 = eudaq::Factory<eudaq::Monitor>::Register<
-    eudaq::TestBeamMonitor, const std::string &, const std::string &>(
-    eudaq::TestBeamMonitor::factory_id_);
+    eudaq::HCalTestBeamMonitor, const std::string &, const std::string &>(
+    eudaq::HCalTestBeamMonitor::factory_id_);
 }
 
 namespace eudaq {
 
-void TestBeamMonitor::AtConfiguration() {
+void HCalTestBeamMonitor::AtConfiguration() {
   // TODO Use DAQ map to fill map
   for (int i{256}; i < 264; ++i) {
     histo_map["ROC " + std::to_string(i) + " - ADC"] =
@@ -24,7 +24,7 @@ void TestBeamMonitor::AtConfiguration() {
   }
 }
 
-void TestBeamMonitor::AtEventReception(EventSP event) {
+void HCalTestBeamMonitor::AtEventReception(EventSP event) {
   // Fill HCal plots
   auto hcal_event{std::make_shared<HgcrocDataPacket>(*event)};
 
@@ -38,7 +38,5 @@ void TestBeamMonitor::AtEventReception(EventSP event) {
       }
     }
   }
-  // if (event->GetDescription().compare("HCalTestBeamRaw") == 0) {
-  //}
 }
 } // namespace eudaq
