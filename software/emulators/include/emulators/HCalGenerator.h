@@ -27,14 +27,15 @@ public:
    */
   void genFrame(uint32_t size);
 
-  /** @return the TX count */
-  uint32_t getTxCount(){};
+
+  /** @return the TX count */  
+  uint32_t getTxCount(){return 0;}; /** not implemented **/
 
   /** @return the total TX bytes */
-  uint32_t getTxBytes(){};
+  uint32_t getTxBytes(){return 0;}; /** not implemented **/
 
   /** @return the total TX errors */
-  uint32_t getTxErrors(){};
+  uint32_t getTxErrors(){return 0;}; /** not implemented **/
 
 private:
   /**
@@ -126,7 +127,8 @@ private:
   uint8_t adc_t1_mask_{0x14}; 
 
   /// Channel is valid mask
-  uint8_t channel_valid_mask_{0x1E}; 
+  uint8_t channel_valid_mask_{0x1E};
+
 };
 
 } // namespace emulators
