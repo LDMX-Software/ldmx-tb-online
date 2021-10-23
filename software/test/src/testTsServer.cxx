@@ -1,7 +1,7 @@
 #include <string>
 #include <iostream>
 #include "eudaq/TcpCommandGenerator.h"
-#include "eudaq/TsReceiver.h"
+#include "rogue/TrigScintReceiver.h"
 #include "rogue/interfaces/stream/TcpClient.h"
 
 using namespace eudaq;
@@ -18,11 +18,11 @@ int main(int argc, char* argv[]) {
   tcp_command_->addSlave(tcp_);
   
   //Create the TCP command read-back receiver
-  std::shared_ptr<TsReceiver> tcp_receiver_{TsReceiver::create()};
+  std::shared_ptr<TrigScintReceiver> tcp_receiver_{TrigScintReceiver::create()};
   tcp_->addSlave(tcp_receiver_);
 
   //tcp_command_->send_cmd("configure:dummy");
-  tcp_command_->send_cmd("configure:dummy2");
+  tcp_command_->genFrame("configure:dummy2");
   
     
   while (1) {
