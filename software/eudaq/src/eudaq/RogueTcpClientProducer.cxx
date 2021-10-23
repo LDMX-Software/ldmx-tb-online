@@ -41,16 +41,6 @@ void RogueTcpClientProducer::DoInitialise() {
   // Connect the tcp stream to the file writer
   tcp_->addSlave(writer_->getChannel(0)); 
 
-  // Configure the sender
-  // TODO: Dynamically load these instead
-  auto sender_type{ini->Get("SENDER", "HCal")}; 
-  if (sender_type.compare("HCal") == 0) sender_ = HCalDataSender::create(this); 
-  else if (sender_type.compare("TrigScint") == 0) sender_ = TrigScintDataSender::create(this); 
-  else {
-    EUDAQ_THROW("Failed to specify SENDER");
-  }
-  EUDAQ_INFO("Using a data sender of type " + sender_type); 
-
   // Connect the data sender to the TCP client
   tcp_->addSlave(sender_); 
   
