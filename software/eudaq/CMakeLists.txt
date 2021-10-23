@@ -15,12 +15,6 @@ setup_rogue()
 
 find_package(ROOT CONFIG REQUIRED)
 
-# Build the eudaq library
-#setup_library(module eudaq name eudaq_module_dark 
-#	      dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue
-#	      ROOT::Gui ROOT::Hist)
-
-
 setup_library(module eudaq name eudaq_module_dark 
   dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue
   ROOT::Gui ROOT::Hist FiberTrackerDAQ)
