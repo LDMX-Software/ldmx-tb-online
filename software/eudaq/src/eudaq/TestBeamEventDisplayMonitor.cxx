@@ -40,7 +40,9 @@ void TestBeamEventDisplayMonitor::AtConfiguration() {
 
 void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
 
-  bool newSpill = false; //TODO Set new spill flag 
+  time = time;
+  bool newSpill = time - prev_time > time_reset; //reset plots every 18 s for now
+  
   //Reset event plots if new spill
   if(!newSpill){
     return;
@@ -50,6 +52,7 @@ void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
       hcal_event_map[i]->Reset();
     }
     ts_event->Reset();
+    previous_time = time;
   }
   // Fill HCal plots
   auto hcal_event{std::make_shared<HgcrocDataPacket>(*event)};
