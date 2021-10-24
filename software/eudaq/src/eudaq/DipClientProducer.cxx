@@ -18,16 +18,8 @@ void DipClientProducer::DoInitialise() {
   
   // Get the TCP server address and server from the configuration
   // Default: localhost:8000
-  auto addr{ini->Get("TCP_ADDR", "127.0.0.1")};
-  auto port{ini->Get("TCP_PORT", 8000)};
 
-  std::string filenameBase="Test_DipClient";
-  std::string outputPath="/u1/ldmx/data/dip_client/";
-  std::string runNumber = std::to_string(GetRunNumber());
-  //singleton pattern instead?
-  client = std::make_shared<FiberTrackerClient>(runNumber,filenameBase,outputPath);
-  
-  EUDAQ_INFO("TCP client listening on " + addr + ":" + std::to_string(port));
+  EUDAQ_INFO("DIP Client initialized");
   
 }
 
@@ -36,15 +28,20 @@ void DipClientProducer::DoConfigure() {
   // Get the configuration
   auto conf{GetConfiguration()};
 
-  // Get the path to the output file
-  output_path_ = conf->Get("OUTPUT_PATH", ".");
+  file_prefix_ = conf->Get("FILENAMEBASE", "dipClientData_");
+  output_path_ = conf->Get("OUTPUTPATH","./");
   
-  // Build the file name
-  auto output_file{output_path_ + "/" + file_prefix_ + "_" + std::to_string(GetRunNumber()) + ".dat"}; 
   
+    
 }
 
 void DipClientProducer::DoStartRun() {
+
+  
+  //The run number is only known at the start of the run.
+  std::string runNumber = std::to_string(GetRunNumber());
+    
+  client = std::make_unique<FiberTrackerClient>(runNumber,file_prefix_,output_path_);
   //Call the DIP client connect
   client->Subscribe();
   
@@ -53,14 +50,17 @@ void DipClientProducer::DoStartRun() {
 void DipClientProducer::DoStopRun() {
   // Call the DIP client disconnect
   client->Unsubscribe();
-    
+  client.reset(nullptr);
 }
 
 void DipClientProducer::DoReset() {
-  //Do something?
+  client.reset(nullptr); 
 }
 
-void DipClientProducer::DoTerminate() {}
+void DipClientProducer::DoTerminate() {
+  client.reset(nullptr);
+  
+}
 
 void DipClientProducer::RunLoop() {
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 euRun -n DarkRunControl -a tcp://4000 &
-sleep 1
+sleep 5
 
 #euLog &
 #sleep 1
