@@ -146,6 +146,7 @@ private:
   TH2D* ts_event;
   int nPlanes;
   double time_reset; //seconds
+  int n;
 };
 } // namespace eudaq
 #endif // EUDAQ_TESTBEAMEVENTDISPLAYMONITOR_H

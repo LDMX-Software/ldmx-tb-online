@@ -15,6 +15,7 @@ namespace eudaq {
 void TestBeamEventDisplayMonitor::AtConfiguration() {
   nPlanes = 19;
   time_reset = 18; //seconds
+  n = 0;
 
   for (int i{1}; i < nPlanes + 1; i++){
     if(nPlanes < 10){
@@ -40,8 +41,10 @@ void TestBeamEventDisplayMonitor::AtConfiguration() {
 
 void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
 
-  time = time;
-  bool newSpill = time - prev_time > time_reset; //reset plots every 18 s for now
+  //time = time;
+  //bool newSpill = time - prev_time > time_reset; //reset plots every 18 s for now
+  
+  bool newSpill = n%100 == 0;
   
   //Reset event plots if new spill
   if(!newSpill){
@@ -52,7 +55,7 @@ void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
       hcal_event_map[i]->Reset();
     }
     ts_event->Reset();
-    previous_time = time;
+    //previous_time = time;
   }
   // Fill HCal plots
   auto hcal_event{std::make_shared<HgcrocDataPacket>(*event)};
