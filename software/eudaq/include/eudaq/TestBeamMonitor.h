@@ -146,6 +146,7 @@ private:
   std::map<int, TH2D*> hcal_run_map; 
   TH2D* ts_run;
   int nPlanes;
+
 };
 } // namespace eudaq
 #endif // EUDAQ_SIMPLEMONITOR_H

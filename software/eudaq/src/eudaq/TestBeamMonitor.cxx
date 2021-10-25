@@ -14,7 +14,6 @@ namespace eudaq {
 
 void TestBeamMonitor::AtConfiguration() {
   nPlanes = 19;
-  hcal_adc_thresh = 0; //adjust later
   // TODO Use DAQ map to fill map
   for (int i{256}; i < 264; ++i) {
     histo_map["ROC " + std::to_string(i) + " - ADC"] = m_monitor->Book<TH2D>(
@@ -76,7 +75,7 @@ void TestBeamMonitor::AtEventReception(EventSP event) {
           continue;
         }
         int plane = getPlane(daq_map[channel]);
-        if(!hcal_run_map.count(plane) || !hcal_event_map.count(plane)){
+        if(!hcal_run_map.count(plane)){
           std::cout<< "Histo for plane " << std::to_string(plane) << " not found" << std::endl;
           continue;
         }
