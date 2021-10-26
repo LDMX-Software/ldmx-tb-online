@@ -34,7 +34,10 @@ void DipClientProducer::DoConfigure() {
 
   if (!client)
     client = std::make_unique<FiberTrackerClient>("",file_prefix_,output_path_);
-  
+  else {
+    client->setFileNameBase(file_prefix_);
+    client->setOutputPath(output_path_);
+  }
 }
 
 void DipClientProducer::DoStartRun() {
