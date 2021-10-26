@@ -195,6 +195,7 @@ to connect to.
 
 
 Compile with FiberTracker and DIP
+cd build
 cmake -DCMAKE_INSTALL_PREFIX=../install -DFIBERTRACKERDAQ_Dir=/u1/ldmx/server/FiberTrackerDAQ/install -DDIP_Dir=/home/ldmx/DIP/dip-5.7.0 ..
-
+make install
 

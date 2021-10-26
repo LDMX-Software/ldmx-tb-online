@@ -48,7 +48,7 @@ public:
 
 private:
 
-  std::unique_ptr<FiberTrackerClient> client;
+  std::unique_ptr<FiberTrackerClient> client{nullptr};
   
   /// Output file path
   std::string output_path_{"."};
