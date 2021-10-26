@@ -49,7 +49,9 @@ if (NOT EMULATORS_ONLY)
 
   # eudaq library
   add_subdirectory(eudaq)
-endif() 
+endif()
+
+add_subdirectory(utils)
 
 # Build all test. The test are assumed to reside inside of the directory "test"
 # within each module.
