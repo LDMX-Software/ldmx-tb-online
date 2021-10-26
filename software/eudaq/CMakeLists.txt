@@ -15,7 +15,12 @@ setup_rogue()
 
 find_package(ROOT CONFIG REQUIRED)
 
-# Build the emulator library
 setup_library(module eudaq name eudaq_module_dark 
-	      dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue
-	      ROOT::Gui ROOT::Hist)
+  dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue
+  ROOT::Gui ROOT::Hist FiberTrackerDAQ)
+
+
+#Add fiber tracker -- TODO
+target_include_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include)
+target_link_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64/)
+
