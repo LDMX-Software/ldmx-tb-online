@@ -20,6 +20,8 @@ void DipClientProducer::DoInitialise() {
   // Default: localhost:8000
 
   EUDAQ_INFO("DIP Client initialized");
+
+
   
 }
 
@@ -27,21 +29,19 @@ void DipClientProducer::DoConfigure() {
   
   // Get the configuration
   auto conf{GetConfiguration()};
-
   file_prefix_ = conf->Get("FILENAMEBASE", "dipClientData_");
   output_path_ = conf->Get("OUTPUTPATH","./");
+
+  if (!client)
+    client = std::make_unique<FiberTrackerClient>("",file_prefix_,output_path_);
   
-  
-    
 }
 
 void DipClientProducer::DoStartRun() {
 
-  
-  //The run number is only known at the start of the run.
   std::string runNumber = std::to_string(GetRunNumber());
-    
-  client = std::make_unique<FiberTrackerClient>(runNumber,file_prefix_,output_path_);
+  client->setRunNumber(runNumber);  
+  
   //Call the DIP client connect
   client->Subscribe();
   
@@ -50,11 +50,10 @@ void DipClientProducer::DoStartRun() {
 void DipClientProducer::DoStopRun() {
   // Call the DIP client disconnect
   client->Unsubscribe();
-  client.reset(nullptr);
 }
 
 void DipClientProducer::DoReset() {
-  client.reset(nullptr); 
+  
 }
 
 void DipClientProducer::DoTerminate() {
