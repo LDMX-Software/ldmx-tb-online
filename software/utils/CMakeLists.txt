@@ -10,4 +10,14 @@ add_executable(sendTsConfigCommand ${CMAKE_BINARY_DIR}/../utils/src/sendTsConfig
 target_link_libraries(sendTsConfigCommand
   PRIVATE eudaq_module_dark rogue::rogue)
 
-install(TARGETS sendTsControlCommand sendTsConfigCommand DESTINATION ${CMAKE_INSTALL_PREFIX}/utils/)
+install(TARGETS sendTsControlCommand DESTINATION ${CMAKE_INSTALL_PREFIX}/utils/)
+
+
+add_executable(receiveUdpTsPackets ${CMAKE_BINARY_DIR}/../utils/src/receiveUdpTsPackets.cxx)
+
+target_link_libraries(receiveUdpTsPackets
+  PRIVATE rogue::rogue)
+
+install(TARGETS receiveUdpTsPackets DESTINATION ${CMAKE_INSTALL_PREFIX}/utils/)
+
+
