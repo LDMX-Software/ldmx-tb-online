@@ -24,9 +24,9 @@ namespace eudaq {
     
     // Get the UDP server address and server from the configuration
     // Default: localhost:9999
-    auto addr{ini->Get("TCP_ADDR", "127.0.0.1")};
-    auto port{ini->Get("TCP_PORT", 9999)};
-    EUDAQ_INFO("TCP client listening on " + addr + ":" + std::to_string(port));
+    auto addr{ini->Get("UDP_ADDR", "127.0.0.1")};
+    auto port{ini->Get("UDP_PORT", 9999)};
+    EUDAQ_INFO("UDP client listening on " + addr + ":" + std::to_string(port));
     
     // Open the UDP client
 
@@ -54,6 +54,11 @@ namespace eudaq {
     // Get the file prefix
     file_prefix_ = conf->Get("ROGUE_FILE_PATTERN", "test"); 
     
+        
+  }
+
+  void CaptanTrigScintTestBeamProducer::DoStartRun() {
+
     // Build the file name
     auto output_file{output_path_ + "/" + file_prefix_ + "_" + std::to_string(GetRunNumber()) + ".dat"}; 
     
@@ -62,23 +67,20 @@ namespace eudaq {
     
     // Open a file to write the stream
     writer_->open(output_file);
-    
     EUDAQ_INFO("Writing rogue stream to " + output_file);
 
-    
-  }
-
-  void CaptanTrigScintTestBeamProducer::DoStartRun() {
-
+    udp_client_->buff_[0]=2;
+    udp_client_->sendmsg(1,true);
     udp_client_->dataEnableToggle(false);
     udp_client_->dataEnableToggle(true);
-
+    
   }
   
 
   void CaptanTrigScintTestBeamProducer::DoStopRun() {
     
     udp_client_->dataEnableToggle(false);
+    writer_->close();
   }
 
 
