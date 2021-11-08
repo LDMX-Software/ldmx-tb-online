@@ -44,11 +44,14 @@ endif()
 add_subdirectory(emulators)
 
 if (NOT EMULATORS_ONLY) 
-  # eudaq library
+  # rogue library
   add_subdirectory(rogue)
 
   # eudaq library
-  add_subdirectory(eudaq)
+  #add_subdirectory(eudaq)
+
+  # polarfire configuration lib
+  add_subdirectory(pflib)
 endif() 
 
 # Build all test. The test are assumed to reside inside of the directory "test"
