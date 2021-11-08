@@ -15,12 +15,20 @@ setup_rogue()
 
 find_package(ROOT CONFIG REQUIRED)
 
+# Find all of the source files we want to add to the eudaq library.
+# For now, exclude the DIP client until it can be brought in as 
+# an external dependency.
+file(GLOB SRC_FILES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/eudaq/[A-Z]*.cxx)
+list(REMOVE_ITEM SRC_FILES ${PROJECT_SOURCE_DIR}/src/eudaq/DipClientProducer.cxx)
+
 setup_library(module eudaq name eudaq_module_dark 
   dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue
-  ROOT::Gui ROOT::Hist FiberTrackerDAQ)
+  ROOT::Gui ROOT::Hist
+  sources ${SRC_FILES})
+#FiberTrackerDAQ)
 
 
 #Add fiber tracker -- TODO
-target_include_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include)
-target_link_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64/)
+#target_include_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include)
+#target_link_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64/)
 
