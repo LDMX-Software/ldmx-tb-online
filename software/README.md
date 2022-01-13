@@ -7,6 +7,12 @@
  * [Installng Rogue with Anaconda](https://slaclab.github.io/rogue/installing/anaconda.html)
  * [Installing Rogue on Archlinux](https://slaclab.github.io/rogue/installing/build.html#archlinux)
 
+### eudaq 
+ * [Documentation](https://eudaq.github.io/) 
+ * To use the monitoring, the CMake flag `-DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON` needs to be included in the cmake command.
+
+### ROOT
+
 ## Building ldmx-daq
 
 First, clone the `ldmx-daq` repository and make a build directory
@@ -52,12 +58,21 @@ In order to run any `ldmx-daq` apps, the environment needs to be setup as
 follows
 
 ```
-export DAQ_INSTALL_PREFIX=/full/path/to/ldmx-daq/install
+export DAQ_INSTALL_PREFIX=/full/path/to/ldmx-daq/software/install
 export LD_LIBRARY_PATH=$DAQ_INSTALL_PREFIX/lib:$LD_LIBRARY_PATH
 export PATH=$DAQ_INSTALL_PREFIX/bin:$PATH
 ```
 
 Once the commands above are executed, apps (e.g. emulator) can be run. 
+
+Eudaq loads all run control, producer and data collector libraries at 
+run time.  For this reason, it needs to be made aware of the LDMX 
+specific eudaq libraries.  This can be done by creating a soft link
+of the LDMX eudaq library within the eudaq `lib` directory as follows
+
+```
+ln -s /full/path/to/ldmx-daq/software/install/lib/libeudaq_module_dark.so /full/path/to/eudaq/lib/libeudaq_module_dark.so
+```
 
 # Running the emulator
 
@@ -97,3 +112,90 @@ address should be specified as `127.0.0.1`.
  
 Once the client is started, you should begin to see the RX and TX counters
 start to increase. 
+
+## Emulation using eudaq
+
+In addition to emulation using the stand alone app, eudaq can also be 
+used.  Doing so will require starting the run control, producer, data collector, 
+monitoring and and rogue server in seperate terminals.  This can be
+done by executing the following commands (Note the terminal ID)
+
+Terminal 1 - Run Control
+```
+euRun -n DarkRunControl -a tcp://4000
+```
+
+Terminal 2 - Producer
+```
+euCliProducer -n RogueTcpClientProducer -t hcal -r tcp://localhost:4000
+```
+
+Terminal 3 - Data Collector 
+```
+euCliCollector -n TestBeamDataCollector -t test_beam -r tcp://localhost:4000
+```
+
+Terminal 4 - Monitor
+```
+euCliMonitor -n SimpleMonitor -t mon -r tcp://localhost:4000
+```
+
+Terminal 5 - Rogue Server (HCal)
+```
+ldmx_rogue_server --hcal --emulate
+```
+
+Note, that both the `hcal` and `emulate` flags need to set on the server side.  Emulation 
+of the trigger scintillator can be done by replacing `hcal` with `trig`.   It's also 
+possible to emulate a producer for the trigger scintillator by instatiating 
+an additional producer as follows
+
+Terminal 6 - Trig Scint Producer
+```
+euCliProducer -n RogueTcpClientProducer -t trig -r tcp://localhost:4000
+```
+
+Terminal 7 - Rogue Server (Trigger Scint)
+
+```
+ldmx_rogue_server --trig --emulate --port 9000
+```
+
+Once the producers and run control has been started, you can start going through 
+the state transitions.  An example of what is contained within an init file is as follows
+
+```
+[Producer.hcal]
+TCP_ADDR = 127.0.0.1
+TCP_PORT = 8000
+
+[Producer.trig]
+TCP_ADDR = 127.0.0.1
+TCP_PORT = 9000
+```
+
+The `TCP_PORT` parameter should be set to whatever value was passed to the
+rogue server. The default is 8000. 
+
+The configure stage is what is used to connect the producers to the data 
+collectors and monitoring. An example config file will look as follows
+```
+[Producer.hcal]
+EUDAQ_DC=test_beam
+
+[DataCollector.test_beam]
+EUDAQ_MN=mon
+```
+
+The variable `EUDAQ_DC` is used to tell the producer the name of the data 
+collector it should connect and send events to. Similarly, the variable
+`EUDAQ_MN` is used to tell the data collector to which monitoring app
+to connect to. 
+
+
+
+Compile with FiberTracker and DIP
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=../install -DFIBERTRACKERDAQ_Dir=/u1/ldmx/server/FiberTrackerDAQ/install -DDIP_Dir=/home/ldmx/DIP/dip-5.7.0 ..
+make install
+

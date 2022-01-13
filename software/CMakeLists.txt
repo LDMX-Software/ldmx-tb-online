@@ -54,6 +54,8 @@ if (NOT EMULATORS_ONLY)
   add_subdirectory(pflib)
 endif() 
 
+add_subdirectory(utils)
+
 # Build all test. The test are assumed to reside inside of the directory "test"
 # within each module.
 #build_test()

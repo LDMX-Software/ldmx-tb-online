@@ -31,12 +31,43 @@ public:
 
   bool stopRun() { return stop_run_; } 
 
-private: 
+  bool reset() { return reset_; }
+
+  bool initialize() { return init_; }
+
+  bool configure() { return config_; }
+
+  bool command() { return command_; }
+
+  std::string buffer() { return buffer_; }
+
+  /**
+   * Reset all states to false.
+   */
+  void resetStates(); 
+
+private:
+
   /// Flag indicating whether a run should be started.
   bool start_run_{false};
 
   /// Flag indicating whether a run should be stopped.
-  bool stop_run_{false}; 
+  bool stop_run_{false};
+
+  ///
+  bool reset_{false}; 
+
+  ///
+  bool init_{false}; 
+
+  ///
+  bool config_{false};
+
+  /// 
+  bool command_{false};
+
+  /// String buffer
+  std::string buffer_;
 };
 } // namespace rogue
 #endif // ROGUE_TCPCOMMANDRECEIVERS_H

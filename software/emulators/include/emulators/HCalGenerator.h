@@ -27,16 +27,30 @@ public:
    */
   void genFrame(uint32_t size);
 
-  /** @return the TX count */
-  uint32_t getTxCount(){};
+
+  /** @return the TX count */  
+  uint32_t getTxCount(){return 0;}; /** not implemented **/
 
   /** @return the total TX bytes */
-  uint32_t getTxBytes(){};
+  uint32_t getTxBytes(){return 0;}; /** not implemented **/
 
   /** @return the total TX errors */
-  uint32_t getTxErrors(){};
+  uint32_t getTxErrors(){return 0;}; /** not implemented **/
 
 private:
+  /**
+   * Reset the bunch id and readout request counters
+   */
+  void resetCounters() override {
+    bunch_id_ = 0; 
+    rr_count_ = 0; 
+  }
+
+  /**
+   *
+   */
+  std::vector<uint32_t> buildRocInfo(int n_links); 
+  
   /**
    */
   std::vector<uint32_t> buildRocSubpackets(int n_links, uint16_t orbit_counter,
@@ -47,6 +61,9 @@ private:
 
   /// ROC subpacket size in bytes
   uint32_t roc_subpacket_size_{42*4}; 
+
+  /// tail size in bytes
+  uint32_t tail_size_{4}; 
 
   /// Number of subpackets from the ROCs (NLINKS)
   uint8_t n_links_{0x1};
@@ -68,6 +85,9 @@ private:
 
   /// Orbit counter
   uint16_t orbit_counter_{0};
+
+  /// Readout request
+  uint8_t rr_count_{0}; 
 
   /// Readout request mask
   uint8_t rr_mask_{0xA};
@@ -107,7 +127,8 @@ private:
   uint8_t adc_t1_mask_{0x14}; 
 
   /// Channel is valid mask
-  uint8_t channel_valid_mask_{0x1E}; 
+  uint8_t channel_valid_mask_{0x1E};
+
 };
 
 } // namespace emulators
