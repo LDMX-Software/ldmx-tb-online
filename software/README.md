@@ -12,6 +12,8 @@
  * To use the monitoring, the CMake flag `-DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON` needs to be included in the cmake command.
 
 ### ROOT
+ * Only required if you wish to use monitoring that fills histograms
+ * [Documentation](https://root.cern/install/build_from_source/)
 
 ## Building ldmx-daq
 
@@ -64,15 +66,6 @@ export PATH=$DAQ_INSTALL_PREFIX/bin:$PATH
 ```
 
 Once the commands above are executed, apps (e.g. emulator) can be run. 
-
-Eudaq loads all run control, producer and data collector libraries at 
-run time.  For this reason, it needs to be made aware of the LDMX 
-specific eudaq libraries.  This can be done by creating a soft link
-of the LDMX eudaq library within the eudaq `lib` directory as follows
-
-```
-ln -s /full/path/to/ldmx-daq/software/install/lib/libeudaq_module_dark.so /full/path/to/eudaq/lib/libeudaq_module_dark.so
-```
 
 # Running the emulator
 
