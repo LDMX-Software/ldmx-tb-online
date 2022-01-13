@@ -24,6 +24,20 @@ setup_library(module eudaq name eudaq_module_dark
   sources ${SRC_FILES})
 #FiberTrackerDAQ)
 
+# EUDAQ loads modules at runtime based on what it "knows" about
+#   a simple way to let EUDAQ know about our module is to put a symlink to our module
+#   in the directory that the rest of the EUDAQ modules are in
+# reference for creating a symlink: https://stackoverflow.com/a/41037224/17617632
+install(CODE "execute_process( \
+    COMMAND ${CMAKE_COMMAND} -E create_symlink \
+    ${CMAKE_INSTALL_PREFIX}/lib/libeudaq_module_dark.so \
+    ${EUDAQ_LIBRARIES_DIRS}/libeudaq_module_dark.so \
+    )")
+install(CODE "message(\"-- Created symlink: \
+    ${CMAKE_INSTALL_PREFIX}/lib/libeudaq_module_dark.so -> \
+    ${EUDAQ_LIBRARIES_DIRS}/libeudaq_module_dark.so \
+    )")
+
 #Add fiber tracker -- TODO
 #target_include_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include)
 #target_link_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64/)
