@@ -27,6 +27,7 @@ setup_rogue()
 
 add_library(eudaq_core SHARED 
   src/eudaq/DarkRunControl.cxx
+  src/eudaq/PolarfireInterface.cxx
   src/eudaq/HgcrocFileReaderProducer.cxx
   src/eudaq/HgcrocDataPacket.cxx
   src/eudaq/HCalDataSender.cxx
@@ -38,7 +39,7 @@ add_library(eudaq_core SHARED
   src/eudaq/TrigScintDataSender.cxx
   src/eudaq/TrigScintTestBeamProducer.cxx)
 target_include_directories(eudaq_core PUBLIC include)
-target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue rogue::rogue)
+target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue rogue::rogue pflib::rogue)
 add_library(eudaq::eudaq ALIAS eudaq_core)
 symlink_to_eudaq(core)
 

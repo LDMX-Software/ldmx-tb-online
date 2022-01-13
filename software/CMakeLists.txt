@@ -47,11 +47,11 @@ if (NOT EMULATORS_ONLY)
   # rogue library
   add_subdirectory(rogue)
 
-  # eudaq library
-  add_subdirectory(eudaq)
-
   # polarfire configuration lib
   add_subdirectory(pflib)
+
+  # eudaq library
+  add_subdirectory(eudaq)
 endif() 
 
 add_subdirectory(utils)
