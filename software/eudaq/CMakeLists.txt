@@ -7,6 +7,18 @@ project(eudaq
 	DESCRIPTION "Module containing all eudaq classes." 
 	LANGUAGES CXX)
 
+# EUDAQ loads modules at runtime based on what it "knows" about
+#   a simple way to let EUDAQ know about our module is to put a symlink to our module
+#   in the directory that the rest of the EUDAQ modules are in
+# reference for creating a symlink: https://stackoverflow.com/a/42697475/17617632
+#   - modified to restrict to our usecase
+macro(symlink_to_eudaq module)
+  set(origin "${CMAKE_INSTALL_PREFIX}/lib/lib${module}.so")
+  set(dest   "${EUDAQ_LIBRARIES_DIRS}/lib${module}.so")  
+  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${origin} ${dest})")
+  install(CODE "message(\"-- Created symlink: ${dest} -> ${origin}\")")
+endmacro()
+
 # Setup the Rogue CMake target
 setup_eudaq()
 
@@ -23,20 +35,7 @@ setup_library(module eudaq name eudaq_module_dark
   dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue
   sources ${SRC_FILES})
 #FiberTrackerDAQ)
-
-# EUDAQ loads modules at runtime based on what it "knows" about
-#   a simple way to let EUDAQ know about our module is to put a symlink to our module
-#   in the directory that the rest of the EUDAQ modules are in
-# reference for creating a symlink: https://stackoverflow.com/a/41037224/17617632
-install(CODE "execute_process( \
-    COMMAND ${CMAKE_COMMAND} -E create_symlink \
-    ${CMAKE_INSTALL_PREFIX}/lib/libeudaq_module_dark.so \
-    ${EUDAQ_LIBRARIES_DIRS}/libeudaq_module_dark.so \
-    )")
-install(CODE "message(\"-- Created symlink: \
-    ${CMAKE_INSTALL_PREFIX}/lib/libeudaq_module_dark.so -> \
-    ${EUDAQ_LIBRARIES_DIRS}/libeudaq_module_dark.so \
-    )")
+symlink_to_eudaq(eudaq_module_dark)
 
 #Add fiber tracker -- TODO
 #target_include_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include)
@@ -45,9 +44,10 @@ install(CODE "message(\"-- Created symlink: \
 find_package(ROOT CONFIG)
 if (ROOT_FOUND)
   # we assume we can enable the monitoring
-  setup_library(module eudaq name monitor
+  setup_library(module eudaq name eudaq_module_monitor
     dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue
       ROOT::Gui ROOT::Hist)
+  symlink_to_eudaq(eudaq_module_monitor)
 else()
   # no ROOT -> no monitoring
   message(WARNING "ROOT not found, so monitoring is disabled.")
