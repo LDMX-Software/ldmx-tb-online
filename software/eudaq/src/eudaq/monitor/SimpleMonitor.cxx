@@ -1,4 +1,4 @@
-#include "eudaq/SimpleMonitor.h"
+#include "eudaq/monitor/SimpleMonitor.h"
 
 #include <chrono>
 #include <fstream>

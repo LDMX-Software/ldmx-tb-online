@@ -1,4 +1,4 @@
-#include "eudaq/TrigScintTestBeamMonitor.h"
+#include "eudaq/monitor/TrigScintTestBeamMonitor.h"
 
 #include <iostream>
 
