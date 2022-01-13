@@ -61,6 +61,8 @@ make install
 
 ## ldmx-daq/software
 First done on `tom/polarfirelib-dev` branch.
+
+Using environment script from [tomeichlersmith/ldmx-cob](https://github.com/tomeichlersmith/ldmx-cob/blob/main/env.sh)
 ```
 cd ldmx-daq/software
 cmake -B build -S . -Deudaq_DIR=/home/eichl008/eudaq
