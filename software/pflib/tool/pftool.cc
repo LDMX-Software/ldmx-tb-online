@@ -23,6 +23,65 @@
 #include "pflib/Backend.h"
 #include "pflib/rogue/RogueWishboneInterface.h"
 
+/**
+ * @struct hex
+ * A very simple wrapper enabling us to more easily
+ * tell the output stream to style the input word
+ * in hexidecimal format.
+ *
+ * @tparam WordType type of word for styling
+ */
+struct hex {
+  static const std::size_t width_{2};
+  uint8_t& word_;
+  explicit hex(uint8_t& w) : word_{w} {}
+  friend inline std::ostream& operator<<(std::ostream& os, const hex& h) {
+    os << "0x" << std::setfill('0') << std::setw(h.width_) << std::hex
+      << static_cast<int>(h.word_) << std::dec;
+    return os;
+  }
+};
+
+/**
+ * Modern RAII-styled CSV extractor taken from
+ * https://stackoverflow.com/a/1120224/17617632
+ * this allows us to **discard white space within the cells**
+ * making the CSV more human readable.
+ */
+static std::vector<int> getNextLineAndExtractValues(std::istream& ss) {
+  std::vector<int> result;
+
+  std::string line, cell;
+  std::getline(ss, line);
+
+  if (line.empty() or line[0] == '#') {
+    // empty line or comment, return empty container
+    return result;
+  }
+
+  std::stringstream line_stream(line);
+  while (std::getline(line_stream, cell, ',')) {
+    /**
+     * std stoi has a auto-detect base feature
+     * https://en.cppreference.com/w/cpp/string/basic_string/stol
+     * which we can enable by setting the pre-defined base to 0
+     * (the third parameter).
+     * The second parameter is and address to put the number of characters processed,
+     * which I disregard at this time.
+     *
+     * Do we allow empty cells?
+     */
+    result.push_back(cell.empty() ? 0 : std::stoi(cell,nullptr,0));
+  }
+  // checks for a trailing comma with no data after it
+  if (!line_stream and cell.empty()) {
+    // trailing comma, put in one more 0
+    result.push_back(0);
+  }
+
+  return result;
+}
+
 struct PolarfireTarget {
   pflib::WishboneInterface* wb;
   pflib::Hcal* hcal;
@@ -434,6 +493,7 @@ uMenu::Line menu_ldmx_roc_lines[] =
    uMenu::Line("PAGE","Dump a page", &ldmx_roc ),
    uMenu::Line("POKE","Change a single value", &ldmx_roc ),
    uMenu::Line("LOAD","Load values from file", &ldmx_roc ),
+   uMenu::Line("DUMP","Dump all settings to a file", &ldmx_roc),
    uMenu::Line("QUIT","Back to top menu"),
    uMenu::Line()
   };
@@ -821,30 +881,68 @@ void ldmx_roc( const std::string& cmd, PolarfireTarget* pft ) {
     printf(" --- Line starting with # are ignored.\n");
     std::string fname=tool_readline("Filename: ");
     if (!fname.empty()) {
-      FILE* f=fopen(fname.c_str(),"r");
-      if (f==0) {
-	printf("\n\n  ERROR: Unable to open '%s'\n\n",fname.c_str());
-	return;
+      std::ifstream f{fname};
+      if (!f.is_open()) {
+	      printf("\n\n  ERROR: Unable to open '%s'\n\n",fname.c_str());
+	      return;
       }
-      char buffer[1025];
-      while (!feof(f)) {
-	buffer[0]=0;
-	fgets(buffer,1024,f);
-	if (strchr(buffer,'#')!=0) *(strchr(buffer,'#'))=0;
-	int vals[3];
-	int itok=0;
-	for (itok=0; itok<3; itok++) {
-	  char* tok=strtok((itok==0)?(buffer):(0),", \t");
-	  if (tok==0) break;
-	  vals[itok]=strtol(tok,0,0);
-	}
-	if (itok==3) {
-	  roc.setValue(vals[0],vals[1],vals[2]);
-	}
+      while (f) {
+        auto cells = getNextLineAndExtractValues(f);
+        if (cells.empty()) {
+          // empty line or comment
+          continue;
+        }
+        if (cells.size() == 3) {
+          roc.setValue(cells.at(0), cells.at(1), cells.at(2));
+        } else {
+          printf("WARNING: Ignoring line without exactly three columns.\n");
+        }
       }
-      fclose(f);
     }
-  }
+  } // LOAD
+  if (cmd=="DUMP") {
+    std::cout << 
+      "\n --- This command dumps out a CSV file with all of the ROC's settings."
+      "\n --- The columns are [page,register,value]."
+      "\n"
+      << std::endl;
+
+    std::string fname_def_format = "hgcroc_settings_%Y%m%d_%H%M%S.csv";
+
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+
+    char fname_def[64];
+    strftime(fname_def, sizeof(fname_def), fname_def_format.c_str(), tm); 
+    
+    std::string fname=tool_readline("Filename: ", fname_def);
+    if (fname.empty()) {
+      printf("\n ERROR: Output filename required.");
+      return;
+    }
+    std::ofstream f{fname};
+    if (not f.is_open()) {
+	    printf("\n ERROR: Unable to open '%s'\n\n",fname.c_str());
+	    return;
+    }
+
+    f << 
+      "# Columns:\n"
+      "#  page,register,value (in hex)\n";
+
+    static const int num_pages = 300;
+    static const int num_registers_per_page = 16;
+    for (int page{0}; page < num_pages; page++) {
+      std::cout << "Printing page " << page << "..." << std::endl;
+      std::vector<uint8_t> v=roc.readPage(page,num_registers_per_page);
+      for (std::size_t reg = 0; reg < v.size(); reg++) {
+        f << page << "," << reg << "," << hex(v.at(reg)) << "\n";
+      } // loop over registers
+    }   // loop over pages
+
+    f.flush();
+    std::cout << "done" << std::endl;
+  } // DUMP
 }
 
 void ldmx_fc( const std::string& cmd, PolarfireTarget* pft ) {
@@ -1035,9 +1133,17 @@ void ldmx_daq( const std::string& cmd, PolarfireTarget* pft ) {
     int extra_samples;
     pflib::FastControl& fc=pft->hcal->fc();
     fc.getMultisampleSetup(enable,extra_samples);
+
+    std::string fname_def_format = "pedestal_%Y%m%d_%H%M%S.raw";
+
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+
+    char fname_def[64];
+    strftime(fname_def, sizeof(fname_def), fname_def_format.c_str(), tm); 
     
     int nevents=tool_readline_int("How many events? ", 100);
-    std::string fname=tool_readline("Filename :  ");
+    std::string fname=tool_readline("Filename :  ", fname_def);
     FILE* f=fopen(fname.c_str(),"w");
 
     if (debug_readout) daq_status(pft,0);
