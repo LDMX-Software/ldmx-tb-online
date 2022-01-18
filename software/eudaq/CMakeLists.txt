@@ -31,7 +31,7 @@ add_library(eudaq_core SHARED
   src/eudaq/HgcrocDataPacket.cxx
   src/eudaq/HCalDataSender.cxx
   src/eudaq/HCalTestBeamProducer.cxx
-  src/eudaq/PolarfireInterface.cxx
+  src/eudaq/PolarfireProducer.cxx
   src/eudaq/RogueDataSender.cxx
   src/eudaq/RogueTcpClientProducer.cxx
   src/eudaq/TcpCommandGenerator.cxx
