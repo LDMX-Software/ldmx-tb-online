@@ -14,7 +14,7 @@ project(eudaq
 #   - modified to restrict to our usecase
 macro(symlink_to_eudaq name)
   set(origin "${CMAKE_INSTALL_PREFIX}/lib/libeudaq_${name}.so")
-  set(dest   "${EUDAQ_LIBRARIES_DIRS}/libldmx_eudaq_${name}.so")  
+  set(dest   "${EUDAQ_LIBRARIES_DIRS}/libeudaq_module_ldmx_${name}.so")  
   install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${origin} ${dest})")
   install(CODE "message(\"-- Created symlink: ${dest} -> ${origin}\")")
 endmacro()
@@ -27,11 +27,11 @@ setup_rogue()
 
 add_library(eudaq_core SHARED 
   src/eudaq/DarkRunControl.cxx
-  src/eudaq/PolarfireInterface.cxx
   src/eudaq/HgcrocFileReaderProducer.cxx
   src/eudaq/HgcrocDataPacket.cxx
   src/eudaq/HCalDataSender.cxx
   src/eudaq/HCalTestBeamProducer.cxx
+  src/eudaq/PolarfireInterface.cxx
   src/eudaq/RogueDataSender.cxx
   src/eudaq/RogueTcpClientProducer.cxx
   src/eudaq/TcpCommandGenerator.cxx
