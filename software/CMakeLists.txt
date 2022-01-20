@@ -25,8 +25,8 @@ include(BuildMacros RESULT_VARIABLE build_macros_found)
 # If an install location hasn't been set via CMAKE_INSTALL_PREFIX, set it to 
 # a reasonable default ($PWD/install).  
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/install CACHE PATH "" FORCE)
-    message(STATUS "Install directory set to ${CMAKE_INSTALL_PREFIX}")
+  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/install CACHE PATH "" FORCE)
+  message(STATUS "Install directory set to ${CMAKE_INSTALL_PREFIX}")
 endif()
 
 # Set the python installation path
@@ -49,14 +49,16 @@ if (NOT EMULATORS_ONLY)
   # rogue library
   IF (Rogue_FOUND)
     add_subdirectory(rogue)
+    # eudaq library
+    add_subdirectory(eudaq)
   endif()
   
-  # eudaq library
-  #add_subdirectory(eudaq)
-
   # polarfire configuration lib
   add_subdirectory(pflib)
+
 endif() 
+
+add_subdirectory(utils)
 
 # Build all test. The test are assumed to reside inside of the directory "test"
 # within each module.

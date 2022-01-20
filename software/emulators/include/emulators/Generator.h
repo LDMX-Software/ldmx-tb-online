@@ -22,6 +22,11 @@ public:
   /**
    */
   virtual uint32_t getTxErrors() = 0;
+
+  /**
+   *
+   */
+   virtual void resetCounters() = 0; 
 };
 } // namespace emulators
 #endif // EMULATORS_GENERATORS_H

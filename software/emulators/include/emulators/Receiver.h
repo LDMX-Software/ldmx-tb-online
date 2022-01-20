@@ -3,6 +3,7 @@
 
 //---< rogue >---//
 #include "rogue/interfaces/stream/Slave.h"
+#include <math.h>
 
 namespace emulators {
 class Receiver : public rogue::interfaces::stream::Slave {

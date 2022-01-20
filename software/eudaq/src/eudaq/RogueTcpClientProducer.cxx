@@ -3,6 +3,10 @@
 //---< ldmx-rogue >---//
 #include "rogue/Commands.h"
 
+//---< ldmx-eudaq >---//
+#include "eudaq/HCalDataSender.h"
+#include "eudaq/TrigScintDataSender.h"
+
 namespace {
 auto dummy0 = eudaq::Factory<eudaq::Producer>::Register<
     eudaq::RogueTcpClientProducer, const std::string &, const std::string &>(
@@ -14,7 +18,7 @@ namespace eudaq {
 RogueTcpClientProducer::RogueTcpClientProducer(const std::string &name,
                                                const std::string &runcontrol)
     : eudaq::Producer(name, runcontrol) {
-} //, m_file_lock(0), m_exit_of_run(false) {}
+} 
 
 void RogueTcpClientProducer::DoInitialise() {
   auto ini{GetInitConfiguration()};
@@ -30,9 +34,45 @@ void RogueTcpClientProducer::DoInitialise() {
 
   // Connect the tcp client to the tcp command generator
   tcp_command_->addSlave(tcp_);
+
+  // Set how much data to buffer before writing
+  writer_->setBufferSize(10000);
+
+  // Connect the tcp stream to the file writer
+  tcp_->addSlave(writer_->getChannel(0)); 
+
+  // Connect the data sender to the TCP client
+  tcp_->addSlave(sender_); 
+  
+  // Send the init command to the rogue server
+  tcp_command_->genFrame(rogue::commands::init);
 }
 
-void RogueTcpClientProducer::DoConfigure() {}
+void RogueTcpClientProducer::DoConfigure() {
+
+  // Get the configuration
+  auto conf{GetConfiguration()};
+
+  // Get the path to the output file
+  output_path_ = conf->Get("OUTPUT_PATH", ".");
+
+  // Get the file prefix
+  file_prefix_ = conf->Get("ROGUE_FILE_PATTERN", "test"); 
+
+  // Build the file name
+  auto output_file{output_path_ + "/" + file_prefix_ + "_" + std::to_string(GetRunNumber()) + ".dat"}; 
+
+  // First, make sure an existing file isn't open.
+  if (writer_->isOpen()) writer_->close(); 
+
+  // Open a file to write the stream
+  writer_->open(output_file);
+
+  EUDAQ_INFO("Writing rogue stream to " + output_file);
+  
+  // Send the config command to the rogue server
+  tcp_command_->genFrame(rogue::commands::config);
+}
 
 void RogueTcpClientProducer::DoStartRun() {
   tcp_command_->genFrame(rogue::commands::start);
@@ -40,12 +80,18 @@ void RogueTcpClientProducer::DoStartRun() {
 
 void RogueTcpClientProducer::DoStopRun() {
   tcp_command_->genFrame(rogue::commands::stop);
+
+  // If open, close the file to which data is being written to.
+  if (writer_->isOpen()) writer_->close(); 
 }
 
-void RogueTcpClientProducer::DoReset() {}
+void RogueTcpClientProducer::DoReset() {
+  tcp_command_->genFrame(rogue::commands::reset);
+}
 
 void RogueTcpClientProducer::DoTerminate() {}
 
-void RogueTcpClientProducer::RunLoop() {}
+void RogueTcpClientProducer::RunLoop() {
+}
 
 } // namespace eudaq
