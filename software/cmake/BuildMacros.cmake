@@ -219,6 +219,32 @@ macro(build_test)
 
 endmacro()
 
+macro(setup_uhal)
+  
+  # If the target doesn't exist, create an imported target for uhal
+  if(NOT TARGET Uhal::Uhal)
+    
+    # Find the Rogue & support libraries
+    if (DEFINED ENV{UHAL_DIR})
+       set(Uhal_DIR $ENV{UHAL_DIR})
+    else()
+      set(Uhal_DIR /opt/cactus)
+    endif()
+    
+    if(EXISTS ${Uhal_DIR}/include/uhal/Node.hpp)
+      set(Uhal_FOUND YES)     
+      add_library(Uhal::Uhal INTERFACE IMPORTED GLOBAL)
+      set_target_properties(Uhal::Uhal 
+	    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${Uhal_DIR}/include"
+	    INTERFACE_LINK_LIBRARIES "${Uhal_DIR}/lib/libcactus_uhal_uhal.so")
+    else()
+      set(Uhal_FOUND NO)
+    endif()
+
+  endif()
+endmacro()
+
+
 macro(clear_cache_variables)
   unset(test_sources CACHE)
   unset(test_dep CACHE)

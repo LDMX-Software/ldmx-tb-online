@@ -58,7 +58,9 @@ if (NOT EMULATORS_ONLY)
 
 endif() 
 
-add_subdirectory(utils)
+IF (Rogue_FOUND)
+  add_subdirectory(utils)
+endif()
 
 # Build all test. The test are assumed to reside inside of the directory "test"
 # within each module.
