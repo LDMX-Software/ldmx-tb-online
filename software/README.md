@@ -13,6 +13,10 @@
 
 ### ROOT
 
+### yaml-cpp
+ * [Documentation](https://github.com/jbeder/yaml-cpp#how-to-build)
+ * We need to build it with the CMake flag `-DYAML_BUILD_SHARED_LIBS=ON`
+
 ## Building ldmx-daq
 
 First, clone the `ldmx-daq` repository and make a build directory
