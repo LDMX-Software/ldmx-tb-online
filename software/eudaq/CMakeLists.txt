@@ -55,8 +55,9 @@ symlink_to_eudaq(core)
 #target_include_directories(eudaq_dip PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include)
 #target_link_directories(eudaq_dip PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64/)
 
-find_package(ROOT CONFIG)
-if (ROOT_FOUND)
+option(MONITORING "Build monitoring submodule, requires ROOT" OFF)
+if (MONITORING)
+  find_package(ROOT CONFIG REQUIRED)
   # we assume we can enable the monitoring
   set(monitor_target eudaq_monitor)
   add_library(eudaq_monitor SHARED
@@ -68,8 +69,7 @@ if (ROOT_FOUND)
   add_library(eudaq::hcal ALIAS eudaq_hcal)
   symlink_to_eudaq(hcal)
 else()
-  # no ROOT -> no monitoring
-  message(WARNING "ROOT not found, so monitoring is disabled.")
+  message(STATUS "Not building eudaq::monitoring")
 endif()
 
 install(TARGETS eudaq_core ${monitor_target} LIBRARY DESTINATION lib)
