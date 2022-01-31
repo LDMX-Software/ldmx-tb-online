@@ -25,6 +25,7 @@ setup_eudaq()
 # Setup the Rogue CMake target
 setup_rogue()
 
+#find_package(ROOT REQUIRED COMPONENTS Gui Hist)
 add_library(eudaq_core SHARED 
   src/eudaq/DarkRunControl.cxx
   src/eudaq/HgcrocFileReaderProducer.cxx
@@ -37,9 +38,17 @@ add_library(eudaq_core SHARED
   src/eudaq/TcpCommandGenerator.cxx
   src/eudaq/TestBeamDataCollector.cxx
   src/eudaq/TrigScintDataSender.cxx
-  src/eudaq/TrigScintTestBeamProducer.cxx)
+  src/eudaq/TrigScintTestBeamProducer.cxx
+#  src/eudaq/HCalTestBeamMonitor.cxx
+#  src/eudaq/SimpleMonitor.cxx
+#  src/eudaq/TrigScintTestBeamMonitor.cxx
+  )
 target_include_directories(eudaq_core PUBLIC include)
-target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue rogue::rogue pflib::rogue)
+target_link_libraries(eudaq_core PUBLIC 
+  EUDAQ::EUDAQ 
+  Rogue::Rogue rogue::rogue pflib::rogue 
+#  ROOT::Gui ROOT::Hist
+  )
 add_library(eudaq::eudaq ALIAS eudaq_core)
 symlink_to_eudaq(core)
 
@@ -55,23 +64,6 @@ symlink_to_eudaq(core)
 #target_include_directories(eudaq_dip PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include)
 #target_link_directories(eudaq_dip PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64/)
 
-option(MONITORING "Build monitoring submodule, requires ROOT" OFF)
-if (MONITORING)
-  find_package(ROOT CONFIG REQUIRED)
-  # we assume we can enable the monitoring
-  set(monitor_target eudaq_monitor)
-  add_library(eudaq_monitor SHARED
-    src/eudaq/monitor/HCalTestBeamMonitor.cxx
-    src/eudaq/monitor/SimpleMonitor.cxx
-    src/eudaq/monitor/TrigScintTestBeamMonitor.cxx)
-  target_include_directories(eudaq_hcal PUBLIC include)
-  target_link_libraries(eudaq_hcal PUBLIC eudaq_core ROOT::Gui ROOT::Hist)
-  add_library(eudaq::hcal ALIAS eudaq_hcal)
-  symlink_to_eudaq(hcal)
-else()
-  message(STATUS "Not building eudaq::monitoring")
-endif()
-
-install(TARGETS eudaq_core ${monitor_target} LIBRARY DESTINATION lib)
+install(TARGETS eudaq_core LIBRARY DESTINATION lib)
 install(DIRECTORY include DESTINATION include)
 
