@@ -14,7 +14,7 @@ project(eudaq
 #   - modified to restrict to our usecase
 macro(symlink_to_eudaq name)
   set(origin "${CMAKE_INSTALL_PREFIX}/lib/libeudaq_${name}.so")
-  set(dest   "${EUDAQ_LIBRARIES_DIRS}/libldmx_eudaq_${name}.so")  
+  set(dest   "${EUDAQ_LIBRARIES_DIRS}/libeudaq_module_ldmx_${name}.so")  
   install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${origin} ${dest})")
   install(CODE "message(\"-- Created symlink: ${dest} -> ${origin}\")")
 endmacro()
@@ -25,21 +25,30 @@ setup_eudaq()
 # Setup the Rogue CMake target
 setup_rogue()
 
+#find_package(ROOT REQUIRED COMPONENTS Gui Hist)
 add_library(eudaq_core SHARED 
   src/eudaq/DarkRunControl.cxx
-  src/eudaq/PolarfireInterface.cxx
   src/eudaq/HgcrocFileReaderProducer.cxx
   src/eudaq/HgcrocDataPacket.cxx
   src/eudaq/HCalDataSender.cxx
   src/eudaq/HCalTestBeamProducer.cxx
+  src/eudaq/PolarfireProducer.cxx
   src/eudaq/RogueDataSender.cxx
   src/eudaq/RogueTcpClientProducer.cxx
   src/eudaq/TcpCommandGenerator.cxx
   src/eudaq/TestBeamDataCollector.cxx
   src/eudaq/TrigScintDataSender.cxx
-  src/eudaq/TrigScintTestBeamProducer.cxx)
+  src/eudaq/TrigScintTestBeamProducer.cxx
+#  src/eudaq/HCalTestBeamMonitor.cxx
+#  src/eudaq/SimpleMonitor.cxx
+#  src/eudaq/TrigScintTestBeamMonitor.cxx
+  )
 target_include_directories(eudaq_core PUBLIC include)
-target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue rogue::rogue pflib::rogue)
+target_link_libraries(eudaq_core PUBLIC 
+  EUDAQ::EUDAQ 
+  Rogue::Rogue rogue::rogue pflib::rogue 
+#  ROOT::Gui ROOT::Hist
+  )
 add_library(eudaq::eudaq ALIAS eudaq_core)
 symlink_to_eudaq(core)
 
@@ -55,23 +64,6 @@ symlink_to_eudaq(core)
 #target_include_directories(eudaq_dip PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include)
 #target_link_directories(eudaq_dip PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64/)
 
-find_package(ROOT CONFIG)
-if (ROOT_FOUND)
-  # we assume we can enable the monitoring
-  set(monitor_target eudaq_monitor)
-  add_library(eudaq_monitor SHARED
-    src/eudaq/monitor/HCalTestBeamMonitor.cxx
-    src/eudaq/monitor/SimpleMonitor.cxx
-    src/eudaq/monitor/TrigScintTestBeamMonitor.cxx)
-  target_include_directories(eudaq_hcal PUBLIC include)
-  target_link_libraries(eudaq_hcal PUBLIC eudaq_core ROOT::Gui ROOT::Hist)
-  add_library(eudaq::hcal ALIAS eudaq_hcal)
-  symlink_to_eudaq(hcal)
-else()
-  # no ROOT -> no monitoring
-  message(WARNING "ROOT not found, so monitoring is disabled.")
-endif()
-
-install(TARGETS eudaq_core ${monitor_target} LIBRARY DESTINATION lib)
+install(TARGETS eudaq_core LIBRARY DESTINATION lib)
 install(DIRECTORY include DESTINATION include)
 

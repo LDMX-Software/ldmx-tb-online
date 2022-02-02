@@ -1,5 +1,12 @@
-#include "eudaq/PolarfireInterface.h"
+//#include "eudaq/PolarfireProducer.h"
 
+#include "eudaq/Producer.hh"
+#include <iostream>
+#include <memory>
+
+#include "pflib/Hcal.h"
+#include "pflib/Backend.h"
+#include "pflib/WishboneInterface.h"
 #include "pflib/ROC.h"
 #include "pflib/Elinks.h"
 #include "pflib/Bias.h"
@@ -7,17 +14,37 @@
 #include "pflib/rogue/RogueWishboneInterface.h"
 
 /**
+ * Interface to a single polarfire 
+ */
+class PolarfireProducer : public eudaq::Producer {
+ public:
+  PolarfireProducer(const std::string & name, const std::string & runcontrol);
+  void DoInitialise() override;
+  void DoConfigure() override;
+  void DoStartRun() override;
+  void DoStopRun() override;
+  void DoTerminate() override;
+  void DoReset() override;
+  void RunLoop() override;
+  
+  static const uint32_t factory_id_ = eudaq::cstr2hash("PolarfireProducer");
+ private:
+  std::shared_ptr<pflib::WishboneInterface> wb_;
+  std::shared_ptr<pflib::Backend> backend_;
+  std::unique_ptr<pflib::Hcal> hcal_;
+};
+
+/**
  * This code registers our class with the central eudaq factory
  * so that it can be constructed when needed
  */
 namespace {
-  auto dummy0 = eudaq::Factory<eudaq::Producer>::
-    Register<PolarFireInterface, 
-             const std::string&, 
-             const std::string&>(PolarFireInterface::factory_id_);
+auto dummy_pfint = eudaq::Factory<eudaq::Producer>::Register<
+    PolarfireProducer, const std::string&, const std::string&>(
+    PolarfireProducer::factory_id_);
 }
 
-PolarFireInterface::PolarFireInterface(const std::string & name, const std::string & runcontrol)
+PolarfireProducer::PolarfireProducer(const std::string & name, const std::string & runcontrol)
   : eudaq::Producer(name, runcontrol) {}
 
 /**
@@ -33,8 +60,11 @@ PolarFireInterface::PolarFireInterface(const std::string & name, const std::stri
  *  - DMA/stream (not implemented or tested yet)
  *  - MemMap (currently only one supported)
  */
-void PolarFireInterface::DoInitialise(){
+void PolarfireProducer::DoInitialise(){
   auto ini = GetInitConfiguration();
+
+  // debug printout
+  ini->Print(std::cout);
 
   auto addr{ini->Get("TCP_ADDR", "127.0.0.1")};
   auto port{ini->Get("TCP_PORT", 8000)};
@@ -67,7 +97,7 @@ void PolarFireInterface::DoInitialise(){
  *  - (pflib) get links up and running properly
  *  - stream vs memory map readout mode from rogue POV
  */
-void PolarFireInterface::DoConfigure(){
+void PolarfireProducer::DoConfigure(){
   auto conf = GetConfiguration();
 
   // debug printout
@@ -83,29 +113,29 @@ void PolarFireInterface::DoConfigure(){
  *  - Jeremy's branch
  *  - flags for "external" or various "local" modes
  */
-void PolarFireInterface::DoStartRun(){
+void PolarfireProducer::DoStartRun(){
 }
 /**
  * Clean close
  */
-void PolarFireInterface::DoStopRun(){
+void PolarfireProducer::DoStopRun(){
 }
 /**
  * typically used in failure modes, check out state function
  * i.e. recover from failure
  */
-void PolarFireInterface::DoReset(){
+void PolarfireProducer::DoReset(){
 }
 /**
  * Not sure what this does...
  */
-void PolarFireInterface::DoTerminate(){
+void PolarfireProducer::DoTerminate(){
 }
 /**
  * Include some "mode" about if sending our own L1A ("local" mode)
  * or some "external" mode where L1A is generated elsewhere
  */
-void PolarFireInterface::RunLoop(){
+void PolarfireProducer::RunLoop(){
   /*
   auto ev = eudaq::Event::MakeUnique("Ex0Raw");
   ev->SetTag("Plane ID", std::to_string(m_plane_id));
@@ -115,3 +145,4 @@ void PolarFireInterface::RunLoop(){
   SendEvent(std::move(ev));
   */
 }
+

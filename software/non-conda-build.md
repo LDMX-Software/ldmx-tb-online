@@ -59,6 +59,20 @@ cd build
 make install
 ```
 
+### yaml-cpp
+v0.7.0
+
+```
+mkdir yaml-cpp
+wget -q -O - \
+  https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.7.0.tar.gz |\
+  tar xz --strip-components=1 --directory yaml-cpp
+cd yaml-cpp
+cmake -B build -S . -DYAML_BUILD_SHARED_LIBS=ON
+cd build
+make install
+```
+
 ## ldmx-daq/software
 First done on `tom/polarfirelib-dev` branch.
 
