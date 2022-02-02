@@ -40,21 +40,27 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-# Emulator library 
-add_subdirectory(emulators)
+# Emulator library
+if (Rogue_FOUND)
+  add_subdirectory(emulators)
+endif()
 
 if (NOT EMULATORS_ONLY) 
   # rogue library
-  add_subdirectory(rogue)
-
+  IF (Rogue_FOUND)
+    add_subdirectory(rogue)
+    # eudaq library
+    add_subdirectory(eudaq)
+  endif()
+  
   # polarfire configuration lib
   add_subdirectory(pflib)
 
-  # eudaq library
-  add_subdirectory(eudaq)
 endif() 
 
-add_subdirectory(utils)
+IF (Rogue_FOUND)
+  add_subdirectory(utils)
+endif()
 
 # Build all test. The test are assumed to reside inside of the directory "test"
 # within each module.
