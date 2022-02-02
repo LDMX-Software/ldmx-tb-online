@@ -40,6 +40,8 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE STRING "Choose the type of build." FORCE)
 endif()
 
+setup_rogue()
+
 # Emulator library
 if (Rogue_FOUND)
   add_subdirectory(emulators)
