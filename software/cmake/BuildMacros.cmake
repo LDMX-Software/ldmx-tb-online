@@ -3,7 +3,7 @@ include(CMakeParseArguments)
 macro(setup_rogue)
   
   # If the target doesn't exist, create an imported target for Rogue
-  if(NOT TARGET Rogue::Rogue)
+#  if(NOT TARGET Rogue::Rogue)
     
     # Find the Rogue & support libraries
     if (DEFINED ENV{ROGUE_DIR})
@@ -11,6 +11,8 @@ macro(setup_rogue)
     else()
        set(Rogue_DIR ${CMAKE_PREFIX_PATH}/lib)
     endif()
+
+    message(STATUS "find rogue" )
     find_package(Rogue CONFIG REQUIRED)
 
     # If Rogue wasn't found, error out.
@@ -18,9 +20,14 @@ macro(setup_rogue)
       message(FATAL_ERROR "Failed to find required dependency Rogue.")
     endif()
 
+
+    if(NOT TARGET Rogue::Rogue)
+    message(STATUS "Creating the target" )
     # Create the Rogue target
+
     add_library(Rogue::Rogue INTERFACE IMPORTED GLOBAL)
 
+    message(STATUS "ROGUE_LIBRARIES... ${ROGUE_LIBRARIES}" )
     # Need to remove the keyword PUBLIC from the list of libraries to avoid 
     # an ld error. 
     list(REMOVE_ITEM ROGUE_LIBRARIES "PUBLIC")

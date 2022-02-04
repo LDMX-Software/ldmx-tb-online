@@ -3,6 +3,7 @@
 
 //---< StdLib >---//
 #include <string>
+#include <cmath>
 
 //---< eudaq >---//
 #include "eudaq/Producer.hh"

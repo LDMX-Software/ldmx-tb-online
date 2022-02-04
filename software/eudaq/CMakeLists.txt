@@ -23,12 +23,10 @@ list(REMOVE_ITEM SRC_FILES ${PROJECT_SOURCE_DIR}/src/eudaq/DipClientProducer.cxx
 
 setup_library(module eudaq name eudaq_module_dark 
   dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue
-  ROOT::Gui ROOT::Hist
-  sources ${SRC_FILES})
-#FiberTrackerDAQ)
+  ROOT::Gui ROOT::Hist FiberTrackerDAQ Timestamp libfmctdc.so)
 
 
-#Add fiber tracker -- TODO
-#target_include_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include)
-#target_link_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64/)
+#Add fiber tracker and WRTiming -- TODO CLEAR THIS MESS UP!!
+target_include_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include ${WR_Dir}/include)
+target_link_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64/ ${WR_Dir}/build/ $ENV{FMCTDC_LIB_DIR}/)
 
