@@ -22,4 +22,3 @@ export LD_LIBRARY_PATH=/u1/ldmx/server/FiberTrackerDAQ/dip-5.7.0/lib64:$LD_LIBRA
 #Add WR library
 export LD_LIBRARY_PATH=/u1/ldmx/server/WRTimestamping/build/:$LD_LIBRARY_PATH
 
-
