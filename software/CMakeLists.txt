@@ -25,8 +25,8 @@ include(BuildMacros RESULT_VARIABLE build_macros_found)
 # If an install location hasn't been set via CMAKE_INSTALL_PREFIX, set it to 
 # a reasonable default ($PWD/install).  
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/install CACHE PATH "" FORCE)
-    message(STATUS "Install directory set to ${CMAKE_INSTALL_PREFIX}")
+  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/install CACHE PATH "" FORCE)
+  message(STATUS "Install directory set to ${CMAKE_INSTALL_PREFIX}")
 endif()
 
 # Set the python installation path
@@ -40,16 +40,13 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-# Emulator library 
+# Emulator library
 add_subdirectory(emulators)
 
 if (NOT EMULATORS_ONLY) 
-  # eudaq library
   add_subdirectory(rogue)
-
-  # eudaq library
   add_subdirectory(eudaq)
-endif()
+endif() 
 
 add_subdirectory(utils)
 

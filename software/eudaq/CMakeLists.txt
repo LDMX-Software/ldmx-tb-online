@@ -21,6 +21,7 @@ endmacro()
 
 setup_eudaq()
 setup_rogue()
+find_package(pflib REQUIRED)
 
 add_library(eudaq_core SHARED
   src/eudaq/CaptanTrigScintTestBeamProducer.cxx
@@ -30,7 +31,7 @@ add_library(eudaq_core SHARED
   src/eudaq/HCalTestBeamProducer.cxx
   src/eudaq/HgcrocDataPacket.cxx
   src/eudaq/HgcrocFileReaderProducer.cxx
-  src/eudaq/monitor
+  src/eudaq/PolarfireProducer.cxx
   src/eudaq/RogueDataSender.cxx
   src/eudaq/RogueTcpClientProducer.cxx
   src/eudaq/TcpCommandGenerator.cxx
