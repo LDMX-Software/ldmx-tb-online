@@ -3,10 +3,6 @@
 //---< ldmx-rogue >---//
 #include "rogue/Commands.h"
 
-//---< ldmx-eudaq >---//
-#include "eudaq/HCalDataSender.h"
-#include "eudaq/TrigScintDataSender.h"
-
 namespace {
 auto dummy0 = eudaq::Factory<eudaq::Producer>::Register<
     eudaq::RogueTcpClientProducer, const std::string &, const std::string &>(
