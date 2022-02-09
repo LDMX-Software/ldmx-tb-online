@@ -44,10 +44,8 @@ endif()
 add_subdirectory(emulators)
 
 if (NOT EMULATORS_ONLY) 
-  # eudaq library
   add_subdirectory(rogue)
-
-  # eudaq library
+  add_subdirectory(pflib)
   add_subdirectory(eudaq)
 endif()
 

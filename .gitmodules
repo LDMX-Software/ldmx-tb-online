@@ -1,0 +1,3 @@
+[submodule "software/pflib"]
+	path = software/pflib
+	url = git@github.com:LDMX-Software/pflib.git
