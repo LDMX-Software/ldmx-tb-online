@@ -20,7 +20,9 @@ within the software directory
 
 ```
 git clone git@github.com:LDMX-Software/ldmx-tb-online.git 
-cd ldmx-tb-online/software; mkdir build; cd build;
+cd ldmx-tb-online/software
+mkdir build 
+cd build
 ```
 
 If `Rogue` was installed with Anaconda, the rogue environment needs
