@@ -34,7 +34,7 @@ Note, `rogue_dev` is the name of the conda environment specified during the
 installation step.  If rogue was installed baremetal e.g. on Archlinux, 
 the conda step is not required.
 
-Configuring the build via CMake can be done withing the build directory
+Configuring the build via CMake can be done within the build directory
 as follows
 
 ```
