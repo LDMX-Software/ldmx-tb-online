@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <memory>
+#include <chrono>
 
 #include <rogue/utilities/fileio/StreamWriter.h>
 #include <rogue/utilities/fileio/StreamWriterChannel.h>
@@ -32,6 +33,8 @@ class PolarfireProducer : public eudaq::Producer, public rogue::interfaces::stre
  private:
   /// pass end-of-run to separate thread
   bool exiting_run_;
+  /// milliseconds the polarfire is busy
+  std::chrono::milliseconds pf_busy_ms_;
  private:
   /// connection to polarfire
   std::unique_ptr<pflib::PolarfireTarget> pft_;
@@ -89,8 +92,12 @@ void PolarfireProducer::DoInitialise(){
   EUDAQ_INFO("Readout Mode set to " + ro_mode);
 
   if (ro_mode == "MemMap") {
-    auto ptr{new pflib::rogue::RogueWishboneInterface(addr,port)};
-    pft_ = std::make_unique<pflib::PolarfireTarget>(ptr,ptr);
+    try {
+      auto ptr{new pflib::rogue::RogueWishboneInterface(addr,port)};
+      pft_ = std::make_unique<pflib::PolarfireTarget>(ptr,ptr);
+    } catch (const pflib::Exception& e) {
+      EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
+    }
   } else {
     EUDAQ_THROW("Unrecognized readout mode "+ro_mode);
   }
@@ -127,6 +134,9 @@ void PolarfireProducer::DoInitialise(){
 void PolarfireProducer::DoConfigure(){
   auto conf = GetConfiguration();
 
+  // expected number of milliseconds the PF is busy
+  pf_busy_ms_ = std::chrono::milliseconds(conf->Get("PF_BUSY_MS", 1000));
+
   // output file writing configuration
   output_path_ = conf->Get("OUTPUT_PATH",".");
   file_prefix_ = conf->Get("FILE_PREFIX","ldmx_hcal");
@@ -134,7 +144,12 @@ void PolarfireProducer::DoConfigure(){
   // or in independent config file?
   fpga_id_ = conf->Get("FPGA_ID", 0);
 
-  auto& daq = pft_->hcal->daq();
+  // do polarfire commands
+  try {
+    auto& daq = pft_->hcal->daq();
+  } catch (const pflib::Exception& e) {
+    EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
+  }
 }
 /**
  * Start of run, softer reset to start cleanly
@@ -143,7 +158,11 @@ void PolarfireProducer::DoConfigure(){
  */
 void PolarfireProducer::DoStartRun(){
   exiting_run_ = false;
-  pft_->prepareNewRun();
+  try { 
+    pft_->prepareNewRun();
+  } catch (const pflib::Exception& e) {
+    EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
+  }
 }
 
 /**
@@ -153,15 +172,23 @@ void PolarfireProducer::DoStopRun(){
   exiting_run_ = true;
 }
 /**
- * typically used in failure modes, check out state function
- * i.e. recover from failure
+ * i.e. recover from failure, this is the only available
+ * command if the producer ends up in an error state
+ *
+ * Go back to "newly created" essentially
  */
 void PolarfireProducer::DoReset(){
+  exiting_run_ = true;
+  // LOCK_UN lock file?
+  pf_busy_ms_ = std::chrono::milliseconds();
+  exiting_run_ = false;
 }
 /**
  * Not sure what this does...
  */
 void PolarfireProducer::DoTerminate(){
+  exiting_run_ = true;
+  // close lock file?
 }
 /**
  * Include some "mode" about if sending our own L1A ("local" mode)
@@ -177,6 +204,7 @@ void PolarfireProducer::DoTerminate(){
  * the member variable.
  */
 void PolarfireProducer::RunLoop(){
+  auto pf_start_run = std::chrono::steady_clock::now();
   /// run has begun, open writer for this polarfire
   rogue::utilities::fileio::StreamWriterPtr writer{
     rogue::utilities::fileio::StreamWriter::create()};
@@ -184,42 +212,58 @@ void PolarfireProducer::RunLoop(){
   std::stringstream output_file;
   output_file << output_path_ << "/" << file_prefix_ << "_run_" << GetRunNumber() << ".raw";
   EUDAQ_INFO("Writing data stream to "+output_file.str());
-  writer->open(output_file.str());
-  this->addSlave(writer->getChannel(0));
+  try {
+    writer->open(output_file.str());
+    this->addSlave(writer->getChannel(0));
+  } catch (const std::exception& e) {
+    EUDAQ_THROW("Rogue Error : "+std::string(e.what()));
+  }
 
-  /// loop until we receive end-of-run
-  while (not exiting_run_) {
-    // depending on configured mode, we trigger daq readout or not
-    switch(the_l1a_mode_) {
-      case L1A_MODE::PEDESTAL:
-        pft_->backend->fc_sendL1A();
-        break;
-      case L1A_MODE::CHARGE:
-        pft_->backend->fc_calibpulse();
-        break;
-      default:
-        // external - l1a triggered elsewhere
-        break;
+  try {
+    /// loop until we receive end-of-run
+    while (not exiting_run_) {
+      auto pf_trigger = std::chrono::steady_clock::now();
+      auto pf_end_of_busy = pf_trigger + pf_busy_ms_;
+      // depending on configured mode, we trigger daq readout or not
+      switch(the_l1a_mode_) {
+        case L1A_MODE::PEDESTAL:
+          pft_->backend->fc_sendL1A();
+          break;
+        case L1A_MODE::CHARGE:
+          pft_->backend->fc_calibpulse();
+          break;
+        default:
+          // external - l1a triggered elsewhere
+          break;
+      }
+    
+      // read raw event data from polarfire
+      std::vector<uint32_t> event_data_words = pft_->daqReadEvent();
+    
+      // cut data words into bytes
+      const uint8_t *ptr = reinterpret_cast<const uint8_t*>(&event_data_words[0]);
+      std::vector<uint8_t> event_data(ptr, ptr + sizeof(uint32_t)*event_data_words.size());
+    
+      // wrap event data in rogue frame to send it to file writer
+      auto size = event_data.size();
+      auto frame = reqFrame(size, true);
+      frame->setPayload(size);
+      std::copy(event_data.begin(), event_data.end(), frame->begin());
+      sendFrame(frame);
+    
+      // wrap data in eudaq object and send it downstream to the monitoring
+      auto ev = eudaq::Event::MakeUnique("HgcrocRaw");
+      ev->AddBlock(fpga_id_, event_data);
+      std::chrono::nanoseconds ev_beg(pf_trigger - pf_start_run);
+      std::chrono::nanoseconds ev_end(pf_end_of_busy - pf_start_run);
+      ev->SetTimestamp(ev_beg.count(), ev_end.count());
+      SendEvent(std::move(ev));
+  
+      // wait until window is done
+      std::this_thread::sleep_until(pf_end_of_busy);
     }
-  
-    // read raw event data from polarfire
-    std::vector<uint32_t> event_data_words = pft_->daqReadEvent();
-  
-    // cut data words into bytes
-    const uint8_t *ptr = reinterpret_cast<const uint8_t*>(&event_data_words[0]);
-    std::vector<uint8_t> event_data(ptr, ptr + sizeof(uint32_t)*event_data_words.size());
-  
-    // wrap event data in rogue frame to send it to file writer
-    auto size = event_data.size();
-    auto frame = reqFrame(size, true);
-    frame->setPayload(size);
-    std::copy(event_data.begin(), event_data.end(), frame->begin());
-    sendFrame(frame);
-  
-    // wrap data in eudaq object and send it downstream to the monitoring
-    auto ev = eudaq::Event::MakeUnique("HgcrocRaw");
-    ev->AddBlock(fpga_id_, event_data);
-    SendEvent(std::move(ev));
+  } catch (const pflib::Exception& e) {
+    EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
   }
 
   // done writing
