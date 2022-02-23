@@ -19,8 +19,8 @@ First, clone the `ldmx-daq` repository and make a build directory
 within the software directory
 
 ```
-git clone git@github.com:slaclab/ldmx-daq.git 
-cd ldmx-daq/software; mkdir build; cd build;
+git clone git@github.com:LDMX-Software/ldmx-tb-online.git 
+cd ldmx-tb-online/software; mkdir build; cd build;
 ```
 
 If `Rogue` was installed with Anaconda, the rogue environment needs
