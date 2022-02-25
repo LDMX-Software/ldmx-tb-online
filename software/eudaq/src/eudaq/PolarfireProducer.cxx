@@ -176,7 +176,6 @@ void PolarfireProducer::DoReset(){
   exiting_run_ = true;
   // LOCK_UN lock file?
   pf_busy_ms_ = std::chrono::milliseconds();
-  exiting_run_ = false;
 }
 /**
  * Not sure what this does...
