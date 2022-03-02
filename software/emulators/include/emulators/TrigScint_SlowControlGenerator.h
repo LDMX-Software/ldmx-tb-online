@@ -32,13 +32,15 @@ public:
   void genFrame(uint32_t size);
 
   /** @return the TX count */
-  uint32_t getTxCount(){};
+  uint32_t getTxCount() { return 0; }
 
   /** @return the total TX bytes */
-  uint32_t getTxBytes(){};
+  uint32_t getTxBytes() { return 0; }
 
   /** @return the total TX errors */
-  uint32_t getTxErrors(){};
+  uint32_t getTxErrors() { return 0; }
+
+  void resetCounters() {}
 
 private:
   /**

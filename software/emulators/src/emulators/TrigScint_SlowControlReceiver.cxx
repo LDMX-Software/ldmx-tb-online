@@ -45,35 +45,37 @@ void TrigScint_SlowControlReceiver::acceptFrame(
     std::printf("Raw data:\t");
     for(auto dat : word_) std::cout<<dat<<"\t";
     
-    string status1[2] = {"Off","On"};
-    string status2[2] = {"low","high"};
-    string ck_input[2]={"LVDS","SLVS"};
-    string range_status[2] = {"auto-range","fixed range"};
-    string TDC_mode[2] = {"First","Last"};
-    std::printf('Input type select for input Ck receiver: %s',ck_input[word_[0]&1]); // bit 0
-    std::printf('LVDS output level trim: %d',LVDS_V_OUT[(word_[0]&6)>>1]); 		  // bit 1-2
-    std::printf('Discriminator state: %s',status1[(word_[0]&8)>>3]); 		  // bit 3
-    std::printf('timing amplifier gain: %s',status2[(word_[0]&16)>>4]); 		  // bit 4
+    std::string status1[2] = {"Off","On"};
+    std::string status2[2] = {"low","high"};
+    std::string ck_input[2]={"LVDS","SLVS"};
+    std::string range_status[2] = {"auto-range","fixed range"};
+    std::string TDC_mode[2] = {"First","Last"};
+    std::printf("Input type select for input Ck receiver: %s",ck_input[word_[0]&1]); // bit 0
+    std::printf("LVDS output level trim: %d",LVDS_V_OUT[(word_[0]&6)>>1]); 		  // bit 1-2
+    std::printf("Discriminator state: %s",status1[(word_[0]&8)>>3]); 		  // bit 3
+    std::printf("timing amplifier gain: %s",status2[(word_[0]&16)>>4]); 		  // bit 4
 
     ////// For the following calculations, refer to QIE11 2015 specs, pg21-22
-    std::printf('DAC Timing Threshold: %d',(word_[0]>>5+word_[1]<<3));		  // bit 5-12
-    std::printf('TDC LSB used: %.3f',TDC_Threshold_LSB);
+    std::printf("DAC Timing Threshold: %d",(word_[0]>>5+word_[1]<<3));		  // bit 5-12
+    std::printf("TDC LSB used: %.3f",TDC_Threshold_LSB);
     float digital_thr = word_[0]>>5+word_[1]<<3;
     float Q_slope = 23.9059;       						  // (6120-24)/(2^8-1)
     float Q_thr = 24 + Q_slope*digital_thr;
     float I_thr = Q_thr*TDC_Threshold_LSB/24;
-    std::printf('TDC Threshold: %.3f uA',I_thr);
+    std::printf("TDC Threshold: %.3f uA",I_thr);
 
-    std::printf('TimingIref: %d',(word_[1]>>5)); // bit 13-15
+    std::printf("TimingIref: %d",(word_[1]>>5)); // bit 13-15
 
     float abs_pedestal = 2*(word_[2]&31);
     float pol = ((word_[2]>>5)&1);
     std::printf("pedestal DAC: %dfC",(abs_pedestal*(1-2*pol))); 		  // bit 16-21
 
+    /*
     std::printf("capID0 pedestal DAC: %.1ffC",CapID_Pedestal((word_[3]&3)*4+word_[2]>>6));  // bit 22-25
     std::printf("capID1 pedestal DAC: %.1ffC",CapID_Pedestal((word_[3]>>2)&15)); 		// bit 26-29
     std::printf("capID2 pedestal DAC: %.1ffC",CapID_Pedestal((word_[4]&3)*4+word_[3]>>6)); 	// bit 30-33
     std::printf("capID3 pedestal DAC: %.1ffC",CapID_Pedestal((word_[4]>>2)&15)); 		// bit 34-37
+    */
 
     int id = (int)((word_[4]>>6)&1);
     std::printf("Digitization range mode: %s",range_status[id]); 		// bit 38
@@ -84,7 +86,7 @@ void TrigScint_SlowControlReceiver::acceptFrame(
     std::printf("LVDS CkOut: %s",status1[(word_[6]>>6)&1]); 				// bit 54
     std::printf("which pulse to consider for TDC (TDCmode): %s",TDC_mode[word_[6]>>7]); 	// bit 55
     std::printf("Hysteresis select for the timing discriminator(Hsel): %s",status2[word_[7]&1]); // bit 56
-    std::printf("phasing delay betw'n input clk & internal integration window(PhaseDelay): %s",PhaseDelay(word_[7]>>1)); // bit 57-63
+    //std::printf("phasing delay between input clk & internal integration window(PhaseDelay): %s",PhaseDelay(word_[7]>>1)); // bit 57-63
   }
 
 }; // namespace emulators
