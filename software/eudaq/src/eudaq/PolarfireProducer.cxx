@@ -143,7 +143,7 @@ void PolarfireProducer::DoConfigure() try {
   fpga_id_ = conf->Get("FPGA_ID", 0);
 
   // do polarfire commands
-  auto& daq = pft_->hcal->daq();
+  auto& daq = pft_->hcal.daq();
 } catch (const pflib::Exception& e) {
   EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
 }
