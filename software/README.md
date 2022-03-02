@@ -2,7 +2,7 @@
 
 ## Dependencies
 
-### [Rogue (v5.13.0) ](https://slaclab.github.io/rogue/index.html)
+### Rogue ([v5.13.0](https://slaclab.github.io/rogue/index.html))
 #### Installation
 There are currently two recommended ways to build `rogue`: [Anaconda](https://slaclab.github.io/rogue/installing/anaconda.html) and from [source](https://slaclab.github.io/rogue/installing/build.html).  The instructions below 
 outline how to install `rogue` from source (the preferred method for the test beam).
@@ -29,11 +29,23 @@ to add `rogue` to the environment
 source setup_rogue.sh
 ```
 
-### eudaq 
- * [Documentation](https://eudaq.github.io/) 
- * To use the monitoring, the CMake flag `-DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON` needs to be included in the cmake command.
+### eudaq ([Docs](https://eudaq.github.io/))
+#### Installation
+Installation of `eudaq`, requires the dependencies outline in the [README](https://github.com/eudaq/eudaq/blob/master/README.md#for-the-core-library-executables-and-gui). 
 
-### ROOT
+  ℹ️ `ROOT` is required because the monitoring app is being used.
+
+Once 
+the depdendencies have been installed, `eudaq` can be built as follows
+```bash
+git clone https://github.com/eudaq/eudaq.git eudaq 
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=../install -DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON ..
+make
+make install
+```
+  ⚠️ Because of the bug discussed [here](https://github.com/eudaq/eudaq/pull/627), only the `master` branch of `eudaq` will work if `ROOT` was built using the C++17 standard.
 
 ## Building ldmx-daq
 
