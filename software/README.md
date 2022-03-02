@@ -2,10 +2,32 @@
 
 ## Dependencies
 
-### Rogue 5.9.3
- * [Documentation](https://slaclab.github.io/rogue/index.html)
- * [Installng Rogue with Anaconda](https://slaclab.github.io/rogue/installing/anaconda.html)
- * [Installing Rogue on Archlinux](https://slaclab.github.io/rogue/installing/build.html#archlinux)
+### [Rogue (v5.13.0) ](https://slaclab.github.io/rogue/index.html)
+#### Installation
+There are currently two recommended ways to build `rogue`: [Anaconda](https://slaclab.github.io/rogue/installing/anaconda.html) and from [source](https://slaclab.github.io/rogue/installing/build.html).  The instructions below 
+outline how to install `rogue` from source (the preferred method for the test beam).
+
+To begin, clone the project and checkout the `v5.13.0` tag as follows
+```bash
+git clone git@github.com:slaclab/rogue.git
+cd rogue
+git checkout tags/v5.13.0 -b v5.13.0
+```
+Once all [dependencies](https://slaclab.github.io/rogue/installing/build.html#installing-packages-required-for-rogue) have been installed, `rogue` is built by issuing the following command
+```bash
+pip3 install -r pip_requirements.txt
+mkdir build
+cd build
+cmake .. -DROGUE_INSTALL=local
+make
+make install
+```
+This will build and install everything in the root rogue directory.  The installation 
+will also create a script in the `rogue` root directory that can be sourced 
+to add `rogue` to the environment
+```bash
+source setup_rogue.sh
+```
 
 ### eudaq 
  * [Documentation](https://eudaq.github.io/) 
