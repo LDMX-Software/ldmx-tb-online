@@ -41,56 +41,36 @@ the depdendencies have been installed, `eudaq` can be built as follows
 git clone https://github.com/eudaq/eudaq.git eudaq 
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=../install -DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON ..
+cmake -DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON ..
 make
 make install
 ```
   ⚠️ Because of the bug discussed [here](https://github.com/eudaq/eudaq/pull/627), only the `master` branch of `eudaq` will work if `ROOT` was built using the C++17 standard.
+  
+To add `eudaq` to the environment, the environmental variable `EUDAQ_DIR` needs to be set to the `eudaq` root directory
+```bash
+export EUDAQ_DIR=/path/to/eudaq
+```
 
-## Building ldmx-daq
+## Building ldmx-tb-online
 
-First, clone the `ldmx-daq` repository and make a build directory
-within the software directory
+Once all dependencies are installed, building `ldmx-tb-online` is fairly straight forward
 
 ```
 git clone git@github.com:LDMX-Software/ldmx-tb-online.git 
 cd ldmx-tb-online/software
 mkdir build 
 cd build
-```
-
-If `Rogue` was installed with Anaconda, the rogue environment needs
-to be first enabled as follows
-
-```
-conda activate rogue_dev
-```
-
-Note, `rogue_dev` is the name of the conda environment specified during the
-installation step.  If rogue was installed baremetal e.g. on Archlinux, 
-the conda step is not required.
-
-Configuring the build via CMake can be done within the build directory
-as follows
-
-```
-cmake -DCMAKE_INSTALL_PREFIX=../install ..
-```
-In this case, the install prefix was specified as `../install`.  If the 
-install prefix is not specified, ldmx-daq will be install in `../install`
-by default. After the cmake step exits without errors, you can build and 
-install `ldmx-daq` with the following command
-
-```
+cmake ..
 make install
 ```
-
-This will build and install ldmx-daq into the install directory specified 
-above.
+If the 
+install prefix is not specified, `ldmx-tb-online` will be install in `../install`
+by default. 
 
 ## Setting up the Environment 
 
-In order to run any `ldmx-daq` apps, the environment needs to be setup as
+In order to run any `ldmx-tb-online` apps, the environment needs to be setup as
 follows
 
 ```
