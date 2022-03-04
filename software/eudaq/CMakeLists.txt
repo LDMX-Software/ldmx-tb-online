@@ -33,13 +33,13 @@ set_target_properties(EUDAQ::EUDAQ PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${EUDAQ_INCLUDE_DIRS}"
   INTERFACE_LINK_LIBRARIES "${eudaq_libs}")
 
+
 add_library(eudaq_core SHARED
   src/eudaq/CaptanTrigScintTestBeamProducer.cxx
   src/eudaq/DarkRunControl.cxx
   #src/eudaq/DipClientProducer.cxx
   src/eudaq/HgcrocDataPacket.cxx
   src/eudaq/HgcrocFileReaderProducer.cxx
-  src/eudaq/PolarfireProducer.cxx
   src/eudaq/RogueDataSender.cxx
   src/eudaq/RogueTcpClientProducer.cxx
   src/eudaq/TcpCommandGenerator.cxx
@@ -51,6 +51,18 @@ add_library(eudaq_core SHARED
 target_include_directories(eudaq_core PUBLIC include)
 target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue pflib::pflib pflib::rogue rogue)
 symlink_to_eudaq(core)
+install(TARGETS eudaq_core DESTINATION lib)
+
+find_package(pflib QUIET)
+if (pflib_FOUND)
+  add_library(eudaq_pflib SHARED
+    src/eudaq/pflib/PolarfireProducer.cxx)
+  target_link_libraries(eudaq_pflib PUBLIC EUDAQ::EUDAQ pflib::rogue)
+  symlink_to_eudaq(pflib)
+  install(TARGETS eudaq_pflib DESTINATION lib)
+else()
+  message(WARNING "pflib not found - PolarfireProducer will not be available.")
+endif()
 
 option(BUILD_MONITORING "Build online monitoring based off ROOT and EUDAQ" ON)
 if (BUILD_MONITORING)
@@ -68,4 +80,3 @@ if (BUILD_MONITORING)
   install(TARGETS eudaq_monitor DESTINATION lib)
 endif()
 
-install(TARGETS eudaq_core DESTINATION lib)
