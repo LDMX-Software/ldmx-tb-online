@@ -18,6 +18,8 @@
 #include "emulators/HCalReceiver.h"
 #include "emulators/TrigScintGenerator.h"
 #include "emulators/TrigScintReceiver.h"
+#include "emulators/TrigScint_SlowControlGenerator.h"
+#include "emulators/TrigScint_SlowControlReceiver.h"
 
 namespace po = boost::program_options;
 
@@ -47,7 +49,9 @@ int main(int argc, char **argv) {
 		       ("hcal", po::bool_switch()->default_value(false), 
 			"Create an HCal data emulator.") 
 		       ("trig", po::bool_switch()->default_value(false), 
-			"Create an Trig Scint data emulator.") 
+			"Create an Trig Scint data emulator.")
+		       ("trig_slow", po::bool_switch()->default_value(false),
+			"Create slow control emulator for Trig Scint.") 
   		       ("rate, r", po::value<float>(&rate),
 			"Rate to run at in Hz."); 
 
@@ -74,6 +78,9 @@ int main(int argc, char **argv) {
   // Flag indicating if an Trigger Scintillator generator/receiver should be used
   bool trig{var_map["trig"].as<bool>()}; 
 
+  // Flag indicating if an Trigger Scintillator slow control generator/receiver should be used
+  bool trig_slow{var_map["trig_slow"].as<bool>()}; 
+
   // Print out all available commands if help is passed or if neither 
   // a server or client is specified.
   if (var_map.count("help") || (!server && !client)) {
@@ -99,6 +106,7 @@ int main(int argc, char **argv) {
     // Create the specified generator
     if (hcal) generator = emulators::HCalGenerator::create();
     else if (trig) generator = emulators::TrigScintGenerator::create(); 
+    else if (trig_slow) generator = emulators::TrigScint_SlowControlGenerator::create(); 
 
     // Connect the generator to the TCP bridge.
     generator->addSlave(tcp);
@@ -127,6 +135,7 @@ int main(int argc, char **argv) {
     // Create the specified receiver
     if (hcal) receiver = emulators::HCalReceiver::create();
     else if (trig) receiver = emulators::TrigScintReceiver::create();
+    else if (trig_slow) receiver = emulators::TrigScint_SlowControlReceiver::create();
 
     // Connect the TCP bridge to the receiver
     tcp->addSlave(receiver);
