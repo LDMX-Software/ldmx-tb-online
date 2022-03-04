@@ -29,9 +29,6 @@ if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   message(STATUS "Install directory set to ${CMAKE_INSTALL_PREFIX}")
 endif()
 
-# Set the python installation path
-set(PYTHON_PACKAGE_NAME LDMX)
-
 # Set the default release type to "Release". If a release type is specified 
 # at the command line, it's respected.
 set(default_build_type "Release")
@@ -40,16 +37,11 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-# Emulator library
 add_subdirectory(emulators)
 
+option(EMULATORS_ONLY "Only build the emulators" OFF)
 if (NOT EMULATORS_ONLY) 
   add_subdirectory(rogue)
   add_subdirectory(eudaq)
+  add_subdirectory(utils)
 endif() 
-
-add_subdirectory(utils)
-
-# Build all test. The test are assumed to reside inside of the directory "test"
-# within each module.
-#build_test()
