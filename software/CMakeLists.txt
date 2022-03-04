@@ -7,6 +7,7 @@ project(ldmx-tb-online
 	DESCRIPTION "LDMX DAQ online software for testbeam." 
 	LANGUAGES CXX)
 
+
 # Add support for building in the conda environment 
 if (DEFINED ENV{CONDA_PREFIX})
   set(CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
@@ -19,6 +20,39 @@ if (DEFINED ENV{ROGUE_DIR})
 else()
   set(Rogue_DIR ${CMAKE_PREFIX_PATH}/lib)
 endif()
+
+# Define some colors. These are used to colorize CMake's user output
+if(NOT WIN32)
+  string(ASCII 27 esc)
+  set(color_reset "${esc}[m")
+  set(bold_yellow "${esc}[1;33m")
+  set(green "${esc}[32m")
+  set(bold_red "${esc}[1;31m")
+endif()
+
+# Override messages and add color
+function(message)
+  # empty message handling
+  if ("${ARGV}" STREQUAL "")
+    _message("")
+    return()
+  endif()
+
+  # extract type of message from first argument
+  list(GET ARGV 0 message_type)
+  if(message_type STREQUAL FATAL_ERROR OR message_type STREQUAL SEND_ERROR)
+    list(REMOVE_AT ARGV 0)
+    _message("${bold_red}[ ERROR ]: ${ARGV}${color_reset}")
+  elseif(message_type STREQUAL WARNING OR message_type STREQUAL AUTHOR_WARNING)
+    list(REMOVE_AT ARGV 0)
+    _message("${bold_yellow}[ WARNING ]: ${ARGV}${color_reset}")
+  elseif(message_type STREQUAL STATUS)
+    list(REMOVE_AT ARGV 0)
+    _message("${green}[ INFO ]: ${ARGV}${color_reset}")
+  else()
+    _message("${green} ${ARGV} ${color_reset}")
+  endif()
+endfunction()
 
 # find Rogue package and put it into a cmake target
 find_package(Rogue CONFIG REQUIRED)
