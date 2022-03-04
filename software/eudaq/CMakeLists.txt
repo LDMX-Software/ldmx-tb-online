@@ -37,7 +37,6 @@ set_target_properties(EUDAQ::EUDAQ PROPERTIES
 add_library(eudaq_core SHARED
   src/eudaq/CaptanTrigScintTestBeamProducer.cxx
   src/eudaq/DarkRunControl.cxx
-  #src/eudaq/DipClientProducer.cxx
   src/eudaq/HgcrocDataPacket.cxx
   src/eudaq/HgcrocFileReaderProducer.cxx
   src/eudaq/RogueDataSender.cxx
@@ -59,6 +58,19 @@ if (EXISTS ${WR_Dir}/include/WRClient.h)
   target_link_directories(eudaq_wr PUBLIC ${WR_Dir}/build/)
   symlink_to_eudaq(wr)
   install(TARGETS eudaq_wr DESTINATION lib)
+else()
+  message(WARNING "Unable to find WRClient - WRClientProducer will not be built.")
+endif()
+
+if (EXISTS ${FIBERTRACKERDAQ_Dir}/include/FiberTrackerClient.h)
+  add_library(eudaq_dip SHARED src/eudaq/dip/DipClientProducer.cxx)
+  target_include_directories(eudaq_dip PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include)
+  target_link_libraries(eudaq_dip PUBLIC EUDAQ::EUDAQ)
+  target_link_directories(eudaq_dip PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64)
+  symlink_to_eudaq(dip)
+  install(TARGETS eudaq_dip DESTINATION lib)
+else()
+  message(WARNING "Unable to find FiberTrackerClient - DipClientProducer will not be built.")
 endif()
 
 find_package(pflib QUIET)

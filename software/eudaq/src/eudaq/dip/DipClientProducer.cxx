@@ -1,4 +1,4 @@
-#include "eudaq/DipClientProducer.h"
+#include "DipClientProducer.h"
 
 namespace {
 auto dummy0 = eudaq::Factory<eudaq::Producer>::Register<
