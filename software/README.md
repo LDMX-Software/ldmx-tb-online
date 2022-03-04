@@ -2,59 +2,75 @@
 
 ## Dependencies
 
-### Rogue 5.9.3
- * [Documentation](https://slaclab.github.io/rogue/index.html)
- * [Installng Rogue with Anaconda](https://slaclab.github.io/rogue/installing/anaconda.html)
- * [Installing Rogue on Archlinux](https://slaclab.github.io/rogue/installing/build.html#archlinux)
+### Rogue ([v5.13.0](https://slaclab.github.io/rogue/index.html))
+#### Installation
+There are currently two recommended ways to build `rogue`: [Anaconda](https://slaclab.github.io/rogue/installing/anaconda.html) and from [source](https://slaclab.github.io/rogue/installing/build.html).  The instructions below 
+outline how to install `rogue` from source (the preferred method for the test beam).
 
-### eudaq 
- * [Documentation](https://eudaq.github.io/) 
- * To use the monitoring, the CMake flag `-DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON` needs to be included in the cmake command.
-
-### ROOT
-
-## Building ldmx-daq
-
-First, clone the `ldmx-daq` repository and make a build directory
-within the software directory
-
+To begin, clone the project and checkout the `v5.13.0` tag as follows
+```bash
+git clone git@github.com:slaclab/rogue.git
+cd rogue
+git checkout tags/v5.13.0 -b v5.13.0
 ```
-git clone git@github.com:slaclab/ldmx-daq.git 
-cd ldmx-daq/software; mkdir build; cd build;
-```
-
-If `Rogue` was installed with Anaconda, the rogue environment needs
-to be first enabled as follows
-
-```
-conda activate rogue_dev
-```
-
-Note, `rogue_dev` is the name of the conda environment specified during the
-installation step.  If rogue was installed baremetal e.g. on Archlinux, 
-the conda step is not required.
-
-Configuring the build via CMake can be done withing the build directory
-as follows
-
-```
-cmake -DCMAKE_INSTALL_PREFIX=../install ..
-```
-In this case, the install prefix was specified as `../install`.  If the 
-install prefix is not specified, ldmx-daq will be install in `../install`
-by default. After the cmake step exits without errors, you can build and 
-install `ldmx-daq` with the following command
-
-```
+Once all [dependencies](https://slaclab.github.io/rogue/installing/build.html#installing-packages-required-for-rogue) have been installed, `rogue` is built by issuing the following command
+```bash
+pip3 install -r pip_requirements.txt
+mkdir build
+cd build
+cmake .. -DROGUE_INSTALL=local
+make
 make install
 ```
+This will build and install everything in the root rogue directory.  The installation 
+will also create a script in the `rogue` root directory that can be sourced 
+to add `rogue` to the environment
+```bash
+source setup_rogue.sh
+```
 
-This will build and install ldmx-daq into the install directory specified 
-above.
+### eudaq ([Docs](https://eudaq.github.io/))
+#### Installation
+Installation of `eudaq`, requires the dependencies outline in the [README](https://github.com/eudaq/eudaq/blob/master/README.md#for-the-core-library-executables-and-gui). 
+
+  ℹ️ `ROOT` is required because the monitoring app is being used.
+
+Once 
+the depdendencies have been installed, `eudaq` can be built as follows
+```bash
+git clone https://github.com/eudaq/eudaq.git eudaq 
+mkdir build
+cd build
+cmake -DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON ..
+make
+make install
+```
+  ⚠️ Because of the bug discussed [here](https://github.com/eudaq/eudaq/pull/627), only the `master` branch of `eudaq` will work if `ROOT` was built using the C++17 standard.
+  
+To add `eudaq` to the environment, the environmental variable `EUDAQ_DIR` needs to be set to the `eudaq` root directory
+```bash
+export EUDAQ_DIR=/path/to/eudaq
+```
+
+## Building ldmx-tb-online
+
+Once all dependencies are installed, building `ldmx-tb-online` is fairly straight forward
+
+```
+git clone git@github.com:LDMX-Software/ldmx-tb-online.git 
+cd ldmx-tb-online/software
+mkdir build 
+cd build
+cmake ..
+make install
+```
+If the 
+install prefix is not specified, `ldmx-tb-online` will be install in `../install`
+by default. 
 
 ## Setting up the Environment 
 
-In order to run any `ldmx-daq` apps, the environment needs to be setup as
+In order to run any `ldmx-tb-online` apps, the environment needs to be setup as
 follows
 
 ```
@@ -192,3 +208,10 @@ collector it should connect and send events to. Similarly, the variable
 `EUDAQ_MN` is used to tell the data collector to which monitoring app
 to connect to. 
 
+### Compile with FiberTracker and DIP
+```
+cd build
+#cmake -DCMAKE_INSTALL_PREFIX=../install -DFIBERTRACKERDAQ_Dir=/u1/ldmx/server/FiberTrackerDAQ/install -DDIP_Dir=/home/ldmx/DIP/dip-5.7.0 ..
+cmake -DCMAKE_INSTALL_PREFIX=../install -DFIBERTRACKERDAQ_Dir=/u1/ldmx/server/FiberTrackerDAQ/install -DDIP_Dir=/u1/ldmx/server/FiberTrackerDAQ/dip-5.7.0 -DWR_Dir=/u1/ldmx/server/WRTimestamping/ ..
+make install
+```

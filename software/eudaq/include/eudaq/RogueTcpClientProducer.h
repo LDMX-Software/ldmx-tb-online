@@ -52,6 +52,19 @@ public:
   /// ID used to register this producer with the eudaq environment
   static const uint32_t factory_id_{eudaq::cstr2hash("RogueTcpClientProducer")};
 
+protected:
+  /// Data Sender
+  std::shared_ptr<RogueDataSender> sender_{nullptr};
+
+  /// File writer
+  rogue::utilities::fileio::StreamWriterPtr writer_{rogue::utilities::fileio::StreamWriter::create()};
+  
+  /// Output file path
+  std::string output_path_{"."};
+  
+  /// File prefix
+  std::string file_prefix_{"ldmx_test"};
+
 private:
   /// TCP Bridge client
   rogue::interfaces::stream::TcpClientPtr tcp_;
@@ -60,18 +73,6 @@ private:
   std::shared_ptr<TcpCommandGenerator> tcp_command_{
       TcpCommandGenerator::create()};
 
-  /// File writer
-  rogue::utilities::fileio::StreamWriterPtr writer_{
-      rogue::utilities::fileio::StreamWriter::create()};
-
-  /// Data Sender
-  std::shared_ptr<RogueDataSender> sender_{nullptr}; 
-
-  /// Output file path
-  std::string output_path_{"."};
-
-  /// File prefix
-  std::string file_prefix_{"ldmx_test"};
 };
 } // namespace eudaq
 
