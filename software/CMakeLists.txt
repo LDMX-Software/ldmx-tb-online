@@ -13,14 +13,19 @@ if (DEFINED ENV{CONDA_PREFIX})
   link_directories($ENV{CONDA_PREFIX}/lib)
 endif()
 
-# Load additional macro commands
-list(APPEND CMAKE_MODULE_PATH ${LDMX_DAQ_SOURCE_DIR}/cmake/)
-message(STATUS ${CMAKE_MODULE_PATH})
+# Rogue is required everywhere
+if (DEFINED ENV{ROGUE_DIR})
+  set(Rogue_DIR $ENV{ROGUE_DIR}/lib)
+else()
+  set(Rogue_DIR ${CMAKE_PREFIX_PATH}/lib)
+endif()
 
-# Load the BuildMacros module. If loaded correctly, the variable
-# 'build_macros_found' will be set to the path of the module.
-# Otherwise, it is set to NOTFOUND
-include(BuildMacros RESULT_VARIABLE build_macros_found)
+# find Rogue package and put it into a cmake target
+find_package(Rogue CONFIG REQUIRED)
+add_library(Rogue::Rogue INTERFACE IMPORTED GLOBAL)
+set_target_properties(Rogue::Rogue PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${ROGUE_INCLUDE_DIRS}"
+  INTERFACE_LINK_LIBRARIES "${ROGUE_LIBRARIES}")
 
 # If an install location hasn't been set via CMAKE_INSTALL_PREFIX, set it to 
 # a reasonable default ($PWD/install).  
