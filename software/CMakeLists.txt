@@ -2,9 +2,9 @@
 cmake_minimum_required(VERSION 3.12)
 
 # Set the name of the project
-project(LDMX_DAQ
-	VERSION 1.0.0
-	DESCRIPTION "LDMX DAQ software." 
+project(ldmx-tb-online
+	VERSION 0.0.0
+	DESCRIPTION "LDMX DAQ online software for testbeam." 
 	LANGUAGES CXX)
 
 # Add support for building in the conda environment 

@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.12)
 
 # Set the project name
 project(emulators
-	VERSION 0.1
 	DESCRIPTION "Module containing all emulator classes." 
 	LANGUAGES CXX)
 
