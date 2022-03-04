@@ -1,4 +1,4 @@
-#include "eudaq/DarkMonitor.h"
+#include "DarkMonitor.h"
 
 #include <chrono>
 #include <fstream>

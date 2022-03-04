@@ -7,26 +7,57 @@ project(eudaq
 	DESCRIPTION "Module containing all eudaq classes." 
 	LANGUAGES CXX)
 
-# Setup the Rogue CMake target
-setup_eudaq()
+# EUDAQ loads modules at runtime based on what it "knows" about
+#   a simple way to let EUDAQ know about our module is to put a symlink to our module
+#   in the directory that the rest of the EUDAQ modules are in
+# reference for creating a symlink: https://stackoverflow.com/a/42697475/17617632
+#   - modified to restrict to our usecase
+macro(symlink_to_eudaq name)
+  set(origin "${CMAKE_INSTALL_PREFIX}/lib/libeudaq_${name}.so")
+  set(dest   "${EUDAQ_LIBRARIES_DIRS}/libeudaq_module_ldmx_${name}.so")  
+  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${origin} ${dest})")
+  install(CODE "message(\"-- Created symlink: ${dest} -> ${origin}\")")
+endmacro()
 
-# Setup the Rogue CMake target
+setup_eudaq()
 setup_rogue()
 
-find_package(ROOT CONFIG REQUIRED)
+add_library(eudaq_core SHARED
+  src/eudaq/CaptanTrigScintTestBeamProducer.cxx
+  src/eudaq/DarkRunControl.cxx
+  #src/eudaq/DipClientProducer.cxx
+  src/eudaq/HCalDataSender.cxx
+  src/eudaq/HCalTestBeamProducer.cxx
+  src/eudaq/HgcrocDataPacket.cxx
+  src/eudaq/HgcrocFileReaderProducer.cxx
+  src/eudaq/monitor
+  src/eudaq/RogueDataSender.cxx
+  src/eudaq/RogueTcpClientProducer.cxx
+  src/eudaq/TcpCommandGenerator.cxx
+  src/eudaq/TestBeamDataCollector.cxx
+  src/eudaq/TrigScintDataSender.cxx
+  src/eudaq/TrigScintTestBeamProducer.cxx
+  #src/eudaq/WRClientProducer.cxx
+  )
+target_include_directories(eudaq_core PUBLIC include)
+target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue rogue::rogue)
+symlink_to_eudaq(core)
 
-# Find all of the source files we want to add to the eudaq library.
-# For now, exclude the DIP client until it can be brought in as 
-# an external dependency.
-file(GLOB SRC_FILES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/eudaq/[A-Z]*.cxx)
-list(REMOVE_ITEM SRC_FILES ${PROJECT_SOURCE_DIR}/src/eudaq/DipClientProducer.cxx)
+option(BUILD_MONITORING "Build online monitoring based off ROOT and EUDAQ" ON)
+if (BUILD_MONITORING)
+  find_package(ROOT REQUIRED COMPONENTS Gui Hist)
+  add_library(eudaq_monitor SHARED
+    src/eudaq/DarkMonitor.cxx
+    src/eudaq/HCalTestBeamMonitor.cxx
+    src/eudaq/SimpleMonitor.cxx
+    src/eudaq/TestBeamEventDisplayMonitor.cxx
+    src/eudaq/TestBeamMonitor.cxx
+    src/eudaq/TrigScintTestBeamMonitor.cxx
+    )
+  target_link_libraries(eudaq_monitor PUBLIC EUDAQ::EUDAQ ROOT::Gui ROOT::Hist)
+  symlink_to_eudaq(monitor)
+  install(TARGETS eudaq_monitor DESTINATION lib)
+endif()
 
-setup_library(module eudaq name eudaq_module_dark 
-  dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue
-  ROOT::Gui ROOT::Hist FiberTrackerDAQ Timestamp libfmctdc.so)
-
-
-#Add fiber tracker and WRTiming -- TODO CLEAR THIS MESS UP!!
-target_include_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include ${WR_Dir}/include)
-target_link_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64/ ${WR_Dir}/build/ $ENV{FMCTDC_LIB_DIR}/)
-
+install(TARGETS eudaq_core DESTINATION lib)
+install(DIRECTORY include DESTINATION include)

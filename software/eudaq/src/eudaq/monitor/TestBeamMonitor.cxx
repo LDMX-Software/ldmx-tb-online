@@ -1,4 +1,4 @@
-#include "eudaq/TestBeamMonitor.h"
+#include "TestBeamMonitor.h"
 
 #include <iostream>
 

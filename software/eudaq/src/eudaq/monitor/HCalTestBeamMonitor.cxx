@@ -1,4 +1,4 @@
-#include "eudaq/HCalTestBeamMonitor.h"
+#include "HCalTestBeamMonitor.h"
 
 #include <iostream>
 
