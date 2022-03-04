@@ -19,9 +19,20 @@ macro(symlink_to_eudaq name)
   install(CODE "message(\"-- Created symlink: ${dest} -> ${origin}\")")
 endmacro()
 
-setup_eudaq()
-setup_rogue()
+# besides Rogue::Rogue we also need pflib and EUDAQ here
 find_package(pflib REQUIRED)
+# Find the eudaq libraries
+if (DEFINED ENV{EUDAQ_DIR})
+  set(eudaq_DIR $ENV{EUDAQ_DIR}/cmake)
+endif()
+find_package(eudaq CONFIG REQUIRED)
+add_library(EUDAQ::EUDAQ INTERFACE IMPORTED GLOBAL)
+foreach(eudaq_lib ${EUDAQ_LIBRARIES})
+  list(APPEND eudaq_libs "${EUDAQ_LIBRARIES_DIRS}/lib${eudaq_lib}.so")
+endforeach()
+set_target_properties(EUDAQ::EUDAQ PROPERTIES 
+  INTERFACE_INCLUDE_DIRECTORIES "${EUDAQ_INCLUDE_DIRS}"
+  INTERFACE_LINK_LIBRARIES "${eudaq_libs}")
 
 add_library(eudaq_core SHARED
   src/eudaq/CaptanTrigScintTestBeamProducer.cxx
@@ -39,7 +50,7 @@ add_library(eudaq_core SHARED
   #src/eudaq/WRClientProducer.cxx
   )
 target_include_directories(eudaq_core PUBLIC include)
-target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue rogue::rogue pflib::pflib pflib::rogue)
+target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue pflib::pflib pflib::rogue rogue)
 symlink_to_eudaq(core)
 
 option(BUILD_MONITORING "Build online monitoring based off ROOT and EUDAQ" ON)
@@ -59,4 +70,3 @@ if (BUILD_MONITORING)
 endif()
 
 install(TARGETS eudaq_core DESTINATION lib)
-install(DIRECTORY include DESTINATION include)
