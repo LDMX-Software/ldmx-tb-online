@@ -1,4 +1,4 @@
-#include "eudaq/WRClientProducer.h"
+#include "WRClientProducer.h"
 
 namespace {
 auto dummy0 = eudaq::Factory<eudaq::Producer>::Register<

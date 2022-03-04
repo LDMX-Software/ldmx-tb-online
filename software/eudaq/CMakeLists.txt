@@ -46,12 +46,20 @@ add_library(eudaq_core SHARED
   src/eudaq/TestBeamDataCollector.cxx
   src/eudaq/TrigScintDataSender.cxx
   src/eudaq/TrigScintTestBeamProducer.cxx
-  #src/eudaq/WRClientProducer.cxx
   )
 target_include_directories(eudaq_core PUBLIC include)
 target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue pflib::pflib pflib::rogue rogue)
 symlink_to_eudaq(core)
 install(TARGETS eudaq_core DESTINATION lib)
+
+if (EXISTS ${WR_Dir}/include/WRClient.h)
+  add_library(eudaq_wr SHARED src/eudaq/wr/WRClientProducer.cxx)
+  target_include_directories(eudaq_wr PUBLIC ${WR_Dir}/include)
+  target_link_libraries(eudaq_wr PUBLIC EUDAQ::EUDAQ)
+  target_link_directories(eudaq_wr PUBLIC ${WR_Dir}/build/)
+  symlink_to_eudaq(wr)
+  install(TARGETS eudaq_wr DESTINATION lib)
+endif()
 
 find_package(pflib QUIET)
 if (pflib_FOUND)
