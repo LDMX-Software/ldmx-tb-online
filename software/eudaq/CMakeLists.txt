@@ -27,8 +27,6 @@ add_library(eudaq_core SHARED
   src/eudaq/CaptanTrigScintTestBeamProducer.cxx
   src/eudaq/DarkRunControl.cxx
   #src/eudaq/DipClientProducer.cxx
-  src/eudaq/HCalDataSender.cxx
-  src/eudaq/HCalTestBeamProducer.cxx
   src/eudaq/HgcrocDataPacket.cxx
   src/eudaq/HgcrocFileReaderProducer.cxx
   src/eudaq/PolarfireProducer.cxx
@@ -41,7 +39,7 @@ add_library(eudaq_core SHARED
   #src/eudaq/WRClientProducer.cxx
   )
 target_include_directories(eudaq_core PUBLIC include)
-target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue rogue::rogue)
+target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue rogue::rogue pflib::pflib pflib::rogue)
 symlink_to_eudaq(core)
 
 option(BUILD_MONITORING "Build online monitoring based off ROOT and EUDAQ" ON)
