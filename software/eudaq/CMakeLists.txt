@@ -51,11 +51,15 @@ target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue pflib::pflib p
 symlink_to_eudaq(core)
 install(TARGETS eudaq_core DESTINATION lib)
 
-if (EXISTS ${WR_Dir}/include/WRClient.h)
+if (NOT WRTiming_DIR)
+  set(WRTiming_DIR $ENV{WRTiming_DIR})
+endif()
+
+if (EXISTS ${WRTiming_DIR}/include/WRClient.h)
   add_library(eudaq_wr SHARED src/eudaq/wr/WRClientProducer.cxx)
-  target_include_directories(eudaq_wr PUBLIC ${WR_Dir}/include)
+  target_include_directories(eudaq_wr PUBLIC ${WRTiming_DIR}/include)
   target_link_libraries(eudaq_wr PUBLIC EUDAQ::EUDAQ)
-  target_link_directories(eudaq_wr PUBLIC ${WR_Dir}/build/)
+  target_link_directories(eudaq_wr PUBLIC ${WRTiming_DIR}/build/)
   symlink_to_eudaq(wr)
   install(TARGETS eudaq_wr DESTINATION lib)
 else()

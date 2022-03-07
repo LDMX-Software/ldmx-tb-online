@@ -1,6 +1,12 @@
 # Quickstart
 
-## Dependencies
+There is no quickstart; there is only start.
+
+# Start
+
+This guide has not been tested but it should hopefully help you go in the right direction.
+
+## Required Dependencies
 
 ### Rogue ([v5.13.0](https://slaclab.github.io/rogue/index.html))
 #### Installation
@@ -33,7 +39,7 @@ source setup_rogue.sh
 #### Installation
 Installation of `eudaq`, requires the dependencies outline in the [README](https://github.com/eudaq/eudaq/blob/master/README.md#for-the-core-library-executables-and-gui). 
 
-  ℹ️ `ROOT` is required because the monitoring app is being used.
+  ℹ️ `ROOT` is required for the monitoring app. If you are able to install ROOT, install it _before_ eudaq so that you can activate the ROOT-based monitoring within eudaq.
 
 Once 
 the depdendencies have been installed, `eudaq` can be built as follows
@@ -46,27 +52,69 @@ make
 make install
 ```
   ⚠️ Because of the bug discussed [here](https://github.com/eudaq/eudaq/pull/627), only the `master` branch of `eudaq` will work if `ROOT` was built using the C++17 standard.
+  ⚠️ Omit the `-DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON` if ROOT is not available on your system.
   
 To add `eudaq` to the environment, the environmental variable `EUDAQ_DIR` needs to be set to the `eudaq` root directory
 ```bash
 export EUDAQ_DIR=/path/to/eudaq
 ```
 
+## Optional Dependencies
+Most of these optional dependencies are for subcomponents of the [eudaq](eudaq) module and involve different methods of communication with subsystems of the detector.
+
+### ROOT ([Docs](https://root.cern/install/build_from_source/))
+As mentioned above, you will need to compile eudaq _after_ installing ROOT since eudaq uses ROOT for its online monitoring module.
+
+We assume ROOT is available in this package. If ROOT is not availabe use the `-DBUILD_MONITORING=OFF` parameter when building ldmx-tb-online.
+
+### pflib ([Docs](https://ldmx-software.github.io/pflib/))
+This library is used for interacting with the Polarfire FPGA that communicates with the HGC ROC. (Read out chip for HCal and ECal).
+
+Install command outline:
+```
+git clone https://github.com/LDMX-Software/pflib.git
+cd pflib
+git checkout v1.7 #or latest version
+cmake -B build -S . -DCMAKE_INSTALL_PREFIX=install
+cd build
+make install
+```
+  ⚠️ You may need to tell `cmake` where `yaml-cpp` is with `-Dyaml-cpp_DIR=/full/path/to/yaml-cpp`.
+
+If cmake is able to find pflib, this subcomponent of eudaq is built. If pflib is not installed to a system location, you will need to specify it with `-Dpflib_DIR=/full/path/to/pflib/install` or add the pflib install path to the `CMAKE_PREFIX_PATH` environment variable.
+
+### dip + FiberTrackerDAQ ([Docs in README](https://github.com/pbutti/FiberTrackerDAQ))
+This library is used for interacting with the hardware reading out the trigger scintillator.
+
+Install command outline:
+```
+git clone https://github.com/pbutti/FiberTrackerDAQ
+cd FiberTrackerDAQ
+wget https://nexus.web.cern.ch/nexus/service/local/repositories/cern-nexus/content/cern/dip/dip/5.7.0/dip-5.7.0-distribution.zip
+unzip dip-5.7.0.zip
+cmake -DDIP_Dir=$(pwd)/dip-5.7.0/ -DCMAKE_INSTALL_PREFIX=. -B build -S .
+cd build
+make install
+```
+
+If the file `${FiberTrackerDAQ_DIR}/include/FiberTrackerClient.h` exists, then this subcomponent is built. The cmake variable `FiberTrackerDAQ_DIR` can be set on the command line with cmake or provided by the environment variable of the same name. We also require the cmake variable `dip_DIR` to be set to the directory with the unpacked contents of dip. If it is not set by the user, it is set to `${FiberTrackerDAQ_DIR}/dip-5.7.0/` which is where it is following the above command outline.
+
+### WRTiming
+This is used for interacting with the White Rabbit timing system.
+
+If the file `${WRTiming_DIR}/include/WRClient.h` exists, then this subcomponent is built.
+The cmake variable `WRTiming_DIR` can be set on the command line or provided by the environment variable of the same name.
+
 ## Building ldmx-tb-online
 
 Once all dependencies are installed, building `ldmx-tb-online` is fairly straight forward
-
 ```
 git clone git@github.com:LDMX-Software/ldmx-tb-online.git 
 cd ldmx-tb-online/software
-mkdir build 
-cd build
-cmake ..
+cmake .. # may need to provide additional arguments here depending on your available dependencies
 make install
 ```
-If the 
-install prefix is not specified, `ldmx-tb-online` will be install in `../install`
-by default. 
+If the install prefix is not specified, `ldmx-tb-online` will be install in `../install` by default. 
 
 ## Setting up the Environment 
 
