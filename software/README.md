@@ -246,11 +246,3 @@ The variable `EUDAQ_DC` is used to tell the producer the name of the data
 collector it should connect and send events to. Similarly, the variable
 `EUDAQ_MN` is used to tell the data collector to which monitoring app
 to connect to. 
-
-### Compile with FiberTracker and DIP
-```
-cd build
-#cmake -DCMAKE_INSTALL_PREFIX=../install -DFIBERTRACKERDAQ_Dir=/u1/ldmx/server/FiberTrackerDAQ/install -DDIP_Dir=/home/ldmx/DIP/dip-5.7.0 ..
-cmake -DCMAKE_INSTALL_PREFIX=../install -DFIBERTRACKERDAQ_Dir=/u1/ldmx/server/FiberTrackerDAQ/install -DDIP_Dir=/u1/ldmx/server/FiberTrackerDAQ/dip-5.7.0 -DWR_Dir=/u1/ldmx/server/WRTimestamping/ ..
-make install
-```
