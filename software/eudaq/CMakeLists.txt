@@ -62,11 +62,20 @@ else()
   message(WARNING "Unable to find WRClient - WRClientProducer will not be built.")
 endif()
 
-if (EXISTS ${FIBERTRACKERDAQ_Dir}/include/FiberTrackerClient.h)
+if (NOT FiberTrackerDAQ_DIR)
+  set(FiberTrackerDAQ_DIR $ENV{FiberTrackerDAQ_DIR})
+endif()
+
+if (NOT dip_DIR)
+  set(dip_DIR ${FiberTrackerDAQ_DIR}/dip-5.7.0/)
+endif()
+
+if (EXISTS ${FiberTrackerDAQ_DIR}/include/FiberTrackerClient.h)
   add_library(eudaq_dip SHARED src/eudaq/dip/DipClientProducer.cxx)
-  target_include_directories(eudaq_dip PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include)
-  target_link_libraries(eudaq_dip PUBLIC EUDAQ::EUDAQ)
-  target_link_directories(eudaq_dip PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64)
+  target_include_directories(eudaq_dip PUBLIC ${FiberTrackerDAQ_DIR}/include ${dip_DIR}/include)
+  target_link_libraries(eudaq_dip PUBLIC EUDAQ::EUDAQ
+    ${FiberTrackerDAQ_DIR}/lib/libFiberTrackerDAQ.so
+    ${dip_DIR}/lib64/libdip.so)
   symlink_to_eudaq(dip)
   install(TARGETS eudaq_dip DESTINATION lib)
 else()
