@@ -3,24 +3,110 @@ cmake_minimum_required(VERSION 3.12)
 
 # Set the project name
 project(eudaq
-	VERSION 0.1
 	DESCRIPTION "Module containing all eudaq classes." 
 	LANGUAGES CXX)
 
-# Setup the Rogue CMake target
-setup_eudaq()
+# EUDAQ loads modules at runtime based on what it "knows" about
+#   a simple way to let EUDAQ know about our module is to put a symlink to our module
+#   in the directory that the rest of the EUDAQ modules are in
+# reference for creating a symlink: https://stackoverflow.com/a/42697475/17617632
+#   - modified to restrict to our usecase
+macro(symlink_to_eudaq name)
+  set(origin "${CMAKE_INSTALL_PREFIX}/lib/libeudaq_${name}.so")
+  set(dest   "${EUDAQ_LIBRARIES_DIRS}/libeudaq_module_ldmx_${name}.so")  
+  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${origin} ${dest})")
+  install(CODE "message(\"-- Created symlink: ${dest} -> ${origin}\")")
+endmacro()
 
-# Setup the Rogue CMake target
-setup_rogue()
+# Find the eudaq libraries
+if (DEFINED ENV{EUDAQ_DIR})
+  set(eudaq_DIR $ENV{EUDAQ_DIR}/cmake)
+endif()
+find_package(eudaq CONFIG REQUIRED)
+add_library(EUDAQ::EUDAQ INTERFACE IMPORTED GLOBAL)
+foreach(eudaq_lib ${EUDAQ_LIBRARIES})
+  list(APPEND eudaq_libs "${EUDAQ_LIBRARIES_DIRS}/lib${eudaq_lib}.so")
+endforeach()
+set_target_properties(EUDAQ::EUDAQ PROPERTIES 
+  INTERFACE_INCLUDE_DIRECTORIES "${EUDAQ_INCLUDE_DIRS}"
+  INTERFACE_LINK_LIBRARIES "${eudaq_libs}")
 
-find_package(ROOT CONFIG REQUIRED)
+add_library(eudaq_core SHARED
+  src/eudaq/CaptanTrigScintTestBeamProducer.cxx
+  src/eudaq/DarkRunControl.cxx
+  src/eudaq/HgcrocDataPacket.cxx
+  src/eudaq/HgcrocFileReaderProducer.cxx
+  src/eudaq/RogueDataSender.cxx
+  src/eudaq/RogueTcpClientProducer.cxx
+  src/eudaq/TcpCommandGenerator.cxx
+  src/eudaq/TestBeamDataCollector.cxx
+  src/eudaq/TrigScintDataSender.cxx
+  src/eudaq/TrigScintTestBeamProducer.cxx
+  )
+target_include_directories(eudaq_core PUBLIC include)
+target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue pflib::pflib pflib::rogue rogue)
+symlink_to_eudaq(core)
+install(TARGETS eudaq_core DESTINATION lib)
 
-setup_library(module eudaq name eudaq_module_dark 
-  dependencies EUDAQ::EUDAQ Rogue::Rogue rogue::rogue
-  ROOT::Gui ROOT::Hist FiberTrackerDAQ)
+if (NOT WRTiming_DIR)
+  set(WRTiming_DIR $ENV{WRTiming_DIR})
+endif()
 
+if (EXISTS ${WRTiming_DIR}/include/WRClient.h)
+  add_library(eudaq_wr SHARED src/eudaq/wr/WRClientProducer.cxx)
+  target_include_directories(eudaq_wr PUBLIC ${WRTiming_DIR}/include)
+  target_link_libraries(eudaq_wr PUBLIC EUDAQ::EUDAQ)
+  target_link_directories(eudaq_wr PUBLIC ${WRTiming_DIR}/build/)
+  symlink_to_eudaq(wr)
+  install(TARGETS eudaq_wr DESTINATION lib)
+else()
+  message(WARNING "Unable to find WRClient - WRClientProducer will not be built.")
+endif()
 
-#Add fiber tracker -- TODO
-target_include_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/include ${DIP_Dir}/include)
-target_link_directories(eudaq_module_dark PUBLIC ${FIBERTRACKERDAQ_Dir}/lib ${DIP_Dir}/lib64/)
+if (NOT FiberTrackerDAQ_DIR)
+  set(FiberTrackerDAQ_DIR $ENV{FiberTrackerDAQ_DIR})
+endif()
+
+if (NOT dip_DIR)
+  set(dip_DIR ${FiberTrackerDAQ_DIR}/dip-5.7.0/)
+endif()
+
+if (EXISTS ${FiberTrackerDAQ_DIR}/include/FiberTrackerClient.h)
+  add_library(eudaq_dip SHARED src/eudaq/dip/DipClientProducer.cxx)
+  target_include_directories(eudaq_dip PUBLIC ${FiberTrackerDAQ_DIR}/include ${dip_DIR}/include)
+  target_link_libraries(eudaq_dip PUBLIC EUDAQ::EUDAQ
+    ${FiberTrackerDAQ_DIR}/lib/libFiberTrackerDAQ.so
+    ${dip_DIR}/lib64/libdip.so)
+  symlink_to_eudaq(dip)
+  install(TARGETS eudaq_dip DESTINATION lib)
+else()
+  message(WARNING "Unable to find FiberTrackerClient - DipClientProducer will not be built.")
+endif()
+
+find_package(pflib QUIET)
+if (pflib_FOUND)
+  add_library(eudaq_pflib SHARED
+    src/eudaq/pflib/PolarfireProducer.cxx)
+  target_link_libraries(eudaq_pflib PUBLIC EUDAQ::EUDAQ pflib::rogue)
+  symlink_to_eudaq(pflib)
+  install(TARGETS eudaq_pflib DESTINATION lib)
+else()
+  message(WARNING "pflib not found - PolarfireProducer will not be available.")
+endif()
+
+option(BUILD_MONITORING "Build online monitoring based off ROOT and EUDAQ" ON)
+if (BUILD_MONITORING)
+  find_package(ROOT REQUIRED COMPONENTS Gui Hist)
+  add_library(eudaq_monitor SHARED
+    src/eudaq/DarkMonitor.cxx
+    src/eudaq/HCalTestBeamMonitor.cxx
+    src/eudaq/SimpleMonitor.cxx
+    src/eudaq/TestBeamEventDisplayMonitor.cxx
+    src/eudaq/TestBeamMonitor.cxx
+    src/eudaq/TrigScintTestBeamMonitor.cxx
+    )
+  target_link_libraries(eudaq_monitor PUBLIC EUDAQ::EUDAQ ROOT::Gui ROOT::Hist)
+  symlink_to_eudaq(monitor)
+  install(TARGETS eudaq_monitor DESTINATION lib)
+endif()
 

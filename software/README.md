@@ -1,60 +1,124 @@
 # Quickstart
 
-## Dependencies
+There is no quickstart; there is only start.
 
-### Rogue 5.9.3
- * [Documentation](https://slaclab.github.io/rogue/index.html)
- * [Installng Rogue with Anaconda](https://slaclab.github.io/rogue/installing/anaconda.html)
- * [Installing Rogue on Archlinux](https://slaclab.github.io/rogue/installing/build.html#archlinux)
+# Start
 
-### eudaq 
- * [Documentation](https://eudaq.github.io/) 
- * To use the monitoring, the CMake flag `-DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON` needs to be included in the cmake command.
+This guide has not been tested but it should hopefully help you go in the right direction.
 
-### ROOT
+## Required Dependencies
 
-## Building ldmx-daq
+### Rogue ([v5.13.0](https://slaclab.github.io/rogue/index.html))
+#### Installation
+There are currently two recommended ways to build `rogue`: [Anaconda](https://slaclab.github.io/rogue/installing/anaconda.html) and from [source](https://slaclab.github.io/rogue/installing/build.html).  The instructions below 
+outline how to install `rogue` from source (the preferred method for the test beam).
 
-First, clone the `ldmx-daq` repository and make a build directory
-within the software directory
-
+To begin, clone the project and checkout the `v5.13.0` tag as follows
+```bash
+git clone git@github.com:slaclab/rogue.git
+cd rogue
+git checkout tags/v5.13.0 -b v5.13.0
 ```
-git clone git@github.com:slaclab/ldmx-daq.git 
-cd ldmx-daq/software; mkdir build; cd build;
+Once all [dependencies](https://slaclab.github.io/rogue/installing/build.html#installing-packages-required-for-rogue) have been installed, `rogue` is built by issuing the following command
+```bash
+pip3 install -r pip_requirements.txt
+mkdir build
+cd build
+cmake .. -DROGUE_INSTALL=local
+make
+make install
+```
+This will build and install everything in the root rogue directory.  The installation 
+will also create a script in the `rogue` root directory that can be sourced 
+to add `rogue` to the environment
+```bash
+source setup_rogue.sh
 ```
 
-If `Rogue` was installed with Anaconda, the rogue environment needs
-to be first enabled as follows
+### eudaq ([Docs](https://eudaq.github.io/))
+#### Installation
+Installation of `eudaq`, requires the dependencies outline in the [README](https://github.com/eudaq/eudaq/blob/master/README.md#for-the-core-library-executables-and-gui). 
 
+  ℹ️ `ROOT` is required for the monitoring app. If you are able to install ROOT, install it _before_ eudaq so that you can activate the ROOT-based monitoring within eudaq.
+
+Once 
+the depdendencies have been installed, `eudaq` can be built as follows
+```bash
+git clone https://github.com/eudaq/eudaq.git eudaq 
+mkdir build
+cd build
+cmake -DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON ..
+make
+make install
 ```
-conda activate rogue_dev
+  ⚠️ Because of the bug discussed [here](https://github.com/eudaq/eudaq/pull/627), only the `master` branch of `eudaq` will work if `ROOT` was built using the C++17 standard.
+  ⚠️ Omit the `-DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON` if ROOT is not available on your system.
+  
+To add `eudaq` to the environment, the environmental variable `EUDAQ_DIR` needs to be set to the `eudaq` root directory
+```bash
+export EUDAQ_DIR=/path/to/eudaq
 ```
 
-Note, `rogue_dev` is the name of the conda environment specified during the
-installation step.  If rogue was installed baremetal e.g. on Archlinux, 
-the conda step is not required.
+## Optional Dependencies
+Most of these optional dependencies are for subcomponents of the [eudaq](eudaq) module and involve different methods of communication with subsystems of the detector.
 
-Configuring the build via CMake can be done withing the build directory
-as follows
+### ROOT ([Docs](https://root.cern/install/build_from_source/))
+As mentioned above, you will need to compile eudaq _after_ installing ROOT since eudaq uses ROOT for its online monitoring module.
 
-```
-cmake -DCMAKE_INSTALL_PREFIX=../install ..
-```
-In this case, the install prefix was specified as `../install`.  If the 
-install prefix is not specified, ldmx-daq will be install in `../install`
-by default. After the cmake step exits without errors, you can build and 
-install `ldmx-daq` with the following command
+We assume ROOT is available in this package. If ROOT is not availabe use the `-DBUILD_MONITORING=OFF` parameter when building ldmx-tb-online.
 
+### pflib ([Docs](https://ldmx-software.github.io/pflib/))
+This library is used for interacting with the Polarfire FPGA that communicates with the HGC ROC. (Read out chip for HCal and ECal).
+
+Install command outline:
 ```
+git clone https://github.com/LDMX-Software/pflib.git
+cd pflib
+git checkout v1.7 #or latest version
+cmake -B build -S . -DCMAKE_INSTALL_PREFIX=install
+cd build
+make install
+```
+  ⚠️ You may need to tell `cmake` where `yaml-cpp` is with `-Dyaml-cpp_DIR=/full/path/to/yaml-cpp`.
+
+If cmake is able to find pflib, this subcomponent of eudaq is built. If pflib is not installed to a system location, you will need to specify it with `-Dpflib_DIR=/full/path/to/pflib/install` or add the pflib install path to the `CMAKE_PREFIX_PATH` environment variable.
+
+### dip + FiberTrackerDAQ ([Docs in README](https://github.com/pbutti/FiberTrackerDAQ))
+This library is used for interacting with the hardware reading out the trigger scintillator.
+
+Install command outline:
+```
+git clone https://github.com/pbutti/FiberTrackerDAQ
+cd FiberTrackerDAQ
+wget https://nexus.web.cern.ch/nexus/service/local/repositories/cern-nexus/content/cern/dip/dip/5.7.0/dip-5.7.0-distribution.zip
+unzip dip-5.7.0.zip
+cmake -DDIP_Dir=$(pwd)/dip-5.7.0/ -DCMAKE_INSTALL_PREFIX=. -B build -S .
+cd build
 make install
 ```
 
-This will build and install ldmx-daq into the install directory specified 
-above.
+If the file `${FiberTrackerDAQ_DIR}/include/FiberTrackerClient.h` exists, then this subcomponent is built. The cmake variable `FiberTrackerDAQ_DIR` can be set on the command line with cmake or provided by the environment variable of the same name. We also require the cmake variable `dip_DIR` to be set to the directory with the unpacked contents of dip. If it is not set by the user, it is set to `${FiberTrackerDAQ_DIR}/dip-5.7.0/` which is where it is following the above command outline.
+
+### WRTiming
+This is used for interacting with the White Rabbit timing system.
+
+If the file `${WRTiming_DIR}/include/WRClient.h` exists, then this subcomponent is built.
+The cmake variable `WRTiming_DIR` can be set on the command line or provided by the environment variable of the same name.
+
+## Building ldmx-tb-online
+
+Once all dependencies are installed, building `ldmx-tb-online` is fairly straight forward
+```
+git clone git@github.com:LDMX-Software/ldmx-tb-online.git 
+cd ldmx-tb-online/software
+cmake .. # may need to provide additional arguments here depending on your available dependencies
+make install
+```
+If the install prefix is not specified, `ldmx-tb-online` will be install in `../install` by default. 
 
 ## Setting up the Environment 
 
-In order to run any `ldmx-daq` apps, the environment needs to be setup as
+In order to run any `ldmx-tb-online` apps, the environment needs to be setup as
 follows
 
 ```
@@ -64,15 +128,6 @@ export PATH=$DAQ_INSTALL_PREFIX/bin:$PATH
 ```
 
 Once the commands above are executed, apps (e.g. emulator) can be run. 
-
-Eudaq loads all run control, producer and data collector libraries at 
-run time.  For this reason, it needs to be made aware of the LDMX 
-specific eudaq libraries.  This can be done by creating a soft link
-of the LDMX eudaq library within the eudaq `lib` directory as follows
-
-```
-ln -s /full/path/to/ldmx-daq/software/install/lib/libeudaq_module_dark.so /full/path/to/eudaq/lib/libeudaq_module_dark.so
-```
 
 # Running the emulator
 
@@ -191,11 +246,3 @@ The variable `EUDAQ_DC` is used to tell the producer the name of the data
 collector it should connect and send events to. Similarly, the variable
 `EUDAQ_MN` is used to tell the data collector to which monitoring app
 to connect to. 
-
-
-
-Compile with FiberTracker and DIP
-cd build
-cmake -DCMAKE_INSTALL_PREFIX=../install -DFIBERTRACKERDAQ_Dir=/u1/ldmx/server/FiberTrackerDAQ/install -DDIP_Dir=/home/ldmx/DIP/dip-5.7.0 ..
-make install
-
