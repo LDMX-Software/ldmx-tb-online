@@ -9,21 +9,28 @@ project(emulators
 # Search for Boost
 find_package(Boost REQUIRED COMPONENTS program_options)
 
-# Find all of the source files we want to add to the emulators library.
-# Note, this excludes all executables which have '_' in the name.
-file(GLOB SRC_FILES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/emulators/[A-Z]*.cxx)
-
 # Build the emulator library
-add_library(emulators SHARED ${SRC_FILES})
+add_library(emulators SHARED 
+  src/emulators/HCalGenerator.cxx
+  src/emulators/HCalReceiver.cxx
+  src/emulators/QieDataPacket.cxx
+  src/emulators/TrigScintGenerator.cxx
+  src/emulators/TrigScintReceiver.cxx
+  src/emulators/TrigScint_SlowControlGenerator.cxx
+  src/emulators/TrigScint_SlowControlReceiver.cxx
+  )
 target_link_libraries(emulators PUBLIC Rogue::Rogue)
 target_include_directories(emulators PUBLIC include)
 
-add_executable(emulator src/emulators/emulator.cxx)
+add_executable(emulator app/emulator.cxx)
 target_link_libraries(emulator PRIVATE Boost::program_options Rogue::Rogue emulators)
 
-add_executable(rce_prbs_tcp_client src/emulators/rce_prbs_tcp_client.cxx)
+add_executable(rce_prbs_tcp_client app/rce_prbs_tcp_client.cxx)
 target_link_libraries(rce_prbs_tcp_client PRIVATE Rogue::Rogue)
 
-install(TARGETS emulators rce_prbs_tcp_client emulator 
+add_executable(rce_prbs_tcp_server app/rce_prbs_tcp_server.cxx)
+target_link_libraries(rce_prbs_tcp_server PRIVATE Rogue::Rogue)
+
+install(TARGETS emulators rce_prbs_tcp_client rce_prbs_tcp_server emulator 
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
