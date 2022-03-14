@@ -18,8 +18,6 @@ macro(symlink_to_eudaq name)
   install(CODE "message(\"-- Created symlink: ${dest} -> ${origin}\")")
 endmacro()
 
-# besides Rogue::Rogue we also need pflib and EUDAQ here
-find_package(pflib REQUIRED)
 # Find the eudaq libraries
 if (DEFINED ENV{EUDAQ_DIR})
   set(eudaq_DIR $ENV{EUDAQ_DIR}/cmake)
@@ -32,7 +30,6 @@ endforeach()
 set_target_properties(EUDAQ::EUDAQ PROPERTIES 
   INTERFACE_INCLUDE_DIRECTORIES "${EUDAQ_INCLUDE_DIRS}"
   INTERFACE_LINK_LIBRARIES "${eudaq_libs}")
-
 
 add_library(eudaq_core SHARED
   src/eudaq/CaptanTrigScintTestBeamProducer.cxx
