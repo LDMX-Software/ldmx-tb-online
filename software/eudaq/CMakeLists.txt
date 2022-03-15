@@ -44,7 +44,7 @@ add_library(eudaq_core SHARED
   src/eudaq/TrigScintTestBeamProducer.cxx
   )
 target_include_directories(eudaq_core PUBLIC include)
-target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue pflib::pflib pflib::rogue rogue)
+target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue rogue)
 symlink_to_eudaq(core)
 install(TARGETS eudaq_core DESTINATION lib)
 
@@ -68,10 +68,10 @@ if (NOT FiberTrackerDAQ_DIR)
 endif()
 
 if (NOT dip_DIR)
-  set(dip_DIR ${FiberTrackerDAQ_DIR}/dip-5.7.0/)
+  set(dip_DIR $ENV{dip_DIR})
 endif()
 
-if (EXISTS ${FiberTrackerDAQ_DIR}/include/FiberTrackerClient.h)
+if (EXISTS ${FiberTrackerDAQ_DIR}/include/FiberTrackerClient.h AND EXISTS ${dip_DIR}/include/Dip.h)
   add_library(eudaq_dip SHARED src/eudaq/dip/DipClientProducer.cxx)
   target_include_directories(eudaq_dip PUBLIC ${FiberTrackerDAQ_DIR}/include ${dip_DIR}/include)
   target_link_libraries(eudaq_dip PUBLIC EUDAQ::EUDAQ
@@ -80,7 +80,7 @@ if (EXISTS ${FiberTrackerDAQ_DIR}/include/FiberTrackerClient.h)
   symlink_to_eudaq(dip)
   install(TARGETS eudaq_dip DESTINATION lib)
 else()
-  message(WARNING "Unable to find FiberTrackerClient - DipClientProducer will not be built.")
+  message(WARNING "Unable to find FiberTrackerClient.h or Dip.h - DipClientProducer will not be built.")
 endif()
 
 find_package(pflib QUIET)
@@ -98,12 +98,12 @@ option(BUILD_MONITORING "Build online monitoring based off ROOT and EUDAQ" ON)
 if (BUILD_MONITORING)
   find_package(ROOT REQUIRED COMPONENTS Gui Hist)
   add_library(eudaq_monitor SHARED
-    src/eudaq/DarkMonitor.cxx
-    src/eudaq/HCalTestBeamMonitor.cxx
-    src/eudaq/SimpleMonitor.cxx
-    src/eudaq/TestBeamEventDisplayMonitor.cxx
-    src/eudaq/TestBeamMonitor.cxx
-    src/eudaq/TrigScintTestBeamMonitor.cxx
+    src/eudaq/monitor/DarkMonitor.cxx
+    src/eudaq/monitor/HCalTestBeamMonitor.cxx
+    src/eudaq/monitor/SimpleMonitor.cxx
+    src/eudaq/monitor/TestBeamEventDisplayMonitor.cxx
+    src/eudaq/monitor/TestBeamMonitor.cxx
+    src/eudaq/monitor/TrigScintTestBeamMonitor.cxx
     )
   target_link_libraries(eudaq_monitor PUBLIC EUDAQ::EUDAQ ROOT::Gui ROOT::Hist)
   symlink_to_eudaq(monitor)
