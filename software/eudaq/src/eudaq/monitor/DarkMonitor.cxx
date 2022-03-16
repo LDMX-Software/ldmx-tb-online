@@ -157,90 +157,105 @@ void DarkMonitor::AtEventReception(EventSP ev) {
 	}
 
 	if (ev->GetDescription().compare("HCalTestBeamRaw") == 0) {
-          int plane = 0; //getPlane
-          int bar = 0; //getBar
-          int end = 0; //getEnd
-          int chan = 0; //getChannel
-          int adc = 0;//getADC
+    std::vector<uint8_t> data = ev->GetBlock(0);
+    /**
+     * decode serialized data into channel/bars/planes/ends
+     */
+    for (int i_hit{0}; i_hit < 1; i_hit++) {
+      int plane = 0; //getPlane
+      int bar = 0; //getBar
+      int end = 0; //getEnd
+      int chan = 0; //getChannel
+      int adc = 0;//getADC
 
-          if(adc < adc_thresh){
-            continue;
-          }
-          if(plane == 0){
-            hcalEventPlane0->Fill(end, chan);
-            hcalRunPlane0->Fill(end, chan);
-          }else if(plane == 1){
-            hcalEventPlane1->Fill(chan, end);
-            hcalRunPlane1->Fill(chan, end);
-          }
-          else if(plane == 2){
-            hcalEventPlane2->Fill(end, chan);
-            hcalRunPlane2->Fill(end, chan);
-          }
-          else if(plane == 3){
-            hcalEventPlane3->Fill(chan, end);
-            hcalRunPlane3->Fill(chan, end);
-          }
-          else if(plane == 4){
-            hcalEventPlane4->Fill(end, chan);
-            hcalRunPlane4->Fill(end, chan);
-          }
-          else if(plane == 5){
-            hcalEventPlane5->Fill(chan, end);
-            hcalRunPlane5->Fill(chan, end);
-          }
-          else if(plane == 6){
-            hcalEventPlane6->Fill(end, chan);
-            hcalRunPlane6->Fill(end, chan);
-          }
-          else if(plane == 7){
-            hcalEventPlane7->Fill(chan, end);
-            hcalRunPlane7->Fill(chan, end);
-          }
-          else if(plane == 8){
-            hcalEventPlane8->Fill(end, chan);
-            hcalRunPlane8->Fill(end, chan);
-          }
-          else if(plane == 9){
-            hcalEventPlane9->Fill(chan, end);
-            hcalRunPlane9->Fill(chan, end);
-          }
-          else if(plane == 10){
-            hcalEventPlane10->Fill(end, chan);
-            hcalRunPlane10->Fill(end, chan);
-          }
-          else if(plane == 11){
-            hcalEventPlane11->Fill(chan, end);
-            hcalRunPlane11->Fill(chan, end);
-          }
-          else if(plane == 12){
-            hcalEventPlane12->Fill(end, chan);
-            hcalRunPlane12->Fill(end, chan);
-          }
-          else if(plane == 13){
-            hcalEventPlane13->Fill(chan, end);
-            hcalRunPlane13->Fill(chan, end);
-          }
-          else if(plane == 14){
-            hcalEventPlane14->Fill(end, chan);
-            hcalRunPlane14->Fill(end, chan);
-          }
-          else if(plane == 15){
-            hcalEventPlane15->Fill(chan, end);
-            hcalRunPlane15->Fill(chan, end);
-          }
-          else if(plane == 16){
-            hcalEventPlane16->Fill(end, chan);
-            hcalRunPlane16->Fill(end, chan);
-          }
-          else if(plane == 17){
-            hcalEventPlane17->Fill(chan, end);
-            hcalRunPlane17->Fill(chan, end);
-          }
-          else if(plane == 18){
-            hcalEventPlane18->Fill(end, chan);
-            hcalRunPlane18->Fill(end, chan);
-          }
+      // skip hits below threshold
+      if(adc < adc_thresh) continue;
+
+      switch(plane) {
+        case 0 :
+          hcalEventPlane0->Fill(end, chan);
+          hcalRunPlane0->Fill(end, chan);
+          break;
+        case 1 :
+          hcalEventPlane1->Fill(end, chan);
+          hcalRunPlane1->Fill(end, chan);
+          break;
+        case 2 :
+          hcalEventPlane2->Fill(end, chan);
+          hcalRunPlane2->Fill(end, chan);
+          break;
+        case 3 :
+          hcalEventPlane3->Fill(end, chan);
+          hcalRunPlane3->Fill(end, chan);
+          break;
+        case 4 :
+          hcalEventPlane4->Fill(end, chan);
+          hcalRunPlane4->Fill(end, chan);
+          break;
+        case 5 :
+          hcalEventPlane5->Fill(end, chan);
+          hcalRunPlane5->Fill(end, chan);
+          break;
+        case 0 :
+          hcalEventPlane0->Fill(end, chan);
+          hcalRunPlane0->Fill(end, chan);
+          break;
+        case 6 :
+          hcalEventPlane6->Fill(end, chan);
+          hcalRunPlane6->Fill(end, chan);
+          break;
+        case 7 :
+          hcalEventPlane7->Fill(chan, end);
+          hcalRunPlane7->Fill(chan, end);
+          break;
+        case 8 :
+          hcalEventPlane8->Fill(end, chan);
+          hcalRunPlane8->Fill(end, chan);
+          break;
+        case 9 :
+          hcalEventPlane9->Fill(chan, end);
+          hcalRunPlane9->Fill(chan, end);
+          break;
+        case 10 :
+          hcalEventPlane10->Fill(end, chan);
+          hcalRunPlane10->Fill(end, chan);
+          break;
+        case 11 :
+          hcalEventPlane11->Fill(chan, end);
+          hcalRunPlane11->Fill(chan, end);
+          break;
+        case 12 :
+          hcalEventPlane12->Fill(end, chan);
+          hcalRunPlane12->Fill(end, chan);
+          break;
+        case 13 :
+          hcalEventPlane13->Fill(chan, end);
+          hcalRunPlane13->Fill(chan, end);
+          break;
+        case 14 :
+          hcalEventPlane14->Fill(end, chan);
+          hcalRunPlane14->Fill(end, chan);
+          break;
+        case 15 :
+          hcalEventPlane15->Fill(chan, end);
+          hcalRunPlane15->Fill(chan, end);
+          break;
+        case 16 :
+          hcalEventPlane16->Fill(end, chan);
+          hcalRunPlane16->Fill(end, chan);
+          break;
+        case 17 :
+          hcalEventPlane17->Fill(chan, end);
+          hcalRunPlane17->Fill(chan, end);
+          break;
+        case 18 :
+          hcalEventPlane18->Fill(end, chan);
+          hcalRunPlane18->Fill(end, chan);
+          break;
+        default:
+          break;
+      }
+    }
 	} else if (ev->GetDeviceN() == 0x2) {
     int chan = 0; //Get TS Channel
 	  tsEvent->Fill(0., chan);
