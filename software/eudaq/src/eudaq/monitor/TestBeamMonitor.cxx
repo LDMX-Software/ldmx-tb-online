@@ -44,7 +44,9 @@ void TestBeamMonitor::AtConfiguration() {
   }
   }
   ts_run = m_monitor->Book<TH2D>("Run/TrigScint", "TrigScint", "", ";Channel; ", 1, 0, 1, 12, 0, 12);
+  ts_event = m_monitor->Book<TH2D>("Event/TrigScint", "TrigScint", "", ";Channel; ", 1, 0, 1, 12, 0, 12);
   m_monitor->SetDrawOptions(ts_run, "colz");
+  m_monitor->SetDrawOptions(ts_event, "colz");
   daq_map = getDaqMap("/home/ldmx/OnlineMonitoring_test/hcal_map.csv");
 }
 
@@ -108,5 +110,6 @@ void TestBeamMonitor::AtEventReception(EventSP event) {
   ts_event->Fill(0., 0.);
   // if (event->GetDescription().compare("HCalTestBeamRaw") == 0) {
   //}
-}
+  }//samples
+}//At Event reception
 } // namespace eudaq

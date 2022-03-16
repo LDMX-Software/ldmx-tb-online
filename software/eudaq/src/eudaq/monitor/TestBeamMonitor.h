@@ -143,8 +143,10 @@ private:
   std::map<std::string, std::string> daq_map;
   std::map<std::string, std::string> ped_map;
   std::map<std::string, TH2D*> histo_map; 
-  std::map<int, TH2D*> hcal_run_map; 
+  std::map<int, TH2D*> hcal_run_map;
+  std::map<int, TH2D*> hcal_event_map;
   TH2D* ts_run;
+  TH2D* ts_event;
   int nPlanes;
 
 };
