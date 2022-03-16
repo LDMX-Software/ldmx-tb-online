@@ -67,7 +67,7 @@ private:
   TH2D* tsEvent;
   
   int eventNum;
-  int adc_thesh;
+  int adc_thresh;
 };
 } // namespace eudaq
 #endif // EUDAQ_DARKMONITOR_H

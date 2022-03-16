@@ -105,6 +105,7 @@ if (BUILD_MONITORING)
     src/eudaq/monitor/TestBeamMonitor.cxx
     src/eudaq/monitor/TrigScintTestBeamMonitor.cxx
     )
+  target_include_directories(eudaq_monitor PUBLIC include)
   target_link_libraries(eudaq_monitor PUBLIC EUDAQ::EUDAQ ROOT::Gui ROOT::Hist)
   symlink_to_eudaq(monitor)
   install(TARGETS eudaq_monitor DESTINATION lib)

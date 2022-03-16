@@ -196,10 +196,6 @@ void DarkMonitor::AtEventReception(EventSP ev) {
           hcalEventPlane5->Fill(end, chan);
           hcalRunPlane5->Fill(end, chan);
           break;
-        case 0 :
-          hcalEventPlane0->Fill(end, chan);
-          hcalRunPlane0->Fill(end, chan);
-          break;
         case 6 :
           hcalEventPlane6->Fill(end, chan);
           hcalRunPlane6->Fill(end, chan);
