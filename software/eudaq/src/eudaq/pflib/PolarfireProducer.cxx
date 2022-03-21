@@ -141,9 +141,74 @@ void PolarfireProducer::DoConfigure() try {
 
   // or in independent config file?
   fpga_id_ = conf->Get("FPGA_ID", 0);
+  int samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
 
-  // do polarfire commands
+  /****************************************************************************
+   * DAQ.SETUP menu in pftool commands
+   *    FPGA
+   *    DMA
+   *    STANDARD 
+   *    L1APARAMS
+   *    MULTISAMPLE
+   ***************************************************************************/
   auto& daq = pft_->hcal.daq();
+  daq.setIds(fpga_id_);
+
+  if (conf->Get("DO_DMA_RO",false)) {
+    auto rwbi = dynamic_cast<pflib::rogue::RogueWishboneInterface*>(pft_->wb);
+    rwbi->daq_dma_enable(true);
+    rwbi->daq_dma_setup((uint8_t)fpga_id_, (uint8_t)samples_per_event);
+  }
+
+  auto& elinks = pft_->hcal.elinks();
+  for (int i{0}; i < elinks.nlinks(); i++) {
+    bool active{conf->Get("LINK_"+std::to_string(i)+"_ACTIVE",false)};
+    elinks.markActive(i,active);
+    if (elinks.isActive(i)) {
+      daq.setupLink(i,false,false,15,40);
+      int delay{conf->Get("LINK_"+std::to_string(i)+"_L1A_DELAY", 15)};
+      int capture{conf->Get("LINK_"+std::to_string(i)+"_L1A_LENGTH", 40)};
+      uint32_t reg = ((delay&0xff)<<8)|((capture&0xff)<<16);
+      pft_->wb->wb_write(pflib::tgt_DAQ_Inbuffer,(i << 7)|1, reg);
+    } else {
+      // fully zero suppress this link
+      daq.setupLink(i,true,true,15,40);
+    }
+  }
+
+  /****************************************************************************
+   * ROC menu in pftool
+   *    HARDRESET
+   *    RESYNCLOAD
+   *    LOAD_PARAM
+   ***************************************************************************/
+  pft_->hcal.hardResetROCs(); // global reset
+  pft_->hcal.resyncLoadROC(); // loops over ROCs if no i_roc provided
+  for (int i{0}; i < 4; i++) {
+    if (elinks.isActive(2*i) or elinks.isActive(2*i+1)) {
+      // either or both of the links on this ROC are active
+      pft_->loadROCParameters(i,
+          conf->Get("ROC_"+std::to_string(i)+"_CONF_FILE_PATH",""),
+          conf->Get("ROC_"+std::to_string(i)+"_PREPEND_DEFAULTS",true));
+    }
+  }
+
+  /****************************************************************************
+   * ELINKS menu in pftool
+   *    RELINK
+   *    or manual DELAY and BITSLIP values
+   ***************************************************************************/
+  if (conf->Get("ELINKS_DO_RELINK",true)) {
+    pft_->elink_relink(2);
+  } else {
+    for (int i{0}; i < elinks.nlinks(); i++) {
+      elinks.setBitslipAuto(i,false);
+      elinks.setBitslip(i,
+          conf->Get("ELINK_"+std::to_string(i)+"_BITSLIP", elinks.getBitslip(i)));
+      elinks.setDelay(i,
+          conf->Get("ELINK_"+std::to_string(i)+"_DELAY", 128));
+    }
+  }
 } catch (const pflib::Exception& e) {
   EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
 }
