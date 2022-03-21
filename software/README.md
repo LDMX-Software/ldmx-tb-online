@@ -111,6 +111,7 @@ Once all dependencies are installed, building `ldmx-tb-online` is fairly straigh
 ```
 git clone git@github.com:LDMX-Software/ldmx-tb-online.git 
 cd ldmx-tb-online/software
+mkdir build; cd build
 cmake .. # may need to provide additional arguments here depending on your available dependencies
 make install
 ```
