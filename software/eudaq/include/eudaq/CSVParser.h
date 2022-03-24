@@ -10,19 +10,15 @@
 #include <boost/tokenizer.hpp>
 #include <map>
 
+
 namespace eudaq {
 
 class CSVParser {
 public:
 
-  static std::map<std::string, int> buildMap(std::string csv, std::string column)
+  static std::map<std::string, int> buildDaqMap(std::string csv, std::string column)
   {
-      //using namespace std;
-      //using namespace boost;
-      //string data("/Users/matthewsolt/ldmx/ldmx-sw/Hcal/data/testbeam_connections.csv");
-
       std::ifstream in(csv.c_str());
-      //if (!in.is_open()) return 1;
 
       typedef boost::tokenizer< boost::escaped_list_separator<char> > Tokenizer;
       std::vector< std::string > vec;
@@ -57,54 +53,124 @@ public:
             std::cout<<"Index is larger than length of row."<<std::endl;
             std::cout<<"Most likely the selected column name does not exist."<<std::endl;
           }
-        //std::cout<<vec[hgcroc_index]<<"  "<<vec[channel_index]<<"  "<<vec[index]<<std::endl;
           std::string key = vec[hgcroc_index] + "," + vec[channel_index];
           std::cout<<column+"  "<<index<<" "<<vec[index]<<std::endl;
           m.insert(std::pair<std::string, int>(key, std::stoi(vec[index])));
-        // vector now contains strings from one row, output to cout here
-        //copy(vec.begin(), vec.end(), ostream_iterator<string>(cout, "|"));
-
-        //cout << "\n----------------------" << endl;
-        //cout << vec[0] << vec[1] << vec[2] << vec[3] << vec[4] << vec[5] << vec[6] << endl;
       }
       return m;
   }
 
+  static std::map<std::string, std::string> buildThresholdMap(std::string csv, std::string column)
+  {
+      std::ifstream in(csv.c_str());
+
+      typedef boost::tokenizer< boost::escaped_list_separator<char> > Tokenizer;
+      std::vector< std::string > vec;
+      std::string line;
+
+      int index = 9999;
+      int digiid_index = 9999;
+      bool firstrow = true;
+      bool secondrow = true;
+      std::map<std::string, std::string> m;
+
+      while (getline(in,line))
+      {
+        if(firstrow){
+          firstrow = false;
+          continue;
+        }
+        Tokenizer tok(line);
+        vec.assign(tok.begin(),tok.end());
+        if(secondrow){
+          for(int j = 0; j < vec.size(); j++){
+            if(vec[j] == column){
+              index = j;
+            }
+            if(vec[j] == "HcalDigiID"){
+              digiid_index = j;
+            }
+          }
+          secondrow = false;
+          continue;
+        }
+        if((index > vec.size() - 1) || (digiid_index > vec.size() - 1)){
+          std::cout<<"Index is larger than length of row."<<std::endl;
+          std::cout<<"Most likely the selected column name does not exist."<<std::endl;
+      }
+      std::string key = vec[digiid_index];
+      m.insert(std::pair<std::string, std::string>(key, vec[index]));
+    }
+    return m;
+}
+
   static std::map<std::string, int> getCMBMap(std::string csv){
-    return buildMap(csv, "CMB");
+    return buildDaqMap(csv, "CMB");
   }
 
   static std::map<std::string, int> getQuadbarMap(std::string csv){
-    return buildMap(csv, "Quadbar");
+    return buildDaqMap(csv, "Quadbar");
   }
 
   static std::map<std::string, int> getBarMap(std::string csv){
-    return buildMap(csv, "Bar");
+    return buildDaqMap(csv, "Bar");
   }
 
   static std::map<std::string, int> getPlaneMap(std::string csv){
-    return buildMap(csv, "Plane");
+    return buildDaqMap(csv, "Plane");
+  }
+
+  static std::map<std::string, int> getDetIDMap(std::string csv){
+    std::map<std::string, std::string> m = buildThresholdMap(csv, " DetID");
+    std::map<std::string, std::string>::iterator it;
+    std::map<std::string, int> outmap;
+    for (it = m.begin(); it != m.end(); it++){
+      outmap.insert(std::pair<std::string, int>(it->first, std::stoi(it->second)));
+    }
+    return outmap;
+  }
+
+  static std::map<std::string, double> getADCPedMap(std::string csv){
+    std::map<std::string, std::string> m = buildThresholdMap(csv, " ADC_PEDESTAL");
+    std::map<std::string, std::string>::iterator it;
+    std::map<std::string, double> outmap;
+    for (it = m.begin(); it != m.end(); it++){
+      outmap.insert(std::pair<std::string, double>(it->first, std::stod(it->second)));
+    }
+    return outmap;
+  }
+
+  static std::map<std::string, double> getADCGainMap(std::string csv){
+    std::map<std::string, std::string> m = buildThresholdMap(csv, " ADC_GAIN");
+    std::map<std::string, std::string>::iterator it;
+    std::map<std::string, double> outmap;
+    for (it = m.begin(); it != m.end(); it++){
+      outmap.insert(std::pair<std::string, double>(it->first, std::stod(it->second)));
+    }
+    return outmap;
+  }
+
+  static std::map<std::string, double> getTOTPedMap(std::string csv){
+    std::map<std::string, std::string> m = buildThresholdMap(csv, " TOT_PEDESTAL");
+    std::map<std::string, std::string>::iterator it;
+    std::map<std::string, double> outmap;
+    for (it = m.begin(); it != m.end(); it++){
+      outmap.insert(std::pair<std::string, double>(it->first, std::stod(it->second)));
+    }
+    return outmap;
+  }
+
+  static std::map<std::string, double> getTOTGainMap(std::string csv){
+    std::map<std::string, std::string> m = buildThresholdMap(csv, " TOT_GAIN");
+    std::map<std::string, std::string>::iterator it;
+    std::map<std::string, double> outmap;
+    for (it = m.begin(); it != m.end(); it++){
+      outmap.insert(std::pair<std::string, double>(it->first, std::stod(it->second)));
+    }
+    return outmap;
   }
 
 private:
-
-/*int main(){
-
-  std::string csvfile = "/Users/matthewsolt/ldmx/ldmx-sw/Hcal/data/testbeam_connections.csv";
-  std::map<std::string, int> cmb_map = getCMBMap(csvfile);
-  std::map<std::string, int> quadbar_map = getQuadbarMap(csvfile);
-  std::map<std::string, int> bar_map = getBarMap(csvfile);
-  std::map<std::string, int> plane_map = getPlaneMap(csvfile);
-  std::map<std::string, int> m = plane_map;
-  std::map<std::string, int>::iterator it;
-  for (it = m.begin(); it != m.end(); it++)
-{
-    std::cout << it->first    // string (key)
-              << ':'
-              << it->second   // string's value
-              << std::endl;
-}
-}*/
 
 };
 } // namespace eudaq
