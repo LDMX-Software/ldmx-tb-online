@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "eudaq/HgcrocDataPacket.h"
+#include "eudaq/HgcrocRawDecode.h"
 
 namespace {
 auto dummy0 = eudaq::Factory<eudaq::Monitor>::Register<
