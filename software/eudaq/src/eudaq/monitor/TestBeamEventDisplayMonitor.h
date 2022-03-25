@@ -26,123 +26,19 @@ private:
     return (value >> low_bit) & mask;
   }
   
-  std::map<std::string, std::string> getDaqMap(std::string csvfile) {
-    std::map<std::string, std::string> daqmap;
-    std::ifstream filemap;
-    filemap.open(csvfile);
-    std::string line;
-    int n = 0;
-    while(std::getline(filemap, line)){
-      if(n == 0){ //skip header
-        n++;
-        continue;
-      }
-      std::stringstream ss(line);
-      std::vector<std::string> temp;
-      std::string item;
-      while (std::getline(ss, item, ',')) {
-        temp.push_back(item);
-      }
-      std::string chan = temp[0] + "," + temp[1];
-      std::string geom = temp[2] + "," + temp[3] + "," + temp[4] + "," + temp[5];
-      daqmap.insert(std::pair<std::string, std::string>(chan, geom));
-      temp.clear();
-      line.clear();
-      n++;
-    }
-    return daqmap;
-  } //Map from "ROC,Chan" to "CMB,QuadBar,BarPlane"
-  
-  std::map<std::string, std::string> getPedMap(std::string csvfile) {
-    std::map<std::string, std::string> pedmap;
-    std::ifstream filemap;
-    filemap.open(csvfile);
-    std::string line;
-    int n = 0;
-    while(std::getline(filemap, line)){
-      if(n <= 1){ //skip header
-        n++;
-        continue;
-      }
-      std::stringstream ss(line);
-      std::vector<std::string> temp;
-      std::string item;
-      while (std::getline(ss, item, ',')) {
-        temp.push_back(item);
-      }
-      std::string chan = temp[0];
-      std::string thresh = temp[2] + "," + temp[3];
-      pedmap.insert(std::pair<std::string, std::string>(chan, thresh));
-      temp.clear();
-      line.clear();
-      n++;
-    }
-    return pedmap;
-  } 
-  
-  int getCMB(std::string str){
-     std::stringstream ss(str);
-     std::vector<std::string> temp;
-     std::string item;
-     while (std::getline(ss, item, ',')) {
-       temp.push_back(item);
-     }
-    return std::stoi(temp[0]);
-  }
-
-  int getQuadBar(std::string str){
-     std::stringstream ss(str);
-     std::vector<std::string> temp;
-     std::string item;
-     while (std::getline(ss, item, ',')) {
-       temp.push_back(item);
-     }
-     return std::stoi(temp[1]);
-  }
-  
-  int getBar(std::string str){
-     std::stringstream ss(str);
-     std::vector<std::string> temp;
-     std::string item;
-     while (std::getline(ss, item, ',')) {
-       temp.push_back(item);
-     }
-     return std::stoi(temp[2]);
-  }
-  
-  int getPlane(std::string str){
-     std::stringstream ss(str);
-     std::vector<std::string> temp;
-     std::string item;
-     while (std::getline(ss, item, ',')) {
-       temp.push_back(item);
-     }
-     return std::stoi(temp[3]);
-  }
-  
-  int getPedest(std::string str){
-     std::stringstream ss(str);
-     std::vector<std::string> temp;
-     std::string item;
-     while (std::getline(ss, item, ',')) {
-       temp.push_back(item);
-     }
-     return std::stoi(temp[0]);
-  }
-  
-  int getThresh(std::string str){
-     std::stringstream ss(str);
-     std::vector<std::string> temp;
-     std::string item;
-     while (std::getline(ss, item, ',')) {
-       temp.push_back(item);
-     }
-     return std::stoi(temp[1]);
-  }
-  
-  std::map<std::string, std::string> daq_map;
-  std::map<std::string, std::string> ped_map;
   std::map<int, TH2D*> hcal_event_map;
+
+  std::map<std::string, int> cmb_map;
+  std::map<std::string, int> quadbar_map;
+  std::map<std::string, int> bar_map;
+  std::map<std::string, int> plane_map;
+
+  std::map<std::string, int> detid_map;
+  std::map<std::string, double> adcped_map;
+  std::map<std::string, double> adcgain_map;
+  std::map<std::string, double> totped_map;
+  std::map<std::string, double> totgain_map;
+
   TH2D* ts_event;
   int nPlanes;
   double time_reset; //seconds
