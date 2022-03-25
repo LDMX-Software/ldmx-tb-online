@@ -98,11 +98,9 @@ option(BUILD_MONITORING "Build online monitoring based off ROOT and EUDAQ" ON)
 if (BUILD_MONITORING)
   find_package(ROOT REQUIRED COMPONENTS Gui Hist)
   add_library(eudaq_monitor SHARED
-    src/eudaq/monitor/DarkMonitor.cxx
     src/eudaq/monitor/HCalTestBeamMonitor.cxx
     src/eudaq/monitor/SimpleMonitor.cxx
     src/eudaq/monitor/TestBeamEventDisplayMonitor.cxx
-    src/eudaq/monitor/TestBeamMonitor.cxx
     src/eudaq/monitor/TrigScintTestBeamMonitor.cxx
     )
   target_include_directories(eudaq_monitor PUBLIC include)
