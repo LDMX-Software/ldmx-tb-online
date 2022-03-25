@@ -34,3 +34,4 @@
 # Build directories
 build
 install
+__pycache__
