@@ -15,6 +15,7 @@ auto dummy0 = eudaq::Factory<eudaq::Monitor>::Register<
 namespace eudaq {
 
 void TestBeamEventDisplayMonitor::AtConfiguration() {
+  auto conf{GetConfiguration()};
   nPlanes = 19;
   time_reset = 18; //seconds
   n = 0;
@@ -37,8 +38,19 @@ void TestBeamEventDisplayMonitor::AtConfiguration() {
   }
   ts_event = m_monitor->Book<TH2D>("Event/TrigScint", "TrigScint", "", ";Channel; ", 1, 0, 1, 12, 0, 12);
   m_monitor->SetDrawOptions(ts_event, "colz");
-  std::string daqmapfile = "~/OnlineMonitor/ldmx-tb-online/software/data/testbeam_connections.csv";
-  std::string gainfile = "~/OnlineMonitor/ldmx-tb-online/software/data/testbeam_connections.csv";
+
+  auto daqmapfile{conf->Get("HCALDAQMAP", "")};
+  EUDAQ_INFO("Reading HCal DAQ map from " + daqmapfile);
+  auto gainfile{conf->Get("HCALGAIN", "")};
+  EUDAQ_INFO("Reading HCal gains from " + gainfile);
+  std::ifstream indaq(daqmapfile.c_str());
+  if (!indaq.is_open()){
+    EUDAQ_THROW("Failed to open HCal DAQ map file " + daqmapfile);
+  }
+  std::ifstream ingain(gainfile.c_str());
+  if (!ingain.is_open()){
+    EUDAQ_THROW("Failed to open HCal gain file " + gainfile);
+  }
   cmb_map = CSVParser::getCMBMap(daqmapfile);
   quadbar_map = CSVParser::getQuadbarMap(daqmapfile);
   bar_map = CSVParser::getBarMap(daqmapfile);
@@ -80,33 +92,49 @@ void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
       auto roc_id{subpacket.roc_id};
       std::cout << "Samples: " << subpacket.adc.size() << std::endl;
       for (int i{0}; i < subpacket.adc.size(); ++i) {
-        std::cout<<subpacket.roc_id<<"  "<<i<<"  "<<subpacket.adc[i]<<std::endl;
-        if(i >= 32){
-          continue;
+	int channel = i; //Double check this. Probably not correct
+	std::string rocchan = std::to_string(roc_id+1) + "," + std::to_string(channel);
+	int cmb = -9999;
+	int quadbar = -9999;
+	int bar = -9999;
+	int plane = -9999;
+
+	if(cmb_map.count(rocchan) > 0 && quadbar_map.count(rocchan) > 0 && bar_map.count(rocchan) > 0 && plane_map.count(rocchan) > 0){
+	  cmb = cmb_map.at(rocchan);
+	  quadbar = quadbar_map.at(rocchan);
+	  bar = bar_map.at(rocchan);
+	  plane = plane_map.at(rocchan);
+	}
+        else{
+          std::cout << "Key not found: " << rocchan << std::endl;
         }
 
-	std::string rocchan = std::to_string(roc_id+1) + "," + std::to_string(i);
-	int cmb = cmb_map.at(rocchan);
-	int quadbar = quadbar_map.at(rocchan);
-	int bar = bar_map.at(rocchan);
-	int plane = plane_map.at(rocchan);
 	int end = cmb%2;
-	std::string digiid = "HcalDigiID(0:" + std::to_string(plane) + ":" + std::to_string((4 - bar) + (quadbar - 1) * 4) + ":" + std::to_string(end) + ")";
-	int chan = (quadbar - 1) * 4 + (4 - bar) * end + (1 - bar) * (end - 1);	
-	int detid = detid_map.at(digiid);
-	double adcped = adcped_map.at(digiid);
-	double adcgain = adcgain_map.at(digiid);
-	double totped = totped_map.at(digiid);
-	double totgain = totgain_map.at(digiid);
+	int barchan = (4 - bar) + (quadbar - 1) * 4;
+	std::string digiid = "HcalDigiID(0:" + std::to_string(plane) + ":" + std::to_string(barchan) + ":" + std::to_string(end) + ")";
+	int detid = -9999;
+	double adcped = -9999.;
+	double adcgain = -9999.;
+	double totped = -9999.;
+	double totgain = -9999.;
+	if(detid_map.count(digiid) > 0 && adcped_map.count(digiid) > 0 && adcgain_map.count(digiid) > 0 && totped_map.count(digiid) > 0 && totgain_map.count(digiid) > 0){
+          detid = detid_map.at(digiid);
+	  adcped = adcped_map.at(digiid);
+	  adcgain = adcgain_map.at(digiid);
+	  totped = totped_map.at(digiid);
+	  totgain = totgain_map.at(digiid);
+        }
+        else{
+          std::cout << "Key not found: " << digiid << std::endl;
+        }
+	double threshold = 0; //adcped + adcgain; //This is wrong fix it
 
-	double thresh = adcped + adcgain;
-
-        if(subpacket.adc[i] >= thresh && !thresh_map.count(rocchan)){
+        if(subpacket.adc[i] >= threshold && !thresh_map.count(rocchan)){
           thresh_map.insert(std::pair<std::string, int>(rocchan, 1));
           if(plane%2 != 0){
-            hcal_event_map[plane]->Fill(chan, 1 - end);
+            hcal_event_map[plane]->Fill(barchan, 1 - end);
           } else{
-            hcal_event_map[plane]->Fill(end, chan);
+            hcal_event_map[plane]->Fill(end, barchan);
           }
       }
     }

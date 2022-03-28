@@ -58,6 +58,8 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
   // Fill HCal plots
   auto hcal_event{std::make_shared<HgcrocDataPacket>(*event)};
 
+  auto thresh_map{std::map<std::string, int>()};
+
   auto samples{hcal_event->getSamples()};
   for (auto &sample : samples) {
     for (auto &subpacket : sample.subpackets) {
@@ -102,7 +104,8 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
           std::cout << "Key not found: " << digiid << std::endl;
         }
 	double threshold = 0; //adcped + adcgain; //This is wrong fix it
-	if(subpacket.adc[i] > threshold){
+	if(subpacket.adc[i] >= threshold && !thresh_map.count(rocchan)){
+	  thresh_map.insert(std::pair<std::string, int>(rocchan, 1));
 	  if(end == 0){
 	    hcalhits_top->Fill(plane, barchan);
 	  }
