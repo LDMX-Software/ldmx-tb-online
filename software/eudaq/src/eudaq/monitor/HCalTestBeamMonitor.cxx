@@ -15,7 +15,8 @@ auto dummy0 = eudaq::Factory<eudaq::Monitor>::Register<
 namespace eudaq {
 
 void HCalTestBeamMonitor::AtConfiguration() {
-  // TODO Use DAQ map to fill map
+  auto conf{GetConfiguration()};
+
   for (int i{0}; i < 6; ++i) {
     histo_map["ROC " + std::to_string(i) + " - ADC"] =
         m_monitor->Book<TH2D>("ROC " + std::to_string(i) + " ADC",
@@ -30,8 +31,18 @@ void HCalTestBeamMonitor::AtConfiguration() {
   hcalhits_bot = m_monitor->Book<TH2D>("hcalhits_bot", "hcalhits_bot", "", ";Plane;Bar", nPlanes, 0, nPlanes, 12, 0, 12);
   m_monitor->SetDrawOptions(hcalhits_top, "colz");
   m_monitor->SetDrawOptions(hcalhits_bot, "colz");
-  std::string daqmapfile = "/home/mrsolt91/OnlineMonitor/ldmx-tb-online/software/data/testbeam_connections.csv";
-  std::string gainfile = "/home/mrsolt91/OnlineMonitor/ldmx-tb-online/software/data/DumbReconConditions.csv";
+  auto daqmapfile{conf->Get("HCALDAQMAP", "")};
+  EUDAQ_INFO("Reading HCal DAQ map from " + daqmapfile);
+  auto gainfile{conf->Get("HCALGAIN", "")};
+  EUDAQ_INFO("Reading HCal gains from " + gainfile);
+  std::ifstream indaq(daqmapfile.c_str());
+  if (!indaq.is_open()){
+    EUDAQ_THROW("Failed to open HCal DAQ map file " + daqmapfile);
+  }
+  std::ifstream ingain(gainfile.c_str());
+  if (!ingain.is_open()){
+    EUDAQ_THROW("Failed to open HCal gain file " + gainfile);
+  }
   cmb_map = CSVParser::getCMBMap(daqmapfile);
   quadbar_map = CSVParser::getQuadbarMap(daqmapfile);
   bar_map = CSVParser::getBarMap(daqmapfile);
@@ -74,7 +85,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
 
 	int end = cmb%2;
 	int barchan = (4 - bar) + (quadbar - 1) * 4;
-	std::string digiid = "HcalDigiID(0:" + std::to_string(plane) + ":" + std::to_string(barchan) + ":" + std::to_string(end) + ")";s
+	std::string digiid = "HcalDigiID(0:" + std::to_string(plane) + ":" + std::to_string(barchan) + ":" + std::to_string(end) + ")";
 	int detid = -9999;
 	double adcped = -9999.;
 	double adcgain = -9999.;
