@@ -6,6 +6,8 @@
 
 #include "TH2.h"
 
+#include "eudaq/CSVParser.h"
+
 namespace eudaq {
 
 class HCalTestBeamMonitor : public eudaq::ROOTMonitor {
@@ -27,7 +29,8 @@ private:
   }
 
   std::map<std::string, TH2D*> histo_map; 
-  TH2D* histo; 
+  TH2D* hcalhits_top; 
+  TH2D* hcalhits_bot; 
   std::map<int, TH2D*> hcal_run_map; 
   std::map<std::string, int> cmb_map;
   std::map<std::string, int> quadbar_map;
