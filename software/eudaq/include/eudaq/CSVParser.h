@@ -17,8 +17,9 @@ class CSVParser {
 public:
 
   static std::map<std::string, int> buildDaqMap(std::string csv, std::string column)
-  {
+  {   
       std::ifstream in(csv.c_str());
+      std::cout<<csv.c_str()<<std::endl;
 
       typedef boost::tokenizer< boost::escaped_list_separator<char> > Tokenizer;
       std::vector< std::string > vec;
@@ -54,7 +55,6 @@ public:
             std::cout<<"Most likely the selected column name does not exist."<<std::endl;
           }
           std::string key = vec[hgcroc_index] + "," + vec[channel_index];
-          std::cout<<column+"  "<<index<<" "<<vec[index]<<std::endl;
           m.insert(std::pair<std::string, int>(key, std::stoi(vec[index])));
       }
       return m;
