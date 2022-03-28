@@ -171,16 +171,32 @@ class HgcrocSample {
  * Wrapper for holding the location of a channel using
  * electronics information.
  */
-struct ElectronicsLocation {
+class ElectronicsLocation {
   /// polarfire fpga id
-  unsigned int fpga;
+  unsigned int fpga_;
   /// link index in that fpga
-  unsigned int link;
+  unsigned int link_;
   /// channel number on that link
-  unsigned int channel;
+  unsigned int inlink_channel_;
+  /// roc index in the fpga
+  unsigned int roc_;
+  /// channel number on that roc
+  unsigned int channel_;
+ public:
+  /**
+   * Constructor from decoded data
+   */
+  ElectronicsLocation(unsigned int f, unsigned int l, unsigned int c)
+    : fpga_{f}, link_{l}, inlink_channel_{c}, roc_{l / 2}, channel_{c - 36*(c>=36)} {}
+
+  unsigned int fpga() const { return fpga_; }
+  unsigned int link() const { return link_; }
+  unsigned int inlink_channel() const { return inlink_channel_; }
+  unsigned int roc() const { return roc_; }
+  unsigned int channel() const { return channel_; }
 
   friend std::ostream& operator<<(std::ostream& os, const ElectronicsLocation& el) {
-    return (os << "EL(" << el.fpga << "," << el.link << "," << el.channel << ")");
+    return (os << "EL(" << el.fpga() << "," << el.roc() << "," << el.channel() << ")");
   }
 };
 
@@ -188,13 +204,13 @@ struct ElectronicsLocation {
  * Must provide ordering operator for std::map, use dictionary order
  */
 bool operator<(const ElectronicsLocation& lhs, const ElectronicsLocation& rhs) {
-  if (lhs.fpga < rhs.fpga) return true;
-  if (lhs.fpga > rhs.fpga) return false;
+  if (lhs.fpga() < rhs.fpga()) return true;
+  if (lhs.fpga() > rhs.fpga()) return false;
   // fpga is equal
-  if (lhs.link < rhs.link) return true;
-  if (lhs.link > rhs.link) return false;
+  if (lhs.roc() < rhs.roc()) return true;
+  if (lhs.roc() > rhs.roc()) return false;
   // fpga and link are equal
-  return lhs.channel < rhs.channel;
+  return lhs.channel() < rhs.channel();
 }
 
 /**
