@@ -374,7 +374,7 @@ decode(const std::vector<uint8_t>& binary_data) {
            * template parameters. If any of the three IDs is out of this range,
            * the ID number will not be formed properly.
            */
-          ElectronicsLocation eid{fpga, i_link, channel_id};
+          ElectronicsLocation eid{fpga, i_link, channel_id - 1*(channel_id > common_mode_channel) - 1};
           // copy data into EID->sample map
           eid_to_samples[eid].emplace_back(w);
         }  // type of channel
