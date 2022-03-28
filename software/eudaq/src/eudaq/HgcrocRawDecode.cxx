@@ -293,21 +293,21 @@ decode(const std::vector<uint8_t>& binary_data) {
       //  since some channels may have been suppressed because of low
       //  amplitude the channel ID is not the same as the index it
       //  is listed in.
-      int channel_id{-1};
+      int channel_index{-1};
       for (uint32_t j{0}; j < length_per_link.at(i_link) - 2; j++) {
         // skip zero-suppressed channel IDs
-        do {
-          channel_id++;
-        } while (channel_id < 40 and not ro_map.test(channel_id));
+        while (channel_index < 40 and not ro_map.test(channel_index)) {
+          channel_index++;
+        }
 
         // next word is this channel
         i_event++; reader >> w;
         //fpga_crc << w;
 #ifdef DEBUG
-        std::cout << debug::hex(w) << " " << channel_id;
+        std::cout << debug::hex(w) << " " << channel_index;
 #endif
 
-        if (channel_id == 0) {
+        if (channel_index == 0) {
           /** Special "Header" Word from ROC
            *
            * version 3:
@@ -324,7 +324,7 @@ decode(const std::vector<uint8_t>& binary_data) {
           uint32_t short_event = (w >> 10) & utility::mask<6>;
           uint32_t short_orbit = (w >> 7) & utility::mask<3>;
           uint32_t hamming_errs = (w >> 4) & utility::mask<3>;
-        } else if (channel_id == common_mode_channel) {
+        } else if (channel_index == common_mode_channel) {
           /** Common Mode Channels
            * 10 | 0000000000 | Common Mode ADC 0 (10) | Common Mode ADC 1 (10)
            */
@@ -332,7 +332,7 @@ decode(const std::vector<uint8_t>& binary_data) {
 #ifdef DEBUG
           std::cout << " : Common Mode";
 #endif
-        } else if (channel_id == 39) {
+        } else if (channel_index == 39) {
           // CRC checksum from ROC
           uint32_t crc = w;
 #ifdef DEBUG
@@ -354,10 +354,10 @@ decode(const std::vector<uint8_t>& binary_data) {
 
           //link_crc << w;
           /** Generate Packed Electronics ID
-           *   Link Index i_link
-           *   Channel ID channel_id
-           *   ROC ID     roc_id
-           *   FPGA ID    fpga
+           *   Link Index         i_link
+           *   In-link Channel ID channel_index - 1*(channel_index > common_mode_channel) - 1
+           *   ROC ID             roc_id
+           *   FPGA ID            fpga
            * are all available.
            * For now, we just generate a dummy mapping
            * using the link and channel indices.
@@ -365,7 +365,7 @@ decode(const std::vector<uint8_t>& binary_data) {
 
 #ifdef DEBUG
           std::cout << " : DAQ Channel ";
-          std::cout << fpga << " " << roc_id << " " << i_link << " " << channel_id << " ";
+          std::cout << fpga << " " << roc_id << " " << i_link << " " << channel_index << " ";
 #endif
           /**
            * The subfields for the electronics ID infrastructure need to start
@@ -374,7 +374,7 @@ decode(const std::vector<uint8_t>& binary_data) {
            * template parameters. If any of the three IDs is out of this range,
            * the ID number will not be formed properly.
            */
-          ElectronicsLocation eid{fpga, i_link, channel_id - 1*(channel_id > common_mode_channel) - 1};
+          ElectronicsLocation eid{fpga, i_link, channel_index - 1*(channel_index > common_mode_channel) - 1};
           // copy data into EID->sample map
           eid_to_samples[eid].emplace_back(w);
         }  // type of channel
