@@ -87,7 +87,7 @@ find_package(pflib QUIET)
 if (pflib_FOUND)
   add_library(eudaq_pflib SHARED
     src/eudaq/pflib/PolarfireProducer.cxx)
-  target_link_libraries(eudaq_pflib PUBLIC EUDAQ::EUDAQ pflib::rogue)
+  target_link_libraries(eudaq_pflib PUBLIC eudaq_core pflib::rogue)
   symlink_to_eudaq(pflib)
   install(TARGETS eudaq_pflib DESTINATION lib)
 else()
