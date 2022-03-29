@@ -4,8 +4,7 @@
 
 ### Rogue ([v5.13.0](https://slaclab.github.io/rogue/index.html))
 #### Installation
-There are currently two recommended ways to build `rogue`: [Anaconda](https://slaclab.github.io/rogue/installing/anaconda.html) and from [source](https://slaclab.github.io/rogue/installing/build.html).  The instructions below 
-outline how to install `rogue` from source (the preferred method for the test beam).
+The instructions below outline how to install `rogue` from source (the preferred method for the test beam).
 
 To begin, clone the project and checkout the `v5.13.0` tag as follows
 ```bash
