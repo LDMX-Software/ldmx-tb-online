@@ -34,3 +34,7 @@
 # Build directories
 build
 install
+__pycache__
+.ipynb_checkpoints
+
+*.root

@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "eudaq/HgcrocDataPacket.h"
+#include "eudaq/HgcrocRawDecode.h"
 
 #include "eudaq/CSVParser.h"
 

@@ -2,8 +2,6 @@
 
 #include <iostream>
 
-#include "eudaq/HgcrocDataPacket.h"
-
 namespace {
 auto dummy0 = eudaq::Factory<eudaq::Monitor>::Register<
     eudaq::TrigScintTestBeamMonitor, const std::string &, const std::string &>(
