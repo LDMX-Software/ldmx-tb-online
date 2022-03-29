@@ -52,6 +52,7 @@ make
 make install
 ```
   ⚠️ Because of the bug discussed [here](https://github.com/eudaq/eudaq/pull/627), only the `master` branch of `eudaq` will work if `ROOT` was built using the C++17 standard.
+
   ⚠️ Omit the `-DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON` if ROOT is not available on your system.
   
 To add `eudaq` to the environment, the environmental variable `EUDAQ_DIR` needs to be set to the `eudaq` root directory
@@ -81,7 +82,9 @@ make install
 ```
   ⚠️ You may need to tell `cmake` where `yaml-cpp` is with `-Dyaml-cpp_DIR=/full/path/to/yaml-cpp`.
 
-If cmake is able to find pflib, this subcomponent of eudaq is built. If pflib is not installed to a system location, you will need to specify it with `-Dpflib_DIR=/full/path/to/pflib/install` or add the pflib install path to the `CMAKE_PREFIX_PATH` environment variable.
+If cmake is able to find pflib, this subcomponent of eudaq is built. 
+If pflib is not installed to a system location, you will need to specify it with `-Dpflib_DIR=/full/path/to/pflib/install` 
+or add the pflib install path to the `CMAKE_PREFIX_PATH` environment variable.
 
 ### dip + FiberTrackerDAQ ([Docs in README](https://github.com/pbutti/FiberTrackerDAQ))
 This library is used for interacting with the hardware reading out the trigger scintillator.
