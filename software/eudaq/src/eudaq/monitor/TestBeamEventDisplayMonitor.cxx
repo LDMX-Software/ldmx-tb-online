@@ -81,7 +81,29 @@ void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
     //previous_time = time;
   }
   // Fill HCal plots
-  auto hcal_event{std::make_shared<HgcrocDataPacket>(*event)};
+
+  auto data = hcal::decode(event->GetBlock(1));
+
+  auto thresh_map{std::map<std::string, int>()};
+
+  for (const auto& [el, samples] : data) {
+    int fpga = el.fpga();
+    int roc = el.roc();
+    int channel = el.channel();
+    int link = el.link();
+    int inlink = el.inlink_channel();
+    std::cout<<"fpga: "<<fpga<<"  roc: "<<roc<<"  channel: "<<channel<<"  link: "<<link<<"  inlink: "<<inlink<<"  sample size: "<<samples.size()<<std::endl;
+    for (auto &sample : samples) {
+      bool isTOT = sample.isTOTinProgress();
+      bool isTOTComplete = sample.isTOTComplete();
+      int toa = sample.toa();
+      int tot = sample.tot();
+      int adc_tm1 = sample.adc_tm1();
+      int adc_t = sample.adc_t();
+      std::cout<<"isTOT: "<<isTOT<<"  isTOTComplete: "<<isTOTComplete<<"  toa: "<<toa<<"  tot: "<<tot<<"  adc_tm1: "<<adc_tm1<<"  adc_t "<<adc_t<<std::endl;
+    }
+  }
+  /*auto hcal_event{std::make_shared<HgcrocDataPacket>(*event)};
   
   auto samples{hcal_event->getSamples()};
   
@@ -139,7 +161,7 @@ void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
       }
     }
   }
-  }
+  }*/
 
   //TODO Fill TS Plots
   ts_event->Fill(0., 0.);
