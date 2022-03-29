@@ -1,11 +1,5 @@
 # Quickstart
 
-There is no quickstart; there is only start.
-
-# Start
-
-This guide has not been tested but it should hopefully help you go in the right direction.
-
 ## Required Dependencies
 
 ### Rogue ([v5.13.0](https://slaclab.github.io/rogue/index.html))
