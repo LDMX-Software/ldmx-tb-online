@@ -20,8 +20,8 @@ void TestBeamDataCollector::DoConfigure() {
 
 void TestBeamDataCollector::DoReceive(ConnectionSPC id, EventSP ev) {
   // if (!m_noprint)
-	std::cout << "I'm here" << std::endl;
-  ev->Print(std::cout);
+	//std::cout << "I'm here" << std::endl;
+  //ev->Print(std::cout);
 
   WriteEvent(ev);
 }
