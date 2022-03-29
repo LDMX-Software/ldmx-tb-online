@@ -47,7 +47,7 @@ class HgcrocSample {
    * Default is version 2 of the HGC ROC since that is what is used
    * for test beam.
    */
-  HgcrocSample(uint32_t w, int version = 2) : word_(w), version_{version} {}
+  HgcrocSample(uint32_t w, int version = 2);
 
   /**
    * Get the first flag from the sample
@@ -55,9 +55,7 @@ class HgcrocSample {
    *
    * @return true if TOT is in progress during this sample
    */
-  bool isTOTinProgress() const {
-    return (1 & (word_ >> 31));
-  }
+  bool isTOTinProgress() const;
 
   /**
    * Get the second flag from the sample
@@ -66,9 +64,7 @@ class HgcrocSample {
    * @return true if TOT is complete and should use this sample to get TOT
    * measurement
    */
-  bool isTOTComplete() const {
-    return (1 & (word_ >> 30));
-  }
+  bool isTOTComplete() const;
 
   /**
    * Get the Time Of Arrival of this sample
@@ -76,13 +72,7 @@ class HgcrocSample {
    *
    * @return 10-bit measurement of TOA
    */
-  int toa() const { 
-    if (version_ == 2) {
-      return secon();
-    } else {
-      return third(); 
-    }
-  }
+  int toa() const;
 
   /**
    * Get the TOT measurement from this sample
@@ -94,15 +84,7 @@ class HgcrocSample {
    *
    * @return 12-bit measurement of TOT
    */
-  int tot() const {
-    int meas = secon();
-    if (version_ == 2) {
-      meas = first();
-    }
-
-    if (meas > 512) meas = (meas - 512) * 8;
-    return meas;
-  }
+  int tot() const;
 
   /**
    * Get the last ADC measurement from this sample
@@ -111,7 +93,7 @@ class HgcrocSample {
    *
    * @return 10-bit measurement of ADC t-1
    */
-  int adc_tm1() const { return first(); }
+  int adc_tm1() const;
 
   /**
    * Get the ADC measurement from this sample
@@ -121,23 +103,14 @@ class HgcrocSample {
    *
    * @return 10-bit measurement of current ADC
    */
-  int adc_t() const {
-    if (version_ == 2) {
-      return third();
-    }
-
-    if (not isTOTComplete())
-      return secon();  // running modes
-    else
-      return first();  // calibration mode
-  }
+  int adc_t() const;
 
   /**
    * Get the raw value of this sample
    *
    * @return 32-bit full value fo the sample
    */
-  uint32_t raw() const { return word_; }
+  uint32_t raw() const;
 
  private:
   /**
@@ -145,20 +118,20 @@ class HgcrocSample {
    *
    * @return 10-bit measurement at first position in sample
    */
-  int first() const { return 0x3ff & (word_ >> 20); }
+  int first() const;
 
   /**
    * Get the second 10-bit measurement out of the sample
    *
    * @return 10-bit measurement at second position in sample
    */
-  int secon() const { return 0x3ff & (word_ >> 10); }
+  int secon() const;
 
   /**
    * Get the third 10-bit measurement out of the smaple
    * @return 10-bit measurement at second position in sample
    */
-  int third() const { return 0x3ff & word_; }
+  int third() const;
 
  private:
   /// The actual 32-bit word spit out by the chip
@@ -186,32 +159,15 @@ class ElectronicsLocation {
   /**
    * Constructor from decoded data
    */
-  ElectronicsLocation(unsigned int f, unsigned int l, unsigned int c)
-    : fpga_{f}, link_{l}, inlink_channel_{c}, roc_{l / 2}, channel_{c - 36*(c>=36)} {}
-
-  unsigned int fpga() const { return fpga_; }
-  unsigned int link() const { return link_; }
-  unsigned int inlink_channel() const { return inlink_channel_; }
-  unsigned int roc() const { return roc_; }
-  unsigned int channel() const { return channel_; }
-
-  friend std::ostream& operator<<(std::ostream& os, const ElectronicsLocation& el) {
-    return (os << "EL(" << el.fpga() << "," << el.roc() << "," << el.channel() << ")");
-  }
+  ElectronicsLocation(unsigned int f, unsigned int l, unsigned int c);
+  unsigned int fpga() const;
+  unsigned int link() const;
+  unsigned int inlink_channel() const;
+  unsigned int roc() const;
+  unsigned int channel() const;
+  friend std::ostream& operator<<(std::ostream& os, const ElectronicsLocation& el);
+  friend bool operator<(const ElectronicsLocation& lhs, const ElectronicsLocation& rhs);
 };
-
-/**
- * Must provide ordering operator for std::map, use dictionary order
- */
-bool operator<(const ElectronicsLocation& lhs, const ElectronicsLocation& rhs) {
-  if (lhs.fpga() < rhs.fpga()) return true;
-  if (lhs.fpga() > rhs.fpga()) return false;
-  // fpga is equal
-  if (lhs.roc() < rhs.roc()) return true;
-  if (lhs.roc() > rhs.roc()) return false;
-  // fpga and link are equal
-  return lhs.channel() < rhs.channel();
-}
 
 /**
  * Decode the passed byte buffer into a map of locations to the samples taken within that channel

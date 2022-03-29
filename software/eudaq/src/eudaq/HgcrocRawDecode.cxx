@@ -76,6 +76,78 @@ struct hex {
 };
 } // debug
 
+HgcrocSample::HgcrocSample(uint32_t w, int version) : word_(w), version_{version} {}
+
+bool HgcrocSample::isTOTinProgress() const {
+  return (1 & (word_ >> 31));
+}
+
+bool HgcrocSample::isTOTComplete() const {
+  return (1 & (word_ >> 30));
+}
+
+int HgcrocSample::toa() const { 
+  if (version_ == 2) {
+    return secon();
+  } else {
+    return third(); 
+  }
+}
+
+int HgcrocSample::tot() const {
+  int meas = secon();
+  if (version_ == 2) {
+    meas = first();
+  }
+
+  if (meas > 512) meas = (meas - 512) * 8;
+  return meas;
+}
+
+int HgcrocSample::adc_tm1() const { return first(); }
+
+int HgcrocSample::adc_t() const {
+  if (version_ == 2) {
+    return third();
+  }
+
+  if (not isTOTComplete())
+    return secon();  // running modes
+  else
+    return first();  // calibration mode
+}
+
+uint32_t HgcrocSample::raw() const { return word_; }
+
+int HgcrocSample::first() const { return 0x3ff & (word_ >> 20); }
+
+int HgcrocSample::secon() const { return 0x3ff & (word_ >> 10); }
+
+int HgcrocSample::third() const { return 0x3ff & word_; }
+
+ElectronicsLocation::ElectronicsLocation(unsigned int f, unsigned int l, unsigned int c)
+  : fpga_{f}, link_{l}, inlink_channel_{c}, roc_{l / 2}, channel_{c - 36*(c>=36)} {}
+
+unsigned int ElectronicsLocation::fpga() const { return fpga_; }
+unsigned int ElectronicsLocation::link() const { return link_; }
+unsigned int ElectronicsLocation::inlink_channel() const { return inlink_channel_; }
+unsigned int ElectronicsLocation::roc() const { return roc_; }
+unsigned int ElectronicsLocation::channel() const { return channel_; }
+
+std::ostream& operator<<(std::ostream& os, const ElectronicsLocation& el) {
+  return (os << "EL(" << el.fpga() << "," << el.roc() << "," << el.channel() << ")");
+}
+
+bool operator<(const ElectronicsLocation& lhs, const ElectronicsLocation& rhs) {
+  if (lhs.fpga() < rhs.fpga()) return true;
+  if (lhs.fpga() > rhs.fpga()) return false;
+  // fpga is equal
+  if (lhs.roc() < rhs.roc()) return true;
+  if (lhs.roc() > rhs.roc()) return false;
+  // fpga and link are equal
+  return lhs.channel() < rhs.channel();
+}
+
 std::map<ElectronicsLocation,std::vector<HgcrocSample>>
 decode(const std::vector<uint8_t>& binary_data) {
   /**
