@@ -74,7 +74,7 @@ Install command outline:
 ```
 git clone https://github.com/LDMX-Software/pflib.git
 cd pflib
-git checkout v1.7 #or latest version
+git checkout v1.7 #or latest version ##latest version 1.12 is broken: can't find pflib
 cmake -B build -S . -DCMAKE_INSTALL_PREFIX=install
 cd build
 make install
