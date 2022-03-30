@@ -1,4 +1,5 @@
-# Quickstart
+# ldmx-tb-online
+Test beam run control software used by the LDMX experiment. 
 
 ## Required Dependencies
 
@@ -65,7 +66,7 @@ We assume ROOT is available in this package. If ROOT is not availabe use the `-D
 This library is used for interacting with the Polarfire FPGA that communicates with the HGC ROC. (Read out chip for HCal and ECal).
 
 Install command outline:
-```
+```bash
 git clone https://github.com/LDMX-Software/pflib.git
 cd pflib
 git checkout v1.7 #or latest version
@@ -104,7 +105,7 @@ The cmake variable `WRTiming_DIR` can be set on the command line or provided by 
 ## Building ldmx-tb-online
 
 Once all dependencies are installed, building `ldmx-tb-online` is fairly straight forward
-```
+```bash
 git clone git@github.com:LDMX-Software/ldmx-tb-online.git 
 cd ldmx-tb-online/software
 mkdir build; cd build
@@ -118,8 +119,8 @@ If the install prefix is not specified, `ldmx-tb-online` will be install in `../
 In order to run any `ldmx-tb-online` apps, the environment needs to be setup as
 follows
 
-```
-export DAQ_INSTALL_PREFIX=/full/path/to/ldmx-daq/software/install
+```bash
+export DAQ_INSTALL_PREFIX=/full/path/to/ldmx-tb-online/software/install
 export LD_LIBRARY_PATH=$DAQ_INSTALL_PREFIX/lib:$LD_LIBRARY_PATH
 export PATH=$DAQ_INSTALL_PREFIX/bin:$PATH
 ```
