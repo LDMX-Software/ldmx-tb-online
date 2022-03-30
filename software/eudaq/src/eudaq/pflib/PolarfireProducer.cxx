@@ -133,7 +133,8 @@ void PolarfireProducer::DoConfigure() try {
   auto conf = GetConfiguration();
 
   // expected number of milliseconds the PF is busy
-  pf_busy_ms_ = std::chrono::milliseconds(conf->Get("PF_BUSY_MS", 1000));
+  int pf_ro_rate{conf->Get("PF_READOUT_RATE", 100)};
+  pf_busy_ms_ = std::chrono::milliseconds(1000/pf_ro_rate);
 
   // output file writing configuration
   output_path_ = conf->Get("OUTPUT_PATH",".");
@@ -142,6 +143,23 @@ void PolarfireProducer::DoConfigure() try {
   // or in independent config file?
   fpga_id_ = conf->Get("FPGA_ID", 0);
   int samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
+
+  /****************************************************************************
+   * ELINKS menu in pftool
+   *    RELINK
+   *    or manual DELAY and BITSLIP values
+   ***************************************************************************/
+  if (conf->Get("ELINKS_DO_RELINK",true)) {
+    pft_->elink_relink(2);
+  } else {
+    for (int i{0}; i < elinks.nlinks(); i++) {
+      elinks.setBitslipAuto(i,false);
+      elinks.setBitslip(i,
+          conf->Get("ELINK_"+std::to_string(i)+"_BITSLIP", elinks.getBitslip(i)));
+      elinks.setDelay(i,
+          conf->Get("ELINK_"+std::to_string(i)+"_DELAY", 128));
+    }
+  }
 
   /****************************************************************************
    * DAQ.SETUP menu in pftool commands
@@ -190,23 +208,6 @@ void PolarfireProducer::DoConfigure() try {
       pft_->loadROCParameters(i,
           conf->Get("ROC_"+std::to_string(i)+"_CONF_FILE_PATH",""),
           conf->Get("ROC_"+std::to_string(i)+"_PREPEND_DEFAULTS",true));
-    }
-  }
-
-  /****************************************************************************
-   * ELINKS menu in pftool
-   *    RELINK
-   *    or manual DELAY and BITSLIP values
-   ***************************************************************************/
-  if (conf->Get("ELINKS_DO_RELINK",true)) {
-    pft_->elink_relink(2);
-  } else {
-    for (int i{0}; i < elinks.nlinks(); i++) {
-      elinks.setBitslipAuto(i,false);
-      elinks.setBitslip(i,
-          conf->Get("ELINK_"+std::to_string(i)+"_BITSLIP", elinks.getBitslip(i)));
-      elinks.setDelay(i,
-          conf->Get("ELINK_"+std::to_string(i)+"_DELAY", 128));
     }
   }
 } catch (const pflib::Exception& e) {
