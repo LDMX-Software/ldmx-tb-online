@@ -83,7 +83,7 @@ else()
   message(WARNING "Unable to find FiberTrackerClient.h or Dip.h - DipClientProducer will not be built.")
 endif()
 
-find_package(pflib QUIET)
+find_package(pflib 2 QUIET)
 if (pflib_FOUND)
   add_library(eudaq_pflib SHARED
     src/eudaq/pflib/PolarfireProducer.cxx)
@@ -91,7 +91,7 @@ if (pflib_FOUND)
   symlink_to_eudaq(pflib)
   install(TARGETS eudaq_pflib DESTINATION lib)
 else()
-  message(WARNING "pflib not found - PolarfireProducer will not be available.")
+  message(WARNING "pflib version >= 2 not found - PolarfireProducer will not be available.")
 endif()
 
 option(BUILD_MONITORING "Build online monitoring based off ROOT and EUDAQ" ON)
