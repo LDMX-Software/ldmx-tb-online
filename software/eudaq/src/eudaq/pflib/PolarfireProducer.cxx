@@ -6,8 +6,10 @@
 #include <rogue/utilities/fileio/StreamWriter.h>
 #include <rogue/utilities/fileio/StreamWriterChannel.h>
 #include <rogue/interfaces/stream/Master.h>
+#include <rogue/interfaces/stream/TcpClient.h>
 #include <rogue/interfaces/stream/Frame.h>
 #include <rogue/interfaces/stream/FrameIterator.h>
+#include <rogue/interfaces/stream/FrameLock.h>
 
 #include <eudaq/Producer.hh>
 
@@ -44,6 +46,12 @@ class PolarfireProducer : public eudaq::Producer, public rogue::interfaces::stre
     CHARGE,
     EXTERNAL
   } the_l1a_mode_;
+  /// has DMA readout been enabled?
+  bool dma_enabled_;
+  /// host that we should be watching
+  std::string host_;
+  /// port of **wishbone** server on that host (DMA server is assumed to be +2)
+  int port_;
   /// ID for fpga connected to this polarfire
   int fpga_id_;
   /// output file path
@@ -84,31 +92,9 @@ PolarfireProducer::PolarfireProducer(const std::string & name, const std::string
 void PolarfireProducer::DoInitialise() try {
   auto ini = GetInitConfiguration();
 
-  auto addr{ini->Get("TCP_ADDR", "127.0.0.1")};
-  auto port{ini->Get("TCP_PORT", 8000)};
-  EUDAQ_INFO("TCP client listening on " + addr + ":" + std::to_string(port));
-
-  auto ro_mode{ini->Get("RO_MODE", "MemMap")};
-  EUDAQ_INFO("Readout Mode set to " + ro_mode);
-
-  if (ro_mode == "MemMap") {
-    auto ptr{new pflib::rogue::RogueWishboneInterface(addr,port)};
-    pft_ = std::make_unique<pflib::PolarfireTarget>(ptr,ptr);
-  } else {
-    EUDAQ_THROW("Unrecognized readout mode "+ro_mode);
-  }
-
-  auto l1a_mode{ini->Get("L1A_MODE","PEDESTAL")};
-  EUDAQ_INFO("L1A Trigger Mode set to " + l1a_mode);
-  if (l1a_mode == "PEDESTAL") {
-    the_l1a_mode_ = L1A_MODE::PEDESTAL;
-  } else if (l1a_mode == "CHARGE") {
-    the_l1a_mode_ = L1A_MODE::CHARGE;
-  } else if (l1a_mode == "EXTERNAL") {
-    the_l1a_mode_ = L1A_MODE::EXTERNAL;
-  } else {
-    EUDAQ_THROW("Unrecognized L1A mode "+l1a_mode);
-  }
+  host_ = ini->Get("TCP_ADDR", "127.0.0.1");
+  port_ = ini->Get("TCP_PORT", 8000);
+  EUDAQ_INFO("TCP client listening on " + host_ + ":" + std::to_string(port_));
 
   // how much data to buffer before writing
   file_buffer_size_ = ini->Get("FILE_BUFF_SIZE",10000);
@@ -144,6 +130,21 @@ void PolarfireProducer::DoConfigure() try {
   fpga_id_ = conf->Get("FPGA_ID", 0);
   int samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
 
+  auto l1a_mode{conf->Get("L1A_MODE","PEDESTAL")};
+  EUDAQ_INFO("L1A Trigger Mode set to " + l1a_mode);
+  if (l1a_mode == "PEDESTAL") {
+    the_l1a_mode_ = L1A_MODE::PEDESTAL;
+  } else if (l1a_mode == "CHARGE") {
+    the_l1a_mode_ = L1A_MODE::CHARGE;
+  } else if (l1a_mode == "EXTERNAL") {
+    the_l1a_mode_ = L1A_MODE::EXTERNAL;
+  } else {
+    EUDAQ_THROW("Unrecognized L1A mode "+l1a_mode);
+  }
+
+  auto& daq = pft_->hcal.daq();
+  auto& elinks = pft_->hcal.elinks();
+
   /****************************************************************************
    * ELINKS menu in pftool
    *    RELINK
@@ -169,16 +170,15 @@ void PolarfireProducer::DoConfigure() try {
    *    L1APARAMS
    *    MULTISAMPLE
    ***************************************************************************/
-  auto& daq = pft_->hcal.daq();
   daq.setIds(fpga_id_);
 
-  if (conf->Get("DO_DMA_RO",false)) {
+  dma_enabled_ = conf->Get("DO_DMA_RO",true);
+  if (dma_enabled_) {
     auto rwbi = dynamic_cast<pflib::rogue::RogueWishboneInterface*>(pft_->wb);
     rwbi->daq_dma_enable(true);
     rwbi->daq_dma_setup((uint8_t)fpga_id_, (uint8_t)samples_per_event);
   }
 
-  auto& elinks = pft_->hcal.elinks();
   for (int i{0}; i < elinks.nlinks(); i++) {
     bool active{conf->Get("LINK_"+std::to_string(i)+"_ACTIVE",false)};
     elinks.markActive(i,active);
@@ -222,6 +222,8 @@ void PolarfireProducer::DoConfigure() try {
 void PolarfireProducer::DoStartRun()  try {
   exiting_run_ = false;
   pft_->prepareNewRun();
+  if (the_l1a_mode_ == L1A_MODE::EXTERNAL)
+    pft_->backend->fc_enables(true,true,false);
 } catch (const pflib::Exception& e) {
   EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
 }
@@ -231,6 +233,8 @@ void PolarfireProducer::DoStartRun()  try {
  */
 void PolarfireProducer::DoStopRun(){
   exiting_run_ = true;
+  if (the_l1a_mode_ == L1A_MODE::EXTERNAL)
+    pft_->backend->fc_enables(false,true,false);
 }
 /**
  * i.e. recover from failure, this is the only available
@@ -250,6 +254,30 @@ void PolarfireProducer::DoTerminate(){
   exiting_run_ = true;
   // close lock file?
 }
+
+class DMAReceiver : public rogue::interfaces::stream::Slave {
+  std::queue<std::vector<uint8_t>> event_buffer_;
+ public:
+  static std::shared_ptr<DMAReceiver> create() {
+    static std::shared_ptr<DMAReceiver> ret =
+      std::make_shared<DMAReceiver>();
+    return(ret);
+  }
+  DMAReceiver() : rogue::interfaces::stream::Slave() { }
+  /// get next event from event buffer
+  const std::vector<uint8_t>& next() {
+    return event_buffer_.front();
+  }
+  /// pop next event from event buffer
+  void pop() {
+    event_buffer_.pop();
+  }
+  void acceptFrame (std::shared_ptr<rogue::interfaces::stream::Frame> frame) {
+    auto lock = frame->lock();
+    event_buffer_.emplace(frame->begin(),frame->end());
+  }
+};
+
 /**
  * Include some "mode" about if sending our own L1A ("local" mode)
  * or some "external" mode where L1A is generated elsewhere
@@ -265,16 +293,37 @@ void PolarfireProducer::DoTerminate(){
  */
 void PolarfireProducer::RunLoop() try {
   auto pf_start_run = std::chrono::steady_clock::now();
+  std::time_t tt = time(NULL);
+  std::tm gmtm = *std::gmtime(&tt); //GMT (UTC)
+  std::shared_ptr<rogue::interfaces::stream::TcpClient> tcp;
+  std::shared_ptr<DMAReceiver> dma_data_src;
   /// run has begun, open writer for this polarfire
   rogue::utilities::fileio::StreamWriterPtr writer{
     rogue::utilities::fileio::StreamWriter::create()};
   writer->setBufferSize(file_buffer_size_);
   std::stringstream output_file;
-  output_file << output_path_ << "/" << file_prefix_ << "_run_" << GetRunNumber() << ".raw";
+  output_file << output_path_ << "/" 
+    << file_prefix_ 
+    << "_run_" << GetRunNumber() 
+    << "_" << gmtm.tm_year << "Y" << gmtm.tm_mon << "m" << gmtm.tm_mday << "d"
+    << "_" << gmtm.tm_hour << "H" << gmtm.tm_min << "M" << gmtm.tm_sec << "S"
+    << ".raw";
   EUDAQ_INFO("Writing data stream to "+output_file.str());
   try {
     writer->open(output_file.str());
-    this->addSlave(writer->getChannel(0));
+    if (dma_enabled_) {
+      // set event tag for firmware
+      pft_->backend->daq_setup_event_tag(GetRunNumber(), 
+          gmtm.tm_mday, gmtm.tm_mon+1, gmtm.tm_hour, gmtm.tm_min);
+      // connect rogue streams
+      EUDAQ_INFO("Receiving DMA data from "+host_+":"+std::to_string(port_+2));
+      tcp = rogue::interfaces::stream::TcpClient::create(host_,port_+2);
+      dma_data_src = DMAReceiver::create();
+      tcp->addSlave(writer->getChannel(0));
+      tcp->addSlave(dma_data_src);
+    } else {
+      this->addSlave(writer->getChannel(0));
+    }
   } catch (const std::exception& e) {
     EUDAQ_THROW("Rogue Error : "+std::string(e.what()));
   }
@@ -283,6 +332,7 @@ void PolarfireProducer::RunLoop() try {
   while (not exiting_run_) {
     auto pf_trigger = std::chrono::steady_clock::now();
     auto pf_end_of_busy = pf_trigger + pf_busy_ms_;
+
     // depending on configured mode, we trigger daq readout or not
     switch(the_l1a_mode_) {
       case L1A_MODE::PEDESTAL:
@@ -295,20 +345,32 @@ void PolarfireProducer::RunLoop() try {
         // external - l1a triggered elsewhere
         break;
     }
+
+    // wait until window is done
+    std::this_thread::sleep_until(pf_end_of_busy);
   
-    // read raw event data from polarfire
-    std::vector<uint32_t> event_data_words = pft_->daqReadEvent();
-  
-    // cut data words into bytes
-    const uint8_t *ptr = reinterpret_cast<const uint8_t*>(&event_data_words[0]);
-    std::vector<uint8_t> event_data(ptr, ptr + sizeof(uint32_t)*event_data_words.size());
-  
-    // wrap event data in rogue frame to send it to file writer
-    auto size = event_data.size();
-    auto frame = reqFrame(size, true);
-    frame->setPayload(size);
-    std::copy(event_data.begin(), event_data.end(), frame->begin());
-    sendFrame(frame);
+    // get event data and push it along the pipeline
+    std::vector<uint8_t> event_data;
+    if (dma_enabled_) {
+      // DMA pushes data to TCP server which pushes it along to writer
+      // need to pop last event packet from TCP server using our DMAReceiver
+      event_data = dma_data_src->next();
+      dma_data_src->pop();
+    } else {
+      // without DMA enabled, need to PULL data from polarfire
+      std::vector<uint32_t> event_data_words = pft_->daqReadEvent();
+    
+      // cut data words into bytes
+      const uint8_t *ptr = reinterpret_cast<const uint8_t*>(&event_data_words[0]);
+      std::copy(ptr, ptr + sizeof(uint32_t)*event_data_words.size(), event_data.begin());
+    
+      // wrap event data in rogue frame to send it to file writer
+      auto size = event_data.size();
+      auto frame = reqFrame(size, true);
+      frame->setPayload(size);
+      std::copy(event_data.begin(), event_data.end(), frame->begin());
+      sendFrame(frame);
+    }
   
     // wrap data in eudaq object and send it downstream to the monitoring
     auto ev = eudaq::Event::MakeUnique("HgcrocRaw");
@@ -316,14 +378,16 @@ void PolarfireProducer::RunLoop() try {
     std::chrono::nanoseconds ev_beg(pf_trigger - pf_start_run);
     std::chrono::nanoseconds ev_end(pf_end_of_busy - pf_start_run);
     ev->SetTimestamp(ev_beg.count(), ev_end.count());
-    SendEvent(std::move(ev));
 
-    // wait until window is done
-    std::this_thread::sleep_until(pf_end_of_busy);
+    SendEvent(std::move(ev));
   }
 
   // done writing
   writer->close();
+  if (dma_enabled_) {
+    dma_data_src->stop();
+    tcp->stop();
+  }
 } catch (const pflib::Exception& e) {
   EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
 }
