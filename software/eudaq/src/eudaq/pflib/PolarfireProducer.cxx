@@ -33,7 +33,6 @@ class DMADataSender : public eudaq::RogueDataSender {
   ~DMADataSender() = default;
   virtual void sendEvent(std::shared_ptr<rogue::interfaces::stream::Frame> frame) final override {
     static std::size_t i_frame{0};
-    std::cout << " got frame " << ++i_frame << std::endl;
     auto lock = frame->lock();
     std::vector<uint8_t> event_data{frame->begin(), frame->end()};
     // wrap data in eudaq object and send it downstream to the monitoring
@@ -67,9 +66,9 @@ class PolarfireProducer : public eudaq::Producer,
  private:
   /// connection to polarfire
   std::unique_ptr<pflib::PolarfireTarget> pft_;
-  /// writer for writing out data
-  std::shared_ptr<rogue::utilities::fileio::StreamWriter> writer_{
-    rogue::utilities::fileio::StreamWriter::create()};
+  pflib::rogue::RogueWishboneInterface* rwbi() {
+    return dynamic_cast<pflib::rogue::RogueWishboneInterface*>(pft_->wb);
+  }
   /// how daq event reading is triggered
   enum class L1A_MODE {
     PEDESTAL,
@@ -78,8 +77,6 @@ class PolarfireProducer : public eudaq::Producer,
   } the_l1a_mode_;
   /// has DMA readout been enabled?
   bool dma_enabled_;
-  /// tcp reciever for dma pipeline
-  std::shared_ptr<rogue::interfaces::stream::TcpClient> dma_tcp_;
   /// dma data sender to bring data from rogue into eudaq
   std::shared_ptr<DMADataSender> dma_sender_;
   /// host that we should be watching
@@ -160,7 +157,6 @@ void PolarfireProducer::DoConfigure() try {
   // output file writing configuration
   output_path_ = conf->Get("OUTPUT_PATH",".");
   file_prefix_ = conf->Get("FILE_PREFIX","ldmx_hcal");
-  writer_->setBufferSize(10000);
 
   auto l1a_mode{conf->Get("L1A_MODE","PEDESTAL")};
   EUDAQ_INFO("L1A Trigger Mode set to " + l1a_mode);
@@ -174,23 +170,21 @@ void PolarfireProducer::DoConfigure() try {
     EUDAQ_THROW("Unrecognized L1A mode "+l1a_mode);
   }
 
+  fpga_id_ = conf->Get("FPGA_ID", 0);
+  int samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
   dma_enabled_ = conf->Get("DO_DMA_RO",true);
+  rwbi()->daq_dma_enable(dma_enabled_);
+  rwbi()->daq_dma_setup((uint8_t)fpga_id_, (uint8_t)samples_per_event);
   if (dma_enabled_) {
-    dma_tcp_ = rogue::interfaces::stream::TcpClient::create(host_,port_+2);
-    EUDAQ_INFO("Receiving DMA data from "+host_+":"+std::to_string(port_+2));
-    dma_tcp_->addSlave(writer_->getChannel(0));
-    EUDAQ_DEBUG("Writer connected to TCP");
     dma_sender_ = DMADataSender::create(this);
     EUDAQ_DEBUG("DMADataSender created");
-    dma_tcp_->addSlave(dma_sender_);
+    rwbi()->daq_dma_dest(dma_sender_);
     EUDAQ_DEBUG("Receiver connected to TCP");
   } else {
     // we are the frame generator without DMA readout
-    this->addSlave(writer_->getChannel(0));
+    //this->addSlave(writer_->getChannel(0));
   }
 
-  fpga_id_ = conf->Get("FPGA_ID", 0);
-  int samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
   auto& daq = pft_->hcal.daq();
   auto& elinks = pft_->hcal.elinks();
   /****************************************************************************
@@ -220,9 +214,6 @@ void PolarfireProducer::DoConfigure() try {
   daq.setIds(fpga_id_);
 
   if (dma_enabled_) {
-    auto rwbi = dynamic_cast<pflib::rogue::RogueWishboneInterface*>(pft_->wb);
-    rwbi->daq_dma_enable(true);
-    rwbi->daq_dma_setup((uint8_t)fpga_id_, (uint8_t)samples_per_event);
   }
 
   for (int i{0}; i < elinks.nlinks(); i++) {
@@ -282,7 +273,7 @@ void PolarfireProducer::DoStartRun()  try {
     << ".raw";
   EUDAQ_INFO("Writing data stream to "+output_file.str());
   try {
-    writer_->open(output_file.str());
+    rwbi()->daq_dma_dest(output_file.str());
   } catch (const std::exception& e) {
     EUDAQ_THROW("Rogue Error : "+std::string(e.what()));
   }
@@ -305,7 +296,7 @@ void PolarfireProducer::DoStopRun(){
   std::this_thread::sleep_for(2*pf_busy_ms_);
   if (the_l1a_mode_ == L1A_MODE::EXTERNAL)
     pft_->backend->fc_enables(false,true,false);
-  writer_->close();
+  rwbi()->daq_dma_close();
 }
 /**
  * i.e. recover from failure, this is the only available
@@ -340,13 +331,12 @@ void PolarfireProducer::DoTerminate(){
  * the member variable.
  */
 void PolarfireProducer::RunLoop() try {
+  // don't do anything if in external trigger mode
+  if (dma_enabled_ and the_l1a_mode_ == L1A_MODE::EXTERNAL) return;
+
   /// loop until we receive end-of-run
-  std::size_t i_trig{0};
+  static std::size_t i_trig{0};
   while (not exiting_run_) {
-    std::cout << "trigger " << ++i_trig << std::endl;
-    // start next window timer
-    auto pf_trigger = std::chrono::steady_clock::now();
-    auto pf_end_of_busy = pf_trigger + pf_busy_ms_;
     // depending on configured mode, we trigger daq readout or not
     switch(the_l1a_mode_) {
       case L1A_MODE::PEDESTAL:
@@ -359,16 +349,18 @@ void PolarfireProducer::RunLoop() try {
         // external - l1a triggered elsewhere
         break;
     }
-
+    // start next window timer
+    auto pf_trigger = std::chrono::steady_clock::now();
+    i_trig++;
+    auto pf_end_of_busy = pf_trigger + pf_busy_ms_;
     // get event data and push it along the pipeline
     if (not dma_enabled_) {
       // without DMA enabled, need to PULL data from polarfire
-      std::vector<uint8_t> event_data;
       std::vector<uint32_t> event_data_words = pft_->daqReadEvent();
     
       // cut data words into bytes
       const uint8_t *ptr = reinterpret_cast<const uint8_t*>(&event_data_words[0]);
-      std::copy(ptr, ptr + sizeof(uint32_t)*event_data_words.size(), event_data.begin());
+      std::vector<uint8_t> event_data(ptr, ptr + sizeof(uint32_t)*event_data_words.size());
     
       // wrap event data in rogue frame to send it to file writer
       auto size = event_data.size();
@@ -381,12 +373,11 @@ void PolarfireProducer::RunLoop() try {
       auto ev = eudaq::Event::MakeUnique("HgcrocRaw");
       ev->AddBlock(fpga_id_, event_data);
       SendEvent(std::move(ev));
-
     }
-
     // wait current daq window is done
     std::this_thread::sleep_until(pf_end_of_busy);
   }
+  EUDAQ_DEBUG("N Triggers: " + std::to_string(i_trig));
 } catch (const pflib::Exception& e) {
   EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
 }
