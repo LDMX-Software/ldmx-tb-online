@@ -18,12 +18,29 @@ void HCalTestBeamMonitor::AtConfiguration() {
   auto conf{GetConfiguration()};
 
   for (int i{0}; i < 6; ++i) {
-    histo_map["ROC " + std::to_string(i) + " - ADC"] =
+    adc_histo_map["ROC " + std::to_string(i) + " - ADC"] =
         m_monitor->Book<TH2D>("ROC " + std::to_string(i) + " ADC",
                               "ROC_" + std::to_string(i) + "_ADC", "",
-                              ";Channel;ADC", 40, 0, 40, 200, 0, 200);
-    m_monitor->SetDrawOptions(histo_map["ROC " + std::to_string(i) + " - ADC"],
-                              "colz");
+                              ";Channel;ADC", 72, 0, 72, 1000, 0, 1000);
+    m_monitor->SetDrawOptions(adc_histo_map["ROC " + std::to_string(i) + " - ADC"], "colz");
+    adc_histo_map["ROC " + std::to_string(i) + " - ADC"]->SetTitle(("ADC vs Channel, ROC " + std::to_string(i)).c_str());
+    adc_histo_map["ROC " + std::to_string(i) + " - ADC"]->SetStats(0);   
+    
+    tot_histo_map["ROC " + std::to_string(i) + " - TOT"] =
+        m_monitor->Book<TH2D>("ROC " + std::to_string(i) + " TOT",
+                              "ROC_" + std::to_string(i) + "_TOT", "",
+                              ";Channel;TOT", 72, 0, 72, 1000, 0, 1000);
+    m_monitor->SetDrawOptions(tot_histo_map["ROC " + std::to_string(i) + " - TOT"], "colz");
+    tot_histo_map["ROC " + std::to_string(i) + " - TOT"]->SetTitle(("TOT vs Channel, ROC " + std::to_string(i)).c_str());
+    tot_histo_map["ROC " + std::to_string(i) + " - TOT"]->SetStats(0);   
+    
+    toa_histo_map["ROC " + std::to_string(i) + " - TOA"] =
+        m_monitor->Book<TH2D>("ROC " + std::to_string(i) + " TOA",
+                              "ROC_" + std::to_string(i) + "_TOA", "",
+                              ";Channel;TOA", 72, 0, 72, 1000, 0, 1000);
+    m_monitor->SetDrawOptions(toa_histo_map["ROC " + std::to_string(i) + " - TOA"], "colz");
+    toa_histo_map["ROC " + std::to_string(i) + " - TOA"]->SetTitle(("TOA vs Channel, ROC " + std::to_string(i)).c_str());
+    toa_histo_map["ROC " + std::to_string(i) + " - TOA"]->SetStats(0);                         
   }
 
   nPlanes = 19;
@@ -31,6 +48,10 @@ void HCalTestBeamMonitor::AtConfiguration() {
   hcalhits_bot = m_monitor->Book<TH2D>("hcalhits_bot", "hcalhits_bot", "", ";Plane;Bar", nPlanes, 0, nPlanes, 12, 0, 12);
   m_monitor->SetDrawOptions(hcalhits_top, "colz");
   m_monitor->SetDrawOptions(hcalhits_bot, "colz");
+  hcalhits_top->SetTitle("Hits Above Threshold Top/Left");
+  hcalhits_bot->SetTitle("Hits Above Threshold Bot/Right");
+  hcalhits_top->SetStats(0);
+  hcalhits_bot->SetStats(0);
   auto daqmapfile{conf->Get("HCALDAQMAP", "")};
   EUDAQ_INFO("Reading HCal DAQ map from " + daqmapfile);
   auto gainfile{conf->Get("HCALGAIN", "")};
@@ -52,11 +73,13 @@ void HCalTestBeamMonitor::AtConfiguration() {
   adcgain_map = CSVParser::getADCGainMap(gainfile);
   totped_map = CSVParser::getTOTPedMap(gainfile);
   totgain_map = CSVParser::getTOTGainMap(gainfile);
+  
+  unusedchans = {8, 17, 26, 35, 44, 53, 62, 71, 72};
+  threshold_PE = 5.;
 }
 
 void HCalTestBeamMonitor::AtEventReception(EventSP event) {
   // Fill HCal plots
-  //auto hcal_event{std::make_shared<HgcrocDataPacket>(*event)};
   auto data = hcal::decode(event->GetBlock(1));
 
   auto thresh_map{std::map<std::string, int>()};
@@ -67,9 +90,9 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     int channel = el.channel();
     int link = el.link();
     int inlink = el.inlink_channel();
-    int chip_channel = channel + (channel >= 8)*1 + (channel >= 18)*1 + (channel >= 28)*1 + (channel >= 38)*1;
-    std::cout<<"fpga: "<<fpga<<"  roc: "<<roc<<"  channel: "<<channel<<"  link: "<<link<<"  inlink: "<<inlink<<"  chipchan: "<<chip_channel<<"  sample size: "<<samples.size()<<std::endl;
-    std::string rocchan = std::to_string(roc+1) + "," + std::to_string(chip_channel);
+    if(std::count(unusedchans.begin(), unusedchans.end(), channel)) continue;
+    std::cout<<"fpga: "<<fpga<<"  roc: "<<roc<<"  channel: "<<channel<<"  link: "<<link<<"  inlink: "<<inlink<<"  sample size: "<<samples.size()<<std::endl;
+    std::string rocchan = std::to_string(roc+1) + "," + std::to_string(channel);
     int cmb = -9999;
     int quadbar = -9999;
     int bar = -9999;
@@ -107,9 +130,11 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       bool isTOTComplete = sample.isTOTComplete();
       int toa = sample.toa();
       int tot = sample.tot();
-      int adc_tm1 = sample.adc_tm1();
+      int adc_tm1 = sample.adc_tm1(); //not really used without zero suppression
       int adc_t = sample.adc_t();
-      histo_map["ROC " + std::to_string(roc) + " - ADC"]->Fill(channel, adc_t);
+      adc_histo_map["ROC " + std::to_string(roc) + " - ADC"]->Fill(channel, adc_t);
+      tot_histo_map["ROC " + std::to_string(roc) + " - TOT"]->Fill(channel, tot);
+      toa_histo_map["ROC " + std::to_string(roc) + " - TOA"]->Fill(channel, toa);
       if(adc_t >= threshold && !thresh_map.count(rocchan)){
 	  thresh_map.insert(std::pair<std::string, int>(rocchan, 1));
 	  if(end == 0){
@@ -119,7 +144,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
             hcalhits_bot->Fill(plane, barchan);
           }
 	}
-      //std::cout<<"isTOT: "<<isTOT<<"  isTOTComplete: "<<isTOTComplete<<"  toa: "<<toa<<"  tot: "<<tot<<"  adc_tm1: "<<adc_tm1<<"  adc_t "<<adc_t<<std::endl;
+      std::cout<<"isTOT: "<<isTOT<<"  isTOTComplete: "<<isTOTComplete<<"  toa: "<<toa<<"  tot: "<<tot<<"  adc_tm1: "<<adc_tm1<<"  adc_t "<<adc_t<<std::endl;
     }
   }
 }
