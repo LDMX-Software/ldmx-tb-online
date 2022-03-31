@@ -161,17 +161,18 @@ decode(const std::vector<uint8_t>& binary_data) {
   utility::Reader reader(binary_data);
 
   // special header words not counted in event length
-  reader >> head1;
-  if (head1 == 0x11111111) { reader >> head1; }
+  do {
+    reader >> head1;
 #ifdef DEBUG
-  if (head1 == 0xbeef2021) {
-    std::cout << "Signal words imply version 1" << std::endl;
-  } else if (head1 == 0xbeef2022) {
-    std::cout << "Signal words imply version 2" << std::endl;
-  } else {
-    std::cout << "Misunderstood signal word " << debug::hex(head1) << std::endl;
-  }
+    if (head1 == 0xbeef2021) {
+      std::cout << "Signal words imply version 1" << std::endl;
+    } else if (head1 == 0xbeef2022) {
+      std::cout << "Signal words imply version 2" << std::endl;
+    } else {
+      std::cout << "Extra header (inserted by rogue): " << debug::hex(head1) << std::endl;
+    }
 #endif
+  } while (head1 != 0xbeef2021 and head1 != 0xbeef2022);
 
   /**
    * Decode event header
@@ -244,6 +245,41 @@ decode(const std::vector<uint8_t>& binary_data) {
     }
 #ifdef DEBUG
     std::cout << std::endl;
+#endif
+
+    /**
+     * extended event header in version 2
+     */
+    reader >> head1; i_event++;
+    uint32_t spill = ((head1 >> 12) & 0xfff);
+    uint32_t bunch = (head1 & 0xfff);
+#ifdef DEBUG
+    std::cout << " " << debug::hex(head1) 
+      << " Spill: " << spill 
+      << " Bunch: " << bunch << std::endl;
+#endif
+    reader >> head1; i_event++;
+#ifdef DEBUG
+    std::cout << " " << debug::hex(head1) 
+      << " 5 MHz Ticks since Spill: " << head1
+      << " Time: " << head1/5e6 << "s" << std::endl;
+#endif
+    reader >> head1; i_event++;
+#ifdef DEBUG
+    std::cout << " " << debug::hex(head1) 
+      << " Event Number: " << head1 << std::endl;
+#endif
+    reader >> head1; i_event++;
+    uint32_t run = (head1 & 0xFFF);
+    uint32_t DD = (head1>>23)&0x1F;
+    uint32_t MM = (head1>>28)&0xF;
+    uint32_t hh = (head1>>18)&0x1F;
+    uint32_t mm = (head1>>12)&0x3F;
+#ifdef DEBUG
+    std::cout << " " << debug::hex(head1) 
+      << " Run: " << run << " DD-MM hh:mm "
+      << DD << "-" << MM << " " << hh << ":" << mm
+      << std::endl;
 #endif
   }
 
