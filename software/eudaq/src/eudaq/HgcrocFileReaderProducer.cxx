@@ -1,19 +1,33 @@
-#include "eudaq/HgcrocFileReaderProducer.h"
 
 //---< C++ >---//
 #include <bitset>
 #include <chrono>
+#include <fstream>
 
 //---< eudaq >---//
 #include "eudaq/RunControl.hh"
+#include "eudaq/Producer.hh"
+
+class HgcrocFileReaderProducer : public eudaq::Producer {
+ public:
+  HgcrocFileReaderProducer(const std::string &name, const std::string &runcontrol);
+  void DoInitialise() override;
+  void DoConfigure() override;
+  void DoStartRun() override;
+  void DoStopRun() override;
+  void DoTerminate() override;
+  void DoReset() override;
+  void RunLoop() override;
+  static const uint32_t factory_id_{eudaq::cstr2hash("HgcrocFileReaderProducer")};
+ private:
+  std::shared_ptr<std::ifstream> ifile; 
+};
 
 namespace {
 auto dummy0 = eudaq::Factory<eudaq::Producer>::Register<
-    eudaq::HgcrocFileReaderProducer, const std::string &, const std::string &>(
-    eudaq::HgcrocFileReaderProducer::factory_id_);
+    HgcrocFileReaderProducer, const std::string &, const std::string &>(
+    HgcrocFileReaderProducer::factory_id_);
 }
-
-namespace eudaq {
 
 HgcrocFileReaderProducer::HgcrocFileReaderProducer(
     const std::string &name, const std::string &runcontrol)
@@ -66,7 +80,7 @@ void HgcrocFileReaderProducer::RunLoop() {
     // initial read.
     if (ifile->eof()) {
       EUDAQ_WARN("End of file reached.");
-      SetStatus(Status::STATE_STOPPED, "Stopped");
+      SetStatus(eudaq::Status::STATE_STOPPED, "Stopped");
       break;
     }
     ifile->read(reinterpret_cast<char *>(&packet[1]), sizeof(uint32_t));
@@ -101,5 +115,3 @@ void HgcrocFileReaderProducer::RunLoop() {
     ++event_count;
   }
 }
-
-} // namespace eudaq
