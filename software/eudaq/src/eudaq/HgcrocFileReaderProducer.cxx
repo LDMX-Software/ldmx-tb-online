@@ -212,6 +212,18 @@ class Reader {
   std::size_t file_size_;
 };  // RawDataFile
 
+struct hex {
+  uint32_t& w_;
+  hex(uint32_t& w) : w_{w} {}
+};
+
+std::ostream& operator<<(std::ostream& os, const hex& h) {
+  os << "0x" << std::setfill('0') << std::setw(8) << std::hex
+     << h.w_ << std::dec << std::setfill(' ');
+  return os;
+}
+
+
 class HgcrocFileReaderProducer : public eudaq::Producer {
  public:
   HgcrocFileReaderProducer(const std::string &name, const std::string &runcontrol);
@@ -273,8 +285,8 @@ void HgcrocFileReaderProducer::RunLoop() {
   while (file_) {
     do {
       file_ >> w;
-    } while(file_ and (w != 0xbeef2021 or w != 0xbeef2022));
-    // trailing words
+    } while(file_ and w != 0xbeef2021 and w != 0xbeef2022);
+    // catch trailing words or events only half read out trailing words
     if (!file_) break;
 
     // w is the signal word now.
