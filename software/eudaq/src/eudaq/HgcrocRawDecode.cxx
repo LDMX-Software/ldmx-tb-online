@@ -1,8 +1,14 @@
 #include "eudaq/HgcrocRawDecode.h"
+#include "eudaq/Exception.hh"
 
 //---< C++ >---//
 #include <bitset>
 #include <math.h>
+
+#include <iostream>
+#include <iomanip>
+// uncomment if you want the very verbose debug commands printed to _terminal_
+//#define DEBUG
 
 namespace hcal {
 namespace utility {
@@ -73,6 +79,10 @@ namespace debug {
 struct hex {
   uint32_t word_;
   hex(uint32_t w) : word_{w} {}
+  friend inline std::ostream& operator<<(std::ostream& os, const hex& h) {
+    return (os << "0x" << std::setw(8) << std::setfill('0') 
+        << std::hex << h.word_ << std::setfill(' ') << std::dec);
+  }
 };
 } // debug
 
@@ -199,7 +209,7 @@ decode(const std::vector<uint8_t>& binary_data) {
     // and subtract off the special header word above
     eventlen -= 1;
   } else {
-    throw std::runtime_error("HgcrocRawDecode only knows version 1 and 2 of DAQ format.");
+    EUDAQ_THROW("HgcrocRawDecode only knows version 1 and 2 of DAQ format.");
   }
 #ifdef DEBUG
   std::cout << debug::hex(head1)
@@ -404,9 +414,9 @@ decode(const std::vector<uint8_t>& binary_data) {
       int channel_index{-1};
       for (uint32_t j{0}; j < length_per_link.at(i_link) - 2; j++) {
         // skip zero-suppressed channel IDs
-        while (channel_index < 40 and not ro_map.test(channel_index)) {
+        do {
           channel_index++;
-        }
+        } while (channel_index < 40 and not ro_map.test(channel_index));
 
         // next word is this channel
         i_event++; reader >> w;

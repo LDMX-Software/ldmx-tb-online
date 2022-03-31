@@ -8,6 +8,9 @@
 #include "eudaq/RunControl.hh"
 #include "eudaq/Producer.hh"
 
+// uncomment to test raw decoder during loop
+//#include "eudaq/HgcrocRawDecode.h"
+
 class Reader {
  public:
   /**
@@ -321,6 +324,15 @@ void HgcrocFileReaderProducer::RunLoop() {
 
     // Copy the data block from the rogue frame
     event->AddBlock(0x1, packet);
+
+    /**
+     * helpful for development of decoding test
+    EUDAQ_DEBUG("Get block back from event");
+    auto bl = event->GetBlock(1);
+    EUDAQ_DEBUG("Test decoding of packet...");
+    hcal::decode(bl);
+    EUDAQ_DEBUG("Done test decoding.");
+    */
 
     // Send the event
     SendEvent(std::move(event));
