@@ -136,7 +136,7 @@ int HgcrocSample::secon() const { return 0x3ff & (word_ >> 10); }
 int HgcrocSample::third() const { return 0x3ff & word_; }
 
 ElectronicsLocation::ElectronicsLocation(unsigned int f, unsigned int l, unsigned int c)
-  : fpga_{f}, link_{l}, inlink_channel_{c}, roc_{l / 2}, channel_{c - 36*(c>=36)} {}
+  : fpga_{f}, link_{l}, inlink_channel_{c}, roc_{l / 2}, channel_{c + 36*(l%2)} {}
 
 unsigned int ElectronicsLocation::fpga() const { return fpga_; }
 unsigned int ElectronicsLocation::link() const { return link_; }
