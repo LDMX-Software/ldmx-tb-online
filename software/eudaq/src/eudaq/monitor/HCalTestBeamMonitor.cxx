@@ -67,7 +67,41 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     int channel = el.channel();
     int link = el.link();
     int inlink = el.inlink_channel();
-    std::cout<<"fpga: "<<fpga<<"  roc: "<<roc<<"  channel: "<<channel<<"  link: "<<link<<"  inlink: "<<inlink<<"  sample size: "<<samples.size()<<std::endl;
+    int chip_channel = channel + (channel >= 8)*1 + (channel >= 18)*1 + (channel >= 28)*1 + (channel >= 38)*1;
+    std::cout<<"fpga: "<<fpga<<"  roc: "<<roc<<"  channel: "<<channel<<"  link: "<<link<<"  inlink: "<<inlink<<"  chipchan: "<<chip_channel<<"  sample size: "<<samples.size()<<std::endl;
+    std::string rocchan = std::to_string(roc+1) + "," + std::to_string(chip_channel);
+    int cmb = -9999;
+    int quadbar = -9999;
+    int bar = -9999;
+    int plane = -9999;
+    if(cmb_map.count(rocchan) > 0 && quadbar_map.count(rocchan) > 0 && bar_map.count(rocchan) > 0 && plane_map.count(rocchan) > 0){
+      cmb = cmb_map.at(rocchan);
+      quadbar = quadbar_map.at(rocchan);
+      bar = bar_map.at(rocchan);
+      plane = plane_map.at(rocchan);
+    }
+    else{
+      std::cout << "Key not found: " << rocchan << std::endl;
+    }
+    int end = cmb%2;
+    int barchan = (4 - bar) + (quadbar - 1) * 4;
+    std::string digiid = "HcalDigiID(0:" + std::to_string(plane) + ":" + std::to_string(barchan) + ":" + std::to_string(end) + ")";
+    int detid = -9999;
+    double adcped = -9999.;
+    double adcgain = -9999.;
+    double totped = -9999.;
+    double totgain = -9999.;
+    if(detid_map.count(digiid) > 0 && adcped_map.count(digiid) > 0 && adcgain_map.count(digiid) > 0 && totped_map.count(digiid) > 0 && totgain_map.count(digiid) > 0){
+      detid = detid_map.at(digiid);
+      adcped = adcped_map.at(digiid);
+      adcgain = adcgain_map.at(digiid);
+      totped = totped_map.at(digiid);
+      totgain = totgain_map.at(digiid);
+    }
+    else{
+      std::cout << "Key not found: " << digiid << std::endl;
+    }
+    double threshold = 0; //adcped + adcgain; //This is wrong fix it
     for (auto &sample : samples) {
       bool isTOT = sample.isTOTinProgress();
       bool isTOTComplete = sample.isTOTComplete();
@@ -75,55 +109,8 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       int tot = sample.tot();
       int adc_tm1 = sample.adc_tm1();
       int adc_t = sample.adc_t();
-      std::cout<<"isTOT: "<<isTOT<<"  isTOTComplete: "<<isTOTComplete<<"  toa: "<<toa<<"  tot: "<<tot<<"  adc_tm1: "<<adc_tm1<<"  adc_t "<<adc_t<<std::endl;
-    }
-  }
-
-  /*auto samples{hcal_event->getSamples()};
-  for (auto &sample : samples) {
-    for (auto &subpacket : sample.subpackets) {
-      auto roc_id{subpacket.roc_id};
-      for (int i{0}; i < subpacket.adc.size(); ++i) {
-        histo_map["ROC " + std::to_string(roc_id) + " - ADC"]->Fill(
-            i, subpacket.adc[i]);
-	int channel = i; //Double check this. Probably not correct
-	int chip_channel = channel - (channel > 19)*1;
-	std::string rocchan = std::to_string(roc_id+1) + "," + std::to_string(channel);
-	int cmb = -9999;
-	int quadbar = -9999;
-	int bar = -9999;
-	int plane = -9999;
-
-	if(cmb_map.count(rocchan) > 0 && quadbar_map.count(rocchan) > 0 && bar_map.count(rocchan) > 0 && plane_map.count(rocchan) > 0){
-	  cmb = cmb_map.at(rocchan);
-	  quadbar = quadbar_map.at(rocchan);
-	  bar = bar_map.at(rocchan);
-	  plane = plane_map.at(rocchan);
-	}
-        else{
-          std::cout << "Key not found: " << rocchan << std::endl;
-        }
-
-	int end = cmb%2;
-	int barchan = (4 - bar) + (quadbar - 1) * 4;
-	std::string digiid = "HcalDigiID(0:" + std::to_string(plane) + ":" + std::to_string(barchan) + ":" + std::to_string(end) + ")";
-	int detid = -9999;
-	double adcped = -9999.;
-	double adcgain = -9999.;
-	double totped = -9999.;
-	double totgain = -9999.;
-	if(detid_map.count(digiid) > 0 && adcped_map.count(digiid) > 0 && adcgain_map.count(digiid) > 0 && totped_map.count(digiid) > 0 && totgain_map.count(digiid) > 0){
-          detid = detid_map.at(digiid);
-	  adcped = adcped_map.at(digiid);
-	  adcgain = adcgain_map.at(digiid);
-	  totped = totped_map.at(digiid);
-	  totgain = totgain_map.at(digiid);
-        }
-        else{
-          std::cout << "Key not found: " << digiid << std::endl;
-        }
-	double threshold = 0; //adcped + adcgain; //This is wrong fix it
-	if(subpacket.adc[i] >= threshold && !thresh_map.count(rocchan)){
+      histo_map["ROC " + std::to_string(roc) + " - ADC"]->Fill(channel, adc_t);
+      if(adc_t >= threshold && !thresh_map.count(rocchan)){
 	  thresh_map.insert(std::pair<std::string, int>(rocchan, 1));
 	  if(end == 0){
 	    hcalhits_top->Fill(plane, barchan);
@@ -132,8 +119,8 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
             hcalhits_bot->Fill(plane, barchan);
           }
 	}
-      }
+      //std::cout<<"isTOT: "<<isTOT<<"  isTOTComplete: "<<isTOTComplete<<"  toa: "<<toa<<"  tot: "<<tot<<"  adc_tm1: "<<adc_tm1<<"  adc_t "<<adc_t<<std::endl;
     }
-  }*/
+  }
 }
 } // namespace eudaq
