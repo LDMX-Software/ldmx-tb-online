@@ -42,6 +42,7 @@ p.histogramFile = f'adc_{base_name}.root'
 p.sequence = [ 
         hcal_format.HcalRawDecoder(
             input_file = arg.input_file,
+            connections_table = f'{os.environ["LDMX_BASE"]}/ldmx-sw/Hcal/data/testbeam_connections.csv',
             output_name = 'ChipSettingsTestDigis'
             ),
         dqm.NtuplizeHgcrocDigiCollection(
