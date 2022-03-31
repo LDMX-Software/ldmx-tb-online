@@ -6,6 +6,7 @@
 #include <rogue/utilities/fileio/StreamWriter.h>
 #include <rogue/utilities/fileio/StreamWriterChannel.h>
 #include <rogue/interfaces/stream/Master.h>
+#include <rogue/interfaces/stream/Slave.h>
 #include <rogue/interfaces/stream/TcpClient.h>
 #include <rogue/interfaces/stream/Frame.h>
 #include <rogue/interfaces/stream/FrameIterator.h>
@@ -19,7 +20,9 @@
 /**
  * Interface to a single polarfire 
  */
-class PolarfireProducer : public eudaq::Producer, public rogue::interfaces::stream::Master {
+class PolarfireProducer : public eudaq::Producer, 
+                          public rogue::interfaces::stream::Master,
+                          public rogue::interfaces::stream::Slave  {
  public:
   PolarfireProducer(const std::string & name, const std::string & runcontrol);
   void DoInitialise() override;
@@ -30,6 +33,9 @@ class PolarfireProducer : public eudaq::Producer, public rogue::interfaces::stre
   void DoReset() override;
   /// put onto its own tread by eudaq::CommandReceiver
   void RunLoop() override;
+  /// used in DMA readout to connect TCP client and eudaq monitoring
+  void acceptFrame (std::shared_ptr<rogue::interfaces::stream::Frame> frame);
+
   
   static const uint32_t factory_id_ = eudaq::cstr2hash("PolarfireProducer");
  private:
@@ -94,6 +100,8 @@ void PolarfireProducer::DoInitialise() try {
 
   host_ = ini->Get("TCP_ADDR", "127.0.0.1");
   port_ = ini->Get("TCP_PORT", 8000);
+  pft_ = std::make_unique<pflib::PolarfireTarget>(
+      new pflib::rogue::RogueWishboneInterface(host_,port_));
   EUDAQ_INFO("TCP client listening on " + host_ + ":" + std::to_string(port_));
 
   // how much data to buffer before writing
@@ -144,12 +152,12 @@ void PolarfireProducer::DoConfigure() try {
 
   auto& daq = pft_->hcal.daq();
   auto& elinks = pft_->hcal.elinks();
+  dma_enabled_ = true;
 
   /****************************************************************************
    * ELINKS menu in pftool
    *    RELINK
    *    or manual DELAY and BITSLIP values
-   ***************************************************************************/
   if (conf->Get("ELINKS_DO_RELINK",true)) {
     pft_->elink_relink(2);
   } else {
@@ -161,6 +169,7 @@ void PolarfireProducer::DoConfigure() try {
           conf->Get("ELINK_"+std::to_string(i)+"_DELAY", 128));
     }
   }
+   ***************************************************************************/
 
   /****************************************************************************
    * DAQ.SETUP menu in pftool commands
@@ -169,7 +178,6 @@ void PolarfireProducer::DoConfigure() try {
    *    STANDARD 
    *    L1APARAMS
    *    MULTISAMPLE
-   ***************************************************************************/
   daq.setIds(fpga_id_);
 
   dma_enabled_ = conf->Get("DO_DMA_RO",true);
@@ -193,13 +201,13 @@ void PolarfireProducer::DoConfigure() try {
       daq.setupLink(i,true,true,15,40);
     }
   }
+   ***************************************************************************/
 
   /****************************************************************************
    * ROC menu in pftool
    *    HARDRESET
    *    RESYNCLOAD
    *    LOAD_PARAM
-   ***************************************************************************/
   pft_->hcal.hardResetROCs(); // global reset
   pft_->hcal.resyncLoadROC(); // loops over ROCs if no i_roc provided
   for (int i{0}; i < 4; i++) {
@@ -210,6 +218,7 @@ void PolarfireProducer::DoConfigure() try {
           conf->Get("ROC_"+std::to_string(i)+"_PREPEND_DEFAULTS",true));
     }
   }
+   ***************************************************************************/
 } catch (const pflib::Exception& e) {
   EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
 }
@@ -220,10 +229,15 @@ void PolarfireProducer::DoConfigure() try {
  *  - flags for "external" or various "local" modes
  */
 void PolarfireProducer::DoStartRun()  try {
-  exiting_run_ = false;
+  std::cout << "DoStartRun" << std::endl;
+  std::cout << " prepareNewRun" << std::endl;
   pft_->prepareNewRun();
-  if (the_l1a_mode_ == L1A_MODE::EXTERNAL)
+  if (the_l1a_mode_ == L1A_MODE::EXTERNAL) {
+    std::cout << " Enable external trigger" << std::endl;
     pft_->backend->fc_enables(true,true,false);
+  }
+  exiting_run_ = false;
+  std::cout << "leaving DoStartRun" << std::endl;
 } catch (const pflib::Exception& e) {
   EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
 }
@@ -255,29 +269,6 @@ void PolarfireProducer::DoTerminate(){
   // close lock file?
 }
 
-class DMAReceiver : public rogue::interfaces::stream::Slave {
-  std::queue<std::vector<uint8_t>> event_buffer_;
- public:
-  static std::shared_ptr<DMAReceiver> create() {
-    static std::shared_ptr<DMAReceiver> ret =
-      std::make_shared<DMAReceiver>();
-    return(ret);
-  }
-  DMAReceiver() : rogue::interfaces::stream::Slave() { }
-  /// get next event from event buffer
-  const std::vector<uint8_t>& next() {
-    return event_buffer_.front();
-  }
-  /// pop next event from event buffer
-  void pop() {
-    event_buffer_.pop();
-  }
-  void acceptFrame (std::shared_ptr<rogue::interfaces::stream::Frame> frame) {
-    auto lock = frame->lock();
-    event_buffer_.emplace(frame->begin(),frame->end());
-  }
-};
-
 /**
  * Include some "mode" about if sending our own L1A ("local" mode)
  * or some "external" mode where L1A is generated elsewhere
@@ -292,11 +283,16 @@ class DMAReceiver : public rogue::interfaces::stream::Slave {
  * the member variable.
  */
 void PolarfireProducer::RunLoop() try {
+  std::cout << "RunLoop launched" << std::endl;
   auto pf_start_run = std::chrono::steady_clock::now();
   std::time_t tt = time(NULL);
   std::tm gmtm = *std::gmtime(&tt); //GMT (UTC)
+  std::cout << " setup event tag" << std::endl;
+  // set event tag for firmware
+  pft_->backend->daq_setup_event_tag(GetRunNumber(), 
+      gmtm.tm_mday, gmtm.tm_mon+1, gmtm.tm_hour, gmtm.tm_min);
   std::shared_ptr<rogue::interfaces::stream::TcpClient> tcp;
-  std::shared_ptr<DMAReceiver> dma_data_src;
+  std::cout << " creating writier" << std::endl;
   /// run has begun, open writer for this polarfire
   rogue::utilities::fileio::StreamWriterPtr writer{
     rogue::utilities::fileio::StreamWriter::create()};
@@ -305,22 +301,22 @@ void PolarfireProducer::RunLoop() try {
   output_file << output_path_ << "/" 
     << file_prefix_ 
     << "_run_" << GetRunNumber() 
-    << "_" << gmtm.tm_year << "Y" << gmtm.tm_mon << "m" << gmtm.tm_mday << "d"
+    << "_" << gmtm.tm_year << "Y" << gmtm.tm_mon+1 << "m" << gmtm.tm_mday << "d"
     << "_" << gmtm.tm_hour << "H" << gmtm.tm_min << "M" << gmtm.tm_sec << "S"
     << ".raw";
   EUDAQ_INFO("Writing data stream to "+output_file.str());
   try {
+    std::cout << " open writing file" << std::endl;
     writer->open(output_file.str());
+    std::cout << " done" << std::endl;
     if (dma_enabled_) {
-      // set event tag for firmware
-      pft_->backend->daq_setup_event_tag(GetRunNumber(), 
-          gmtm.tm_mday, gmtm.tm_mon+1, gmtm.tm_hour, gmtm.tm_min);
       // connect rogue streams
       EUDAQ_INFO("Receiving DMA data from "+host_+":"+std::to_string(port_+2));
       tcp = rogue::interfaces::stream::TcpClient::create(host_,port_+2);
-      dma_data_src = DMAReceiver::create();
+      EUDAQ_DEBUG("TCP Client created");
       tcp->addSlave(writer->getChannel(0));
-      tcp->addSlave(dma_data_src);
+      tcp->addSlave(std::shared_ptr<PolarfireProducer>(this));
+      EUDAQ_DEBUG("Writer and Receiver connected to TCP");
     } else {
       this->addSlave(writer->getChannel(0));
     }
@@ -329,10 +325,12 @@ void PolarfireProducer::RunLoop() try {
   }
 
   /// loop until we receive end-of-run
-  auto pf_trigger = std::chrono::steady_clock::now();
-  auto pf_end_of_busy = pf_trigger + pf_busy_ms_;
   while (not exiting_run_) {
+    // start next window timer
+    auto pf_trigger = std::chrono::steady_clock::now();
+    auto pf_end_of_busy = pf_trigger + pf_busy_ms_;
     // depending on configured mode, we trigger daq readout or not
+    std::cout << "trigger..." << std::flush;
     switch(the_l1a_mode_) {
       case L1A_MODE::PEDESTAL:
         pft_->backend->fc_sendL1A();
@@ -345,23 +343,14 @@ void PolarfireProducer::RunLoop() try {
         break;
     }
 
-    // wait current daq window is done
-    std::this_thread::sleep_until(pf_end_of_busy);
-    // start next window timer
-    pf_trigger = std::chrono::steady_clock::now();
-    pf_end_of_busy = pf_trigger + pf_busy_ms_;
-
+    std::cout << "collect..." << std::flush;
     // get event data and push it along the pipeline
-    std::vector<uint8_t> event_data;
     if (dma_enabled_) {
       // DMA pushes data to TCP server which pushes it along to writer
-      // need to pop last event packet from TCP server using our DMAReceiver
-      event_data = dma_data_src->next();
-      dma_data_src->pop();
-      // no sendFrame necessary since the TCP bridge is connected directly
-      // to the file writer
+      // and sends it along eudaq pipline
     } else {
       // without DMA enabled, need to PULL data from polarfire
+      std::vector<uint8_t> event_data;
       std::vector<uint32_t> event_data_words = pft_->daqReadEvent();
     
       // cut data words into bytes
@@ -374,25 +363,45 @@ void PolarfireProducer::RunLoop() try {
       frame->setPayload(size);
       std::copy(event_data.begin(), event_data.end(), frame->begin());
       sendFrame(frame);
-    }
   
-    // wrap data in eudaq object and send it downstream to the monitoring
-    auto ev = eudaq::Event::MakeUnique("HgcrocRaw");
-    ev->AddBlock(fpga_id_, event_data);
-    std::chrono::nanoseconds ev_beg(pf_trigger - pf_start_run);
-    std::chrono::nanoseconds ev_end(pf_end_of_busy - pf_start_run);
-    ev->SetTimestamp(ev_beg.count(), ev_end.count());
+      std::cout << "wrap in eudaq::Event..." << std::flush;
+      // wrap data in eudaq object and send it downstream to the monitoring
+      auto ev = eudaq::Event::MakeUnique("HgcrocRaw");
+      ev->AddBlock(fpga_id_, event_data);
+      std::chrono::nanoseconds ev_beg(pf_trigger - pf_start_run);
+      std::chrono::nanoseconds ev_end(pf_end_of_busy - pf_start_run);
+      ev->SetTimestamp(ev_beg.count(), ev_end.count());
+  
+      std::cout << "send..." << std::flush;
+      SendEvent(std::move(ev));
+    }
 
-    SendEvent(std::move(ev));
+    std::cout << "sleep..." << std::flush;
+    // wait current daq window is done
+    std::this_thread::sleep_until(pf_end_of_busy);
+  
+    std::cout << "done" << std::endl;
   }
 
   // done writing
   writer->close();
   if (dma_enabled_) {
-    dma_data_src->stop();
     tcp->stop();
   }
 } catch (const pflib::Exception& e) {
   EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
+}
+
+void PolarfireProducer::acceptFrame(std::shared_ptr<rogue::interfaces::stream::Frame> frame) {
+  std::cout << "acceptFrame" << std::endl;
+  auto lock = frame->lock();
+  std::vector<uint8_t> event_data{frame->begin(), frame->end()};
+  std::cout << "wrap in eudaq::Event..." << std::flush;
+  // wrap data in eudaq object and send it downstream to the monitoring
+  auto ev = eudaq::Event::MakeUnique("HgcrocRaw");
+  ev->AddBlock(fpga_id_, event_data);
+  std::cout << "send..." << std::flush;
+  SendEvent(std::move(ev));
+  std::cout << "done" << std::endl;
 }
 
