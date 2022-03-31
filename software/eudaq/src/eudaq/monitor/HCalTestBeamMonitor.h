@@ -28,10 +28,11 @@ private:
     return (value >> low_bit) & mask;
   }
 
-  std::map<std::string, TH2D*> histo_map; 
+  std::map<std::string, TH2D*> adc_histo_map;
+  std::map<std::string, TH2D*> tot_histo_map;
+  std::map<std::string, TH2D*> toa_histo_map; 
   TH2D* hcalhits_top; 
   TH2D* hcalhits_bot; 
-  std::map<int, TH2D*> hcal_run_map; 
   std::map<std::string, int> cmb_map;
   std::map<std::string, int> quadbar_map;
   std::map<std::string, int> bar_map;
@@ -45,6 +46,8 @@ private:
 
   int nPlanes;
   int hcal_adc_thresh;
+  double threshold_PE;
+  std::vector<int> unusedchans;
 };
 } // namespace eudaq
 #endif // EUDAQ_HCALTESTBEAMMONITOR_H
