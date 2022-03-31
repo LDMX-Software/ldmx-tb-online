@@ -329,10 +329,9 @@ void PolarfireProducer::RunLoop() try {
   }
 
   /// loop until we receive end-of-run
+  auto pf_trigger = std::chrono::steady_clock::now();
+  auto pf_end_of_busy = pf_trigger + pf_busy_ms_;
   while (not exiting_run_) {
-    auto pf_trigger = std::chrono::steady_clock::now();
-    auto pf_end_of_busy = pf_trigger + pf_busy_ms_;
-
     // depending on configured mode, we trigger daq readout or not
     switch(the_l1a_mode_) {
       case L1A_MODE::PEDESTAL:
@@ -346,9 +345,12 @@ void PolarfireProducer::RunLoop() try {
         break;
     }
 
-    // wait until window is done
+    // wait current daq window is done
     std::this_thread::sleep_until(pf_end_of_busy);
-  
+    // start next window timer
+    pf_trigger = std::chrono::steady_clock::now();
+    pf_end_of_busy = pf_trigger + pf_busy_ms_;
+
     // get event data and push it along the pipeline
     std::vector<uint8_t> event_data;
     if (dma_enabled_) {
@@ -356,6 +358,8 @@ void PolarfireProducer::RunLoop() try {
       // need to pop last event packet from TCP server using our DMAReceiver
       event_data = dma_data_src->next();
       dma_data_src->pop();
+      // no sendFrame necessary since the TCP bridge is connected directly
+      // to the file writer
     } else {
       // without DMA enabled, need to PULL data from polarfire
       std::vector<uint32_t> event_data_words = pft_->daqReadEvent();
