@@ -127,44 +127,37 @@ export PATH=$DAQ_INSTALL_PREFIX/bin:$PATH
 
 Once the commands above are executed, apps (e.g. emulator) can be run. 
 
-# Running the emulator
+# Running with EUDAQ
 
-There are two parts to the emulator: the server and client. The
-server will make use of "Generators" to build frames and ship
-them out at a specified rate via TCP/IP. The client will 
-recieve the frames via TCP/IP and will pass it along to a receiver 
-for further processing. Further documentation of how generators
-and receivers interact via TCP/IP in rogue can be found 
-[here](https://slaclab.github.io/rogue/interfaces/stream/usingTcp.html).
+The following guide describes the procedure and elements needed to take
+data using `EUDAQ`.  There are currently three possible ways to exercise
+the full DAQ chain: 1) using emulated data 2) replaying raw data 
+3) receiving raw data from a detector subsystem.  For initial testing, 
+the use of 1 and 2 are recommended. 
 
-## Example - Trigger Scintillator Emulator 
+At minimum, only the run control and `rogue` producer (`RogueTcpClientProducer`)
+are needed to take data.  In this minimal case, the `RogueTcpClientProducer`
+instantiates a `tcp` bridge that allows receiving of data from a server
+on a specific port.  The raw data is then passed to a rogue file writer 
+which dumps the data to disk.  The `RogueTcpClientProducer` also includes 
+the logic to send commands to the server during the run control state 
+transitions which enables initialization and configuration of a subdetector.
 
-To run the Trigger Scintillator emulator, first execute the following
-command on the server side
+Each `EUDAQ` element needs to be run in a seperate terminal window.  This is 
+denoted by the `Terminal #` specified prior to the command.  
 
-```
-emulator --server --trig --rate 5
-```
+To begin, the run control can be started as follows
 
-This will open a TCP/IP connection on all server interfaces using 
-port 8000.  The `--rate` is used to specify the stream rate in Hz. 
-The port can also be specified via the command line using the flag
-`--port`.
-
-Once the server side emulator has been started, the client side 
-receiver can be initialize as follows
-
-```
-emulator --client --trig --addr <ip> --port <tcp/ip port> 
+Terminal 1 - Run Control
+```bash
+euRun -a tcp://4000
 ```
 
-Where `<ip>` is the IP address of the server and `<tcp/ip port>` is
-the port on which the tcp bridge was open on the server side.  If
-both the server and client are running on the same machine, the 
-address should be specified as `127.0.0.1`. 
- 
-Once the client is started, you should begin to see the RX and TX counters
-start to increase. 
+Terminal 2 - Producer
+```bash
+euCliProducer -n RogueTcpClientProducer -t hcal -r tcp://localhost:4000
+```
+
 
 ## Emulation using eudaq
 
@@ -244,3 +237,42 @@ The variable `EUDAQ_DC` is used to tell the producer the name of the data
 collector it should connect and send events to. Similarly, the variable
 `EUDAQ_MN` is used to tell the data collector to which monitoring app
 to connect to. 
+
+### Legacy
+
+There are two parts to the emulator: the server and client. The
+server will make use of "Generators" to build frames and ship
+them out at a specified rate via TCP/IP. The client will 
+recieve the frames via TCP/IP and will pass it along to a receiver 
+for further processing. Further documentation of how generators
+and receivers interact via TCP/IP in rogue can be found 
+[here](https://slaclab.github.io/rogue/interfaces/stream/usingTcp.html).
+ 
+
+To run the Trigger Scintillator emulator, first execute the following
+command on the server side
+
+```
+emulator --server --trig --rate 5
+```
+
+This will open a TCP/IP connection on all server interfaces using 
+port 8000.  The `--rate` is used to specify the stream rate in Hz. 
+The port can also be specified via the command line using the flag
+`--port`.
+
+Once the server side emulator has been started, the client side 
+receiver can be initialize as follows
+
+```
+emulator --client --trig --addr <ip> --port <tcp/ip port> 
+```
+
+Where `<ip>` is the IP address of the server and `<tcp/ip port>` is
+the port on which the tcp bridge was open on the server side.  If
+both the server and client are running on the same machine, the 
+address should be specified as `127.0.0.1`. 
+ 
+Once the client is started, you should begin to see the RX and TX counters
+start to increase. 
+
