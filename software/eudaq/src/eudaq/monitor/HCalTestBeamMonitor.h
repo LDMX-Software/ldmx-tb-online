@@ -6,6 +6,8 @@
 
 #include "TH2.h"
 
+#include "TH1.h"
+
 #include "eudaq/CSVParser.h"
 
 namespace eudaq {
@@ -33,6 +35,7 @@ private:
   std::map<std::string, TH2D*> toa_histo_map; 
   TH2D* hcalhits_top; 
   TH2D* hcalhits_bot; 
+  TH1D* total_energy; 
   std::map<std::string, int> cmb_map;
   std::map<std::string, int> quadbar_map;
   std::map<std::string, int> bar_map;
