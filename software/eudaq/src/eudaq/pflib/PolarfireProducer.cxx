@@ -1,5 +1,4 @@
 
-#include <iostream>
 #include <memory>
 #include <chrono>
 
@@ -170,11 +169,25 @@ void PolarfireProducer::DoConfigure() try {
     EUDAQ_THROW("Unrecognized L1A mode "+l1a_mode);
   }
 
-  fpga_id_ = conf->Get("FPGA_ID", 0);
-  int samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
+  /* try to configure DMA
+  fpga_id_;  = conf->Get("FPGA_ID", 0);
+  uint8_t samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
   dma_enabled_ = conf->Get("DO_DMA_RO",true);
   rwbi()->daq_dma_enable(dma_enabled_);
   rwbi()->daq_dma_setup((uint8_t)fpga_id_, (uint8_t)samples_per_event);
+  */
+
+  /* check chip if it is dma
+   */
+  uint8_t samples_per_event, fpga_id;
+  rwbi()->daq_get_dma_setup(fpga_id, samples_per_event, dma_enabled_);
+  fpga_id_ = fpga_id;
+  EUDAQ_INFO("DMA Setup : "
+      +std::string(dma_enabled_?" ENABLED":"DISABLED")
+      +"FPGA = "+std::to_string(fpga_id)
+      +", samples = "+std::to_string(samples_per_event));
+
+  // construct pipeline depending on readout mode
   if (dma_enabled_) {
     dma_sender_ = DMADataSender::create(this);
     EUDAQ_DEBUG("DMADataSender created");
@@ -353,22 +366,18 @@ void PolarfireProducer::RunLoop() try {
     auto pf_trigger = std::chrono::steady_clock::now();
     i_trig++;
     auto pf_end_of_busy = pf_trigger + pf_busy_ms_;
-    // get event data and push it along the pipeline
     if (not dma_enabled_) {
       // without DMA enabled, need to PULL data from polarfire
       std::vector<uint32_t> event_data_words = pft_->daqReadEvent();
-    
       // cut data words into bytes
       const uint8_t *ptr = reinterpret_cast<const uint8_t*>(&event_data_words[0]);
       std::vector<uint8_t> event_data(ptr, ptr + sizeof(uint32_t)*event_data_words.size());
-    
       // wrap event data in rogue frame to send it to file writer
       auto size = event_data.size();
       auto frame = reqFrame(size, true);
       frame->setPayload(size);
       std::copy(event_data.begin(), event_data.end(), frame->begin());
       sendFrame(frame);
-  
       // wrap data in eudaq object and send it downstream to the monitoring
       auto ev = eudaq::Event::MakeUnique("HgcrocRaw");
       ev->AddBlock(fpga_id_, event_data);
