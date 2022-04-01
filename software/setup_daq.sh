@@ -26,5 +26,10 @@ export LD_LIBRARY_PATH=/u1/ldmx/server/FiberTrackerDAQ/dip-5.7.0/lib64:$LD_LIBRA
 export WRTiming_DIR=/u1/ldmx/server/WRTimestamping
 export LD_LIBRARY_PATH=${WRTiming_DIR}/lib:$LD_LIBRARY_PATH
 
+# pflib
+export pflib_DIR=/u1/ldmx/server/pflib/install
+export LD_LIBRARY_PATH=${pflib_DIR}/lib:${LD_LIBRARY_PATH}
+export PATH=${pflib_DIR}/bin:${PATH}
+
 # add root
 source /u1/ldmx/server/root/root_install/bin/thisroot.sh
