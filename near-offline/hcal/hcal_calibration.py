@@ -22,22 +22,22 @@ with open(outputFileName, mode='w') as datafile:
     writer = csv.writer(datafile, delimiter=',', quotechar='"',)
     writer.writerow(header1)
     writer.writerow(header2)
+    count = 0
     for e in tree : #Loop over events in tree
-        if True:
-            for d in e:
-                link = d.link
-                channel = d.channel - 1 #Channel in tuple starts at 1, needs to start at 0
-                chan = (link%2) * 36 + channel #Get correct chan for odd numbered links
-                raw_id = d.raw_id
-                roc = int(link / 2)
-                if(raw_id in usedchans): #Don't duplicate channels
-                    continue
-                print(roc, link, chan)
-                adc_ped = 1. #Dummy Value
-                adc_gain = 1.2 #Dummy Value
-                tot_ped = 1. #Dummy Value
-                tot_gain = 2.5 #Dummy Value
-                elloc = "{0}:{1}".format(roc, chan)
-                line = [str(raw_id), elloc, str(adc_ped), str(adc_gain), str(tot_ped), str(tot_gain)]
-                writer.writerow(line)
-                usedchans[raw_id] = True
+        for d in e:
+            count = count + 1
+            link = d.link
+            channel = d.channel - 1 #Channel in tuple starts at 1, needs to start at 0
+            chan = (link%2) * 36 + channel #Get correct chan for odd numbered links
+            raw_id = d.raw_id
+            roc = int(link / 2) + 1 #ROC ID in tuple starts at 0, needs to start at 1
+            if(raw_id in usedchans): #Don't duplicate channels
+                continue
+            adc_ped = 1. #Dummy Value
+            adc_gain = 1.2 #Dummy Value
+            tot_ped = 1. #Dummy Value
+            tot_gain = 2.5 #Dummy Value
+            elloc = "{0}:{1}".format(roc, chan)
+            line = [str(raw_id), elloc, str(adc_ped), str(adc_gain), str(tot_ped), str(tot_gain)]
+            writer.writerow(line)
+            usedchans[raw_id] = True
