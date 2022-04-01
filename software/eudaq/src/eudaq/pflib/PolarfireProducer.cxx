@@ -65,6 +65,7 @@ class PolarfireProducer : public eudaq::Producer,
  private:
   /// connection to polarfire
   std::unique_ptr<pflib::PolarfireTarget> pft_;
+  /// get the RogueWishboneInterface handle
   pflib::rogue::RogueWishboneInterface* rwbi() {
     return dynamic_cast<pflib::rogue::RogueWishboneInterface*>(pft_->wb);
   }
@@ -78,6 +79,8 @@ class PolarfireProducer : public eudaq::Producer,
   bool dma_enabled_;
   /// dma data sender to bring data from rogue into eudaq
   std::shared_ptr<DMADataSender> dma_sender_;
+  /// rogue writer for non-DMA readout
+  std::shared_ptr<rogue::utilities::fileio::StreamWriter> nondma_writer_;
   /// host that we should be watching
   std::string host_;
   /// port of **wishbone** server on that host (DMA server is assumed to be +2)
@@ -104,7 +107,8 @@ auto d = eudaq::Factory<eudaq::Producer>::Register<
 
 PolarfireProducer::PolarfireProducer(const std::string & name, const std::string & runcontrol)
   : eudaq::Producer(name, runcontrol),
-    rogue::interfaces::stream::Master() {}
+    rogue::interfaces::stream::Master(),
+    nondma_writer_{rogue::utilities::fileio::StreamWriter::create()} {}
 
 /**
  * Initialization procedures
@@ -177,27 +181,6 @@ void PolarfireProducer::DoConfigure() try {
   rwbi()->daq_dma_setup((uint8_t)fpga_id_, (uint8_t)samples_per_event);
   */
 
-  /* check chip if it is dma
-   */
-  uint8_t samples_per_event, fpga_id;
-  rwbi()->daq_get_dma_setup(fpga_id, samples_per_event, dma_enabled_);
-  fpga_id_ = fpga_id;
-  EUDAQ_INFO("DMA Setup : "
-      +std::string(dma_enabled_?" ENABLED":"DISABLED")
-      +"FPGA = "+std::to_string(fpga_id)
-      +", samples = "+std::to_string(samples_per_event));
-
-  // construct pipeline depending on readout mode
-  if (dma_enabled_) {
-    dma_sender_ = DMADataSender::create(this);
-    EUDAQ_DEBUG("DMADataSender created");
-    rwbi()->daq_dma_dest(dma_sender_);
-    EUDAQ_DEBUG("Receiver connected to TCP");
-  } else {
-    // we are the frame generator without DMA readout
-    //this->addSlave(writer_->getChannel(0));
-  }
-
   auto& daq = pft_->hcal.daq();
   auto& elinks = pft_->hcal.elinks();
   /****************************************************************************
@@ -261,6 +244,27 @@ void PolarfireProducer::DoConfigure() try {
     }
   }
    ***************************************************************************/
+
+  /* check chip if it is dma
+   */
+  uint8_t samples_per_event, fpga_id;
+  rwbi()->daq_get_dma_setup(fpga_id, samples_per_event, dma_enabled_);
+  fpga_id_ = fpga_id;
+  EUDAQ_INFO("DMA Setup : "
+      +std::string(dma_enabled_?" ENABLED":"DISABLED")
+      +", FPGA = "+std::to_string(fpga_id)
+      +", samples = "+std::to_string(samples_per_event));
+
+  // construct pipeline depending on readout mode
+  if (dma_enabled_) {
+    dma_sender_ = DMADataSender::create(this);
+    EUDAQ_DEBUG("DMADataSender created");
+    rwbi()->daq_dma_dest(dma_sender_);
+    EUDAQ_DEBUG("Receiver connected to TCP");
+  } else {
+    // we are the frame generator without DMA readout
+    this->addSlave(nondma_writer_->getChannel(0));
+  }
 } catch (const pflib::Exception& e) {
   EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
 }
@@ -286,7 +290,8 @@ void PolarfireProducer::DoStartRun()  try {
     << ".raw";
   EUDAQ_INFO("Writing data stream to "+output_file.str());
   try {
-    rwbi()->daq_dma_dest(output_file.str());
+    if (dma_enabled_) rwbi()->daq_dma_dest(output_file.str());
+    else nondma_writer_->open(output_file.str());
   } catch (const std::exception& e) {
     EUDAQ_THROW("Rogue Error : "+std::string(e.what()));
   }
@@ -309,7 +314,8 @@ void PolarfireProducer::DoStopRun(){
   std::this_thread::sleep_for(2*pf_busy_ms_);
   if (the_l1a_mode_ == L1A_MODE::EXTERNAL)
     pft_->backend->fc_enables(false,true,false);
-  rwbi()->daq_dma_close();
+  if (dma_enabled_) rwbi()->daq_dma_close();
+  else nondma_writer_->close();
 }
 /**
  * i.e. recover from failure, this is the only available
@@ -321,6 +327,7 @@ void PolarfireProducer::DoReset(){
   exiting_run_ = true;
   // LOCK_UN lock file?
   pft_.reset(nullptr);
+  if (nondma_writer_->isOpen()) nondma_writer_->close();
 }
 /**
  * Not sure what this does...
@@ -386,7 +393,7 @@ void PolarfireProducer::RunLoop() try {
     // wait current daq window is done
     std::this_thread::sleep_until(pf_end_of_busy);
   }
-  EUDAQ_DEBUG("N Triggers: " + std::to_string(i_trig));
+  EUDAQ_DEBUG("N Triggers Sent: " + std::to_string(i_trig));
 } catch (const pflib::Exception& e) {
   EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
 }
