@@ -114,14 +114,10 @@ PolarfireProducer::PolarfireProducer(const std::string & name, const std::string
  * Initialization procedures
  *
  * We open the connection to the wishbone interface and pass
- * this interface connection to our Hcal object which holds 
+ * this interface connection to our PolarfireTarget object which holds 
  * more of the "high-level" functions. We also open the connection
  * to the backend. With Rogue, the wishbone interface and
  * the backend are the same.
- *
- * This is where we decide what type of readout mode will be done
- *  - DMA/stream (not implemented or tested yet)
- *  - MemMap (currently only one supported)
  */
 void PolarfireProducer::DoInitialise() try {
   auto ini = GetInitConfiguration();
@@ -138,7 +134,12 @@ void PolarfireProducer::DoInitialise() try {
 /**
  * Configuration of connection to polarfire
  *
- * Cases to Handle:
+ * Besides the trigger type for the run and the configuratino
+ * of the output raw files, all of the configuration of the
+ * chip must be done _prior_ to launching this producer within
+ * pftool.
+ *
+ * ## Cases to Handle
  *  - instance of this class for each polarfire in real world
  *  - specify which polarfire we are
  *  - specify which ROCs are actually there
@@ -146,7 +147,6 @@ void PolarfireProducer::DoInitialise() try {
  *  - beam runs, charge injection runs, ...
  *  - e.g. set charge injection amplitude from here
  *  - (pflib) get links up and running properly
- *  - stream vs memory map readout mode from rogue POV
  */
 void PolarfireProducer::DoConfigure() try {
   auto conf = GetConfiguration();
@@ -162,7 +162,6 @@ void PolarfireProducer::DoConfigure() try {
   file_prefix_ = conf->Get("FILE_PREFIX","ldmx_hcal");
 
   auto l1a_mode{conf->Get("L1A_MODE","PEDESTAL")};
-  EUDAQ_INFO("L1A Trigger Mode set to " + l1a_mode);
   if (l1a_mode == "PEDESTAL") {
     the_l1a_mode_ = L1A_MODE::PEDESTAL;
   } else if (l1a_mode == "CHARGE") {
@@ -172,14 +171,7 @@ void PolarfireProducer::DoConfigure() try {
   } else {
     EUDAQ_THROW("Unrecognized L1A mode "+l1a_mode);
   }
-
-  /* try to configure DMA
-  fpga_id_;  = conf->Get("FPGA_ID", 0);
-  uint8_t samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
-  dma_enabled_ = conf->Get("DO_DMA_RO",true);
-  rwbi()->daq_dma_enable(dma_enabled_);
-  rwbi()->daq_dma_setup((uint8_t)fpga_id_, (uint8_t)samples_per_event);
-  */
+  EUDAQ_INFO("L1A Trigger Mode set to " + l1a_mode);
 
   auto& daq = pft_->hcal.daq();
   auto& elinks = pft_->hcal.elinks();
@@ -209,7 +201,12 @@ void PolarfireProducer::DoConfigure() try {
    *    MULTISAMPLE
   daq.setIds(fpga_id_);
 
+  fpga_id_;  = conf->Get("FPGA_ID", 0);
+  uint8_t samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
+  dma_enabled_ = conf->Get("DO_DMA_RO",true);
   if (dma_enabled_) {
+    rwbi()->daq_dma_enable(dma_enabled_);
+    rwbi()->daq_dma_setup((uint8_t)fpga_id_, (uint8_t)samples_per_event);
   }
 
   for (int i{0}; i < elinks.nlinks(); i++) {
@@ -263,6 +260,7 @@ void PolarfireProducer::DoConfigure() try {
     EUDAQ_DEBUG("Receiver connected to TCP");
   } else {
     // we are the frame generator without DMA readout
+    EUDAQ_DEBUG("non-DMA writer connected to us");
     this->addSlave(nondma_writer_->getChannel(0));
   }
 } catch (const pflib::Exception& e) {
@@ -296,9 +294,10 @@ void PolarfireProducer::DoStartRun()  try {
     EUDAQ_THROW("Rogue Error : "+std::string(e.what()));
   }
   // prep run
-  pft_->prepareNewRun();
+  EUDAQ_INFO("Preparing for new run.");
   // enable external triggers
   if (the_l1a_mode_ == L1A_MODE::EXTERNAL) {
+    EUDAQ_INFO("Enabling external triggering");
     pft_->backend->fc_enables(true,true,false);
   }
   exiting_run_ = false;
@@ -352,8 +351,11 @@ void PolarfireProducer::DoTerminate(){
  */
 void PolarfireProducer::RunLoop() try {
   // don't do anything if in external trigger mode
-  if (dma_enabled_ and the_l1a_mode_ == L1A_MODE::EXTERNAL) return;
-
+  if (dma_enabled_ and the_l1a_mode_ == L1A_MODE::EXTERNAL) {
+    EUDAQ_INFO("DMA Readout and External trigger means nothing for RunLoop to do.");
+    return;
+  }
+  EUDAQ_INFO("Run loop beginning");
   /// loop until we receive end-of-run
   static std::size_t i_trig{0};
   while (not exiting_run_) {
