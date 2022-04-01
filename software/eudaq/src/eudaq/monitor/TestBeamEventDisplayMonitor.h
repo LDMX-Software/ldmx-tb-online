@@ -26,7 +26,9 @@ private:
     return (value >> low_bit) & mask;
   }
   
-  std::map<int, TH2D*> hcal_event_map;
+  //std::map<int, TH2D*> hcal_event_map;
+  
+  TH2D* hcal_event; 
 
   std::map<std::string, int> cmb_map;
   std::map<std::string, int> quadbar_map;
@@ -38,11 +40,11 @@ private:
   std::map<std::string, double> adcgain_map;
   std::map<std::string, double> totped_map;
   std::map<std::string, double> totgain_map;
-
-  TH2D* ts_event;
+  
+  std::vector<int> unusedchans;
   int nPlanes;
-  double time_reset; //seconds
-  int n;
+  int nevents_reset;
+  int nevents;
 };
 } // namespace eudaq
 #endif // EUDAQ_TESTBEAMEVENTDISPLAYMONITOR_H
