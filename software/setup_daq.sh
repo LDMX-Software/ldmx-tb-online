@@ -23,7 +23,8 @@ export dip_DIR=/u1/ldmx/server/FiberTrackerDAQ/dip-5.7.0/
 export LD_LIBRARY_PATH=/u1/ldmx/server/FiberTrackerDAQ/dip-5.7.0/lib64:$LD_LIBRARY_PATH
 
 #Add WR library
-export LD_LIBRARY_PATH=/u1/ldmx/server/WRTimestamping/build/:$LD_LIBRARY_PATH
+export WRTiming_DIR=/u1/ldmx/server/WRTimestamping
+export LD_LIBRARY_PATH=${WRTiming_DIR}/lib:$LD_LIBRARY_PATH
 
 # add root
 source /u1/ldmx/server/root/root_install/bin/thisroot.sh
