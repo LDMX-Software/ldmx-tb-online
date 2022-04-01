@@ -22,10 +22,9 @@ with open(outputFileName, mode='w') as datafile:
     writer = csv.writer(datafile, delimiter=',', quotechar='"',)
     writer.writerow(header1)
     writer.writerow(header2)
-    count = 0
     for e in tree : #Loop over events in tree
         for d in e:
-            count = count + 1
+
             link = d.link
             channel = d.channel - 1 #Channel in tuple starts at 1, needs to start at 0
             chan = (link%2) * 36 + channel #Get correct chan for odd numbered links
