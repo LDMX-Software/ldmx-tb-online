@@ -11,7 +11,7 @@ euCliProducer -n HgcrocFileReaderProducer -t hgcroc_file -r tcp://localhost:4001
 
 sleep 1
 
-#euCliMonitor -n TestBeamEventDisplayMonitor -t event_display -r tcp://localhost:4001 & 
+euCliMonitor -n TestBeamEventDisplayMonitor -t event_display -r tcp://localhost:4001 & 
 
 sleep 5
 
