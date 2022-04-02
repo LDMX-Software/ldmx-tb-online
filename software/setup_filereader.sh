@@ -3,11 +3,19 @@
 euRun -n DarkRunControl -a tcp://4001 &
 sleep 20
 
-euCliCollector -n TestBeamDataCollector -t test_beam -r tcp://localhost:4001 &
+euCliCollector -n TestBeamDataCollector -t test_beam_hcal -r tcp://localhost:4001 &
 
 sleep 1
 
-euCliProducer -n HgcrocFileReaderProducer -t hgcroc_file -r tcp://localhost:4001 &
+euCliCollector -n TestBeamDataCollector -t test_beam_event_display -r tcp://localhost:4001 &
+
+sleep 1
+
+euCliProducer -n HgcrocFileReaderProducer -t hgcroc_file_hcal -r tcp://localhost:4001 &
+
+sleep 1
+
+euCliProducer -n HgcrocFileReaderProducer -t hgcroc_file_event_display -r tcp://localhost:4001 &
 
 sleep 1
 
