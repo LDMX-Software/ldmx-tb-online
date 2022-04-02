@@ -18,7 +18,7 @@ void TestBeamEventDisplayMonitor::AtConfiguration() {
   auto conf{GetConfiguration()};
   nPlanes = 19;
   nevents = 0;
-  nevents_reset = 1000;
+  nevents_reset = 100;
 
   hcal_event = m_monitor->Book<TH2D>("hcal_event", "hcal_event", "", "Plane;Bar; ", nPlanes+1, 0, nPlanes+1, 12, 0, 12);
   m_monitor->SetDrawOptions(hcal_event, "colz");
@@ -54,7 +54,7 @@ void TestBeamEventDisplayMonitor::AtConfiguration() {
 
 void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
   
-  /*bool newSpill = nevents%nevents_reset == 0;
+  bool newSpill = nevents%nevents_reset == 0;
   
   //Reset event plots if new spill
   if(!newSpill){
@@ -62,7 +62,7 @@ void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
   }
   else{
     hcal_event->Reset();
-  }*/
+  }
 
   auto data = hcal::decode(event->GetBlock(1));
 
@@ -105,7 +105,7 @@ void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
       adcped = adcped_map.at(rocchan);
       adcgain = adcgain_map.at(rocchan);
       totped = totped_map.at(rocchan);
-      //totgain = totgain_map.at(rocchan);
+      totgain = totgain_map.at(rocchan);
     }
     else{
       std::cout << "Key not found: " << rocchan << std::endl;
@@ -132,9 +132,6 @@ void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
       double esum = 0;
       if(physical_map.count(key0) > 0 && physical_map.count(key1) > 0){
         esum = physical_map.at(key0) + physical_map.at(key1);
-      }
-      else{
-        std::cout<<"Physical key not found for "<<key0<<"  "<<key1<<std::endl;
       }
       hcal_event->Fill(i, j, esum);
     }
