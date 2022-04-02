@@ -18,11 +18,13 @@ void TestBeamEventDisplayMonitor::AtConfiguration() {
   auto conf{GetConfiguration()};
   nPlanes = 19;
   nevents = 0;
-  nevents_reset = 100;
+  auto nreset{conf->Get("NRESET", "")};
+  nevents_reset = std::stoi(nreset);
 
-  hcal_event = m_monitor->Book<TH2D>("hcal_event", "hcal_event", "", "Plane;Bar; ", nPlanes+1, 0, nPlanes+1, 12, 0, 12);
+  hcal_event = m_monitor->Book<TH2D>("hcal_event", "hcal_event", "", ";Plane;Bar", nPlanes+1, 0, nPlanes+1, 12, 0, 12);
   m_monitor->SetDrawOptions(hcal_event, "colz");
   hcal_event->SetTitle("Hcal Event Energy Deposition");
+  hcal_event->SetStats(0);
 
   std::string daqpath = std::getenv("DAQ_INSTALL_PREFIX");
   auto daqmapfile{conf->Get("HCALDAQMAP", "")};
