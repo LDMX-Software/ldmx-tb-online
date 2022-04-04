@@ -35,7 +35,8 @@ private:
   std::map<std::string, TH2D*> toa_histo_map; 
   TH2D* hcalhits_top; 
   TH2D* hcalhits_bot; 
-  TH1D* total_energy; 
+  TH1D* total_PE; 
+  
   std::map<std::string, int> cmb_map;
   std::map<std::string, int> quadbar_map;
   std::map<std::string, int> bar_map;
@@ -48,9 +49,13 @@ private:
   std::map<std::string, double> totgain_map;
 
   int nPlanes;
-  int hcal_adc_thresh;
-  double threshold_PE;
   std::vector<int> unusedchans;
+  
+  double threshold_PE; //aribtrary for now
+  double energy_per_mip; //MeV/MIP
+  double voltage_hcal; //mV/PE
+  double PE_per_mip; //PEs/mip
+  double mV_per_PE; //mV per MIP is about 73 for now
 };
 } // namespace eudaq
 #endif // EUDAQ_HCALTESTBEAMMONITOR_H
