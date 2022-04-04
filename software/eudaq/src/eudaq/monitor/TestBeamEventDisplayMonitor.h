@@ -26,8 +26,6 @@ private:
     return (value >> low_bit) & mask;
   }
   
-  //std::map<int, TH2D*> hcal_event_map;
-  
   TH2D* hcal_event; 
 
   std::map<std::string, int> cmb_map;
@@ -45,6 +43,11 @@ private:
   int nPlanes;
   int nevents_reset;
   int nevents;
+  
+  double energy_per_mip; //MeV/MIP
+  double voltage_hcal; //mV/PE
+  double PE_per_mip; //PEs/mip
+  double mV_per_PE; //mV per MIP is about 73 for now
 };
 } // namespace eudaq
 #endif // EUDAQ_TESTBEAMEVENTDISPLAYMONITOR_H
