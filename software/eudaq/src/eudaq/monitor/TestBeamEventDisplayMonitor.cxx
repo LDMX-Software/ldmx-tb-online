@@ -23,7 +23,7 @@ void TestBeamEventDisplayMonitor::AtConfiguration() {
 
   hcal_event = m_monitor->Book<TH2D>("hcal_event", "hcal_event", "", ";Plane;Bar", nPlanes+1, 0, nPlanes+1, 12, 0, 12);
   m_monitor->SetDrawOptions(hcal_event, "colz");
-  hcal_event->SetTitle("Hcal Event Energy Deposition");
+  hcal_event->SetTitle("Hcal Event PEs per Bar");
   hcal_event->SetStats(0);
 
   std::string daqpath = std::getenv("DAQ_INSTALL_PREFIX");
@@ -52,6 +52,11 @@ void TestBeamEventDisplayMonitor::AtConfiguration() {
   totgain_map = CSVParser::getTOTGainMap(fullgainfile);
   
   unusedchans = {8, 17, 26, 35, 44, 53, 62, 71, 72};
+  
+  energy_per_mip = 4.66; //MeV/MIP
+  voltage_hcal = 5.; //mV/PE
+  PE_per_mip = 68.; //PEs/mip
+  mV_per_PE = 1/energy_per_mip * voltage_hcal * PE_per_mip; //mV per MIP is about 73 for now
 }
 
 void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
@@ -123,19 +128,19 @@ void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
       if(adc_t > maxadc) maxadc = adc_t;
       //std::cout<<"isTOT: "<<isTOT<<"  isTOTComplete: "<<isTOTComplete<<"  toa: "<<toa<<"  tot: "<<tot<<"  adc_tm1: "<<adc_tm1<<"  adc_t "<<adc_t<<std::endl;
     }
-    double energy_chan = (maxadc - adcped) * adcgain; //this is wrong. fix it.
-    if(energy_chan < 0) energy_chan = 0;
-    physical_map.insert(std::pair<std::string, double>(location, energy_chan));   
+    double PE_chan = (maxadc - adcped) / mV_per_PE * adcgain;
+    if(PE_chan < 0) PE_chan = 0;
+    physical_map.insert(std::pair<std::string, double>(location, PE_chan));   
   }
   for(int i = 1; i < nPlanes+1; i++){
     for(int j = 0; j < 12; j++){
       std::string key0 = std::to_string(i) + ":" + std::to_string(j) + ":0";
       std::string key1 = std::to_string(i) + ":" + std::to_string(j) + ":1";
-      double esum = 0;
+      double PEsum = 0;
       if(physical_map.count(key0) > 0 && physical_map.count(key1) > 0){
-        esum = physical_map.at(key0) + physical_map.at(key1);
+        PEsum = physical_map.at(key0) + physical_map.at(key1);
       }
-      hcal_event->Fill(i, j, esum);
+      hcal_event->Fill(i, j, PEsum);
     }
   }
   nevents++;
