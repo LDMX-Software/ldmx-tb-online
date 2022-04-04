@@ -164,6 +164,7 @@ decode(const std::vector<uint8_t>& binary_data) {
    * Static parameters depending on ROC version
    */
   static const unsigned int common_mode_channel = 19;
+  static const unsigned int calib_channel = 20;
   /// words for reading and decoding
   static uint32_t head1, head2, w;
 
@@ -385,6 +386,12 @@ decode(const std::vector<uint8_t>& binary_data) {
 #ifdef DEBUG
       std::cout << "RO Link " << i_link << std::endl;
 #endif
+      if (length_per_link.at(i_link) < 2) {
+#ifdef DEBUG
+        std::cout << "DOWN" << std::endl;
+#endif
+        continue;
+      }
       //utility::CRC link_crc;
       i_event++; reader >> w;
       //fpga_crc << w;
@@ -392,7 +399,8 @@ decode(const std::vector<uint8_t>& binary_data) {
       uint32_t roc_id = (w >> 16) & utility::mask<16>;
       bool crc_ok = (w >> 15) & utility::mask<1> == 1;
 #ifdef DEBUG
-      std::cout << debug::hex(w) << " : roc_id " << roc_id << ", crc_ok (v2 always false) " << std::boolalpha << crc_ok << std::endl;
+      std::cout << debug::hex(w) << " : roc_id " << roc_id 
+        << ", crc_ok (v2 always false) " << std::boolalpha << crc_ok << std::endl;
 #endif
 
       // get readout map from the last 8 bits of this word
@@ -411,21 +419,21 @@ decode(const std::vector<uint8_t>& binary_data) {
       //  since some channels may have been suppressed because of low
       //  amplitude the channel ID is not the same as the index it
       //  is listed in.
-      int channel_index{-1};
-      for (uint32_t j{0}; j < length_per_link.at(i_link) - 2; j++) {
+      int j{-1};
+      for (uint32_t i_word{2}; i_word < length_per_link.at(i_link); i_word++) {
         // skip zero-suppressed channel IDs
         do {
-          channel_index++;
-        } while (channel_index < 40 and not ro_map.test(channel_index));
+          j++;
+        } while (j < 40 and not ro_map.test(j));
 
         // next word is this channel
         i_event++; reader >> w;
         //fpga_crc << w;
 #ifdef DEBUG
-        std::cout << debug::hex(w) << " " << channel_index;
+        std::cout << debug::hex(w) << " " << j;
 #endif
 
-        if (channel_index == 0) {
+        if (j == 0) {
           /** Special "Header" Word from ROC
            *
            * version 3:
@@ -442,7 +450,7 @@ decode(const std::vector<uint8_t>& binary_data) {
           uint32_t short_event = (w >> 10) & utility::mask<6>;
           uint32_t short_orbit = (w >> 7) & utility::mask<3>;
           uint32_t hamming_errs = (w >> 4) & utility::mask<3>;
-        } else if (channel_index == common_mode_channel) {
+        } else if (j == common_mode_channel) {
           /** Common Mode Channels
            * 10 | 0000000000 | Common Mode ADC 0 (10) | Common Mode ADC 1 (10)
            */
@@ -450,7 +458,11 @@ decode(const std::vector<uint8_t>& binary_data) {
 #ifdef DEBUG
           std::cout << " : Common Mode";
 #endif
-        } else if (channel_index == 39) {
+        } else if (j == calib_channel) {
+#ifdef DEBUG
+          std::cout << " : Calib";
+#endif
+        } else if (j == 39) {
           // CRC checksum from ROC
           uint32_t crc = w;
 #ifdef DEBUG
@@ -473,7 +485,7 @@ decode(const std::vector<uint8_t>& binary_data) {
           //link_crc << w;
           /** Generate Packed Electronics ID
            *   Link Index         i_link
-           *   In-link Channel ID channel_index - 1*(channel_index > common_mode_channel) - 1
+           *   In-link Channel ID j - 1*(j > common_mode_channel) - 1 - 1*(j>calib_channel)
            *   ROC ID             roc_id
            *   FPGA ID            fpga
            * are all available.
@@ -481,10 +493,6 @@ decode(const std::vector<uint8_t>& binary_data) {
            * using the link and channel indices.
            */
 
-#ifdef DEBUG
-          std::cout << " : DAQ Channel ";
-          std::cout << fpga << " " << roc_id << " " << i_link << " " << channel_index << " ";
-#endif
           /**
            * The subfields for the electronics ID infrastructure need to start
            * from 0 and count up. The valid range of the ID numbers is defined 
@@ -492,9 +500,14 @@ decode(const std::vector<uint8_t>& binary_data) {
            * template parameters. If any of the three IDs is out of this range,
            * the ID number will not be formed properly.
            */
-          ElectronicsLocation eid{fpga, i_link, channel_index - 1*(channel_index > common_mode_channel) - 1};
+          ElectronicsLocation eid{fpga, i_link, 
+            j - 1 - 1*(j > common_mode_channel) - 1*(j > calib_channel)};
           // copy data into EID->sample map
           eid_to_samples[eid].emplace_back(w);
+#ifdef DEBUG
+          std::cout << " : DAQ Channel "
+            << eid.fpga() << " " << eid.link() << " " << eid.inlink_channel() << " ";
+#endif
         }  // type of channel
 #ifdef DEBUG
         std::cout << std::endl;
