@@ -52,9 +52,9 @@ void HCalTestBeamMonitor::AtConfiguration() {
   hcalhits_bot->SetTitle("Hits Above Threshold Bot/Left");
   hcalhits_top->SetStats(0);
   hcalhits_bot->SetStats(0);
-  total_energy = m_monitor->Book<TH1D>("total_energy", "total_energy", "", ";Energy per Event;", 100, 0, 1000);
-  total_energy->SetTitle("Total Energy Deposited per Event");
-  total_energy->SetStats(0);
+  total_PE = m_monitor->Book<TH1D>("total_PE", "total_PE", "", ";PEs;", 100, 0, 1000);
+  total_PE->SetTitle("Total PEs per Event");
+  total_PE->SetStats(0);
   std::string daqpath = std::getenv("DAQ_INSTALL_PREFIX");
   auto daqmapfile{conf->Get("HCALDAQMAP", "")};
   auto gainfile{conf->Get("HCALGAIN", "")};
@@ -81,14 +81,19 @@ void HCalTestBeamMonitor::AtConfiguration() {
   totgain_map = CSVParser::getTOTGainMap(fullgainfile);
   
   unusedchans = {8, 17, 26, 35, 44, 53, 62, 71, 72};
-  threshold_PE = 5.;
+  
+  threshold_PE = 5.; //aribtrary for now
+  energy_per_mip = 4.66; //MeV/MIP
+  voltage_hcal = 5.; //mV/PE
+  PE_per_mip = 68.; //PEs/mip
+  mV_per_PE = 1/energy_per_mip * voltage_hcal * PE_per_mip; //mV per MIP is about 73 for now
 }
 
 void HCalTestBeamMonitor::AtEventReception(EventSP event) {
   // Fill HCal plots
   auto data = hcal::decode(event->GetBlock(1));
   
-  double energy = 0;
+  double PE = 0;
 
   for (const auto& [el, samples] : data) {
     int fpga = el.fpga();
@@ -130,7 +135,6 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       std::cout << "Key not found: " << rocchan << std::endl;
     }
     double maxadc = -9999.;
-    double threshold = 0; //adcped + adcgain; //This is wrong fix it
     for (auto &sample : samples) {
       bool isTOT = sample.isTOTinProgress();
       bool isTOTComplete = sample.isTOTComplete();
@@ -144,6 +148,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       toa_histo_map["ROC " + std::to_string(roc) + " - TOA"]->Fill(channel, toa);
       //std::cout<<"isTOT: "<<isTOT<<"  isTOTComplete: "<<isTOTComplete<<"  toa: "<<toa<<"  tot: "<<tot<<"  adc_tm1: "<<adc_tm1<<"  adc_t "<<adc_t<<std::endl;
     }
+    double threshold = adcped + mV_per_PE / adcgain * threshold_PE; 
     if(maxadc >= threshold){
       if(end != 0){
 	hcalhits_top->Fill(plane, barchan);
@@ -152,9 +157,9 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
         hcalhits_bot->Fill(plane, barchan);
       }
     }
-    double energy_chan = (maxadc - adcped) * adcgain; //this is wrong. fix it.
-    energy = energy + energy_chan;
+    double PE_chan = (maxadc - adcped) / mV_per_PE * adcgain; 
+    PE = PE + PE_chan;
   }
-  total_energy->Fill(energy);
+  total_PE->Fill(PE);
 }
 } // namespace eudaq
