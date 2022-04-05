@@ -22,9 +22,5 @@ void RogueDataSender::acceptFrame(
   // Increase the RX counters
   ++rx_count_;
   rx_bytes_ += frame->getPayload();
-
-  std::cout << "Rx count: " << getRxCount() << " "
-            << "Rx bytes: " << getRxBytes() << " "
-            << "Rx errors: " << getRxErrors() << std::endl;
 }
 } // namespace eudaq
