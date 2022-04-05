@@ -159,7 +159,9 @@ void PolarfireProducer::DoConfigure() try {
 
   // output file writing configuration
   output_path_ = conf->Get("OUTPUT_PATH",".");
+  EUDAQ_INFO("Files written to diretory "+output_path_);
   file_prefix_ = conf->Get("FILE_PREFIX","ldmx_hcal");
+  EUDAQ_INFO("Files will start with "+file_prefix_);
 
   auto l1a_mode{conf->Get("L1A_MODE","PEDESTAL")};
   if (l1a_mode == "PEDESTAL") {
@@ -278,15 +280,23 @@ void PolarfireProducer::DoStartRun()  try {
   std::tm gmtm = *std::gmtime(&tt); //GMT (UTC)
   pft_->backend->daq_setup_event_tag(GetRunNumber(), 
       gmtm.tm_mday, gmtm.tm_mon+1, gmtm.tm_hour, gmtm.tm_min);
-  // open file
+  // construct output file path from directory, file prefix,
+  // run, fpga, and timestamp
   std::stringstream output_file;
   output_file << output_path_ << "/" 
     << file_prefix_ 
     << "_fpga_" << fpga_id_
     << "_run_" << GetRunNumber() 
-    << "_" << 1900+gmtm.tm_year << "Y" << 1+gmtm.tm_mon << "m" << gmtm.tm_mday << "d"
-    << "_" << gmtm.tm_hour << "H" << gmtm.tm_min << "M" << gmtm.tm_sec << "S"
+    << "_" << std::setfill('0') 
+    << 1900+gmtm.tm_year 
+    << std::setw(2) << 1+gmtm.tm_mon 
+    << std::setw(2) << gmtm.tm_mday
+    << "_" 
+    << std::setw(2) << gmtm.tm_hour 
+    << std::setw(2) << gmtm.tm_min 
+    << std::setw(2) << gmtm.tm_sec
     << ".raw";
+  // open file
   EUDAQ_INFO("Writing data stream to "+output_file.str());
   try {
     if (dma_enabled_) rwbi()->daq_dma_dest(output_file.str());
