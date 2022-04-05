@@ -241,7 +241,7 @@ void PolarfireProducer::DoConfigure() try {
         // either or both of the links on this ROC are active
         pft_->loadROCParameters(i,
             conf->Get("ROC_"+std::to_string(i)+"_CONF_FILE_PATH",""),
-            conf->Get("ROC_"+std::to_string(i)+"_PREPEND_DEFAULTS",true));
+            conf->Get("ROC_"+std::to_string(i)+"_PREPEND_DEFAULTS",false));
       }
     }
   } // attempt auto config
