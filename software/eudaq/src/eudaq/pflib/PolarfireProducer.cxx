@@ -282,6 +282,7 @@ void PolarfireProducer::DoStartRun()  try {
   std::stringstream output_file;
   output_file << output_path_ << "/" 
     << file_prefix_ 
+    << "_fpga_" << fpga_id_
     << "_run_" << GetRunNumber() 
     << "_" << 1900+gmtm.tm_year << "Y" << 1+gmtm.tm_mon << "m" << gmtm.tm_mday << "d"
     << "_" << gmtm.tm_hour << "H" << gmtm.tm_min << "M" << gmtm.tm_sec << "S"
