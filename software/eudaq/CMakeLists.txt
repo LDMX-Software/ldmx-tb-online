@@ -36,6 +36,7 @@ add_library(eudaq_core SHARED
   src/eudaq/DarkRunControl.cxx
   src/eudaq/HgcrocRawDecode.cxx
   src/eudaq/HgcrocFileReaderProducer.cxx
+  src/eudaq/TrigScintFileReaderProducer.cxx
   src/eudaq/RogueDataSender.cxx
   src/eudaq/RogueTcpClientProducer.cxx
   src/eudaq/TcpCommandGenerator.cxx
