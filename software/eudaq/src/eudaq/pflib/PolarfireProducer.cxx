@@ -175,77 +175,82 @@ void PolarfireProducer::DoConfigure() try {
   }
   EUDAQ_INFO("L1A Trigger Mode set to " + l1a_mode);
 
-  auto& daq = pft_->hcal.daq();
-  auto& elinks = pft_->hcal.elinks();
-  /****************************************************************************
-   * ELINKS menu in pftool
-   *    RELINK
-   *    or manual DELAY and BITSLIP values
-  if (conf->Get("ELINKS_DO_RELINK",true)) {
-    pft_->elink_relink(2);
-  } else {
-    for (int i{0}; i < elinks.nlinks(); i++) {
-      elinks.setBitslipAuto(i,false);
-      elinks.setBitslip(i,
-          conf->Get("ELINK_"+std::to_string(i)+"_BITSLIP", elinks.getBitslip(i)));
-      elinks.setDelay(i,
-          conf->Get("ELINK_"+std::to_string(i)+"_DELAY", 128));
-    }
-  }
-   ***************************************************************************/
-
-  /****************************************************************************
-   * DAQ.SETUP menu in pftool commands
-   *    FPGA
-   *    DMA
-   *    STANDARD 
-   *    L1APARAMS
-   *    MULTISAMPLE
-  daq.setIds(fpga_id_);
-
-  fpga_id_;  = conf->Get("FPGA_ID", 0);
-  uint8_t samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
-  dma_enabled_ = conf->Get("DO_DMA_RO",true);
-  if (dma_enabled_) {
-    rwbi()->daq_dma_enable(dma_enabled_);
-    rwbi()->daq_dma_setup((uint8_t)fpga_id_, (uint8_t)samples_per_event);
-  }
-
-  for (int i{0}; i < elinks.nlinks(); i++) {
-    bool active{conf->Get("LINK_"+std::to_string(i)+"_ACTIVE",false)};
-    elinks.markActive(i,active);
-    if (elinks.isActive(i)) {
-      daq.setupLink(i,false,false,15,40);
-      int delay{conf->Get("LINK_"+std::to_string(i)+"_L1A_DELAY", 15)};
-      int capture{conf->Get("LINK_"+std::to_string(i)+"_L1A_LENGTH", 40)};
-      uint32_t reg = ((delay&0xff)<<8)|((capture&0xff)<<16);
-      pft_->wb->wb_write(pflib::tgt_DAQ_Inbuffer,(i << 7)|1, reg);
+  if (conf->Get("ATTEMPT_AUTO_CONFIG",false)) {
+    auto& daq = pft_->hcal.daq();
+    auto& elinks = pft_->hcal.elinks();
+    /****************************************************************************
+     * ELINKS menu in pftool
+     *    RELINK
+     *    or manual DELAY and BITSLIP values
+    if (conf->Get("ELINKS_DO_RELINK",true)) {
+      pft_->elink_relink(2);
     } else {
-      // fully zero suppress this link
-      daq.setupLink(i,true,true,15,40);
+      for (int i{0}; i < elinks.nlinks(); i++) {
+        elinks.setBitslipAuto(i,false);
+        elinks.setBitslip(i,
+            conf->Get("ELINK_"+std::to_string(i)+"_BITSLIP", elinks.getBitslip(i)));
+        elinks.setDelay(i,
+            conf->Get("ELINK_"+std::to_string(i)+"_DELAY", 128));
+      }
     }
-  }
-   ***************************************************************************/
+     ***************************************************************************/
+  
+    /****************************************************************************
+     * DAQ.SETUP menu in pftool commands
+     *    FPGA
+     *    DMA
+     *    STANDARD 
+     *    L1APARAMS
+     *    MULTISAMPLE
+     ***************************************************************************/
+    fpga_id_ = conf->Get("FPGA_ID", 0);
+    uint8_t samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
+    dma_enabled_ = conf->Get("DO_DMA_RO",true);
+
+    daq.setIds(fpga_id_);
+    if (dma_enabled_) {
+      rwbi()->daq_dma_enable(dma_enabled_);
+      rwbi()->daq_dma_setup((uint8_t)fpga_id_, (uint8_t)samples_per_event);
+    }
+  
+    for (int i{0}; i < elinks.nlinks(); i++) {
+      bool active{conf->Get("LINK_"+std::to_string(i)+"_ACTIVE",false)};
+      elinks.markActive(i,active);
+      if (elinks.isActive(i)) {
+        daq.setupLink(i,false,false,15,40);
+        int delay{conf->Get("LINK_"+std::to_string(i)+"_L1A_DELAY", 15)};
+        int capture{conf->Get("LINK_"+std::to_string(i)+"_L1A_LENGTH", 40)};
+        uint32_t reg = ((delay&0xff)<<8)|((capture&0xff)<<16);
+        pft_->wb->wb_write(pflib::tgt_DAQ_Inbuffer,(i << 7)|1, reg);
+      } else {
+        // fully zero suppress this link
+        daq.setupLink(i,true,true,15,40);
+      }
+    }
+  
+    /****************************************************************************
+     * ROC menu in pftool
+     *    HARDRESET
+     *    RESYNCLOAD
+     *    LOAD_PARAM
+     ***************************************************************************/
+    pft_->hcal.hardResetROCs(); // global reset
+    pft_->hcal.resyncLoadROC(); // loops over ROCs if no i_roc provided
+    for (int i{0}; i < 4; i++) {
+      if (elinks.isActive(2*i) or elinks.isActive(2*i+1)) {
+        // either or both of the links on this ROC are active
+        pft_->loadROCParameters(i,
+            conf->Get("ROC_"+std::to_string(i)+"_CONF_FILE_PATH",""),
+            conf->Get("ROC_"+std::to_string(i)+"_PREPEND_DEFAULTS",true));
+      }
+    }
+  } // attempt auto config
 
   /****************************************************************************
-   * ROC menu in pftool
-   *    HARDRESET
-   *    RESYNCLOAD
-   *    LOAD_PARAM
-  pft_->hcal.hardResetROCs(); // global reset
-  pft_->hcal.resyncLoadROC(); // loops over ROCs if no i_roc provided
-  for (int i{0}; i < 4; i++) {
-    if (elinks.isActive(2*i) or elinks.isActive(2*i+1)) {
-      // either or both of the links on this ROC are active
-      pft_->loadROCParameters(i,
-          conf->Get("ROC_"+std::to_string(i)+"_CONF_FILE_PATH",""),
-          conf->Get("ROC_"+std::to_string(i)+"_PREPEND_DEFAULTS",true));
-    }
-  }
+   * check chip if it is dma
+   *    we check the chip itself because we may or may not do the config
+   *    ourselves above
    ***************************************************************************/
-
-  /* check chip if it is dma
-   */
   uint8_t samples_per_event, fpga_id;
   rwbi()->daq_get_dma_setup(fpga_id, samples_per_event, dma_enabled_);
   fpga_id_ = fpga_id;
