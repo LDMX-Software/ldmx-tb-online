@@ -54,7 +54,7 @@ public:
             std::cout<<"Index is larger than length of row."<<std::endl;
             std::cout<<"Most likely the selected column name does not exist."<<std::endl;
           }
-          std::string key = vec[hgcroc_index] + "," + vec[channel_index];
+          std::string key = vec[hgcroc_index] + ":" + vec[channel_index];
           m.insert(std::pair<std::string, int>(key, std::stoi(vec[index])));
       }
       return m;
@@ -69,7 +69,7 @@ public:
       std::string line;
 
       int index = 9999;
-      int digiid_index = 9999;
+      int elloc_index = 9999;
       bool firstrow = true;
       bool secondrow = true;
       std::map<std::string, std::string> m;
@@ -87,18 +87,21 @@ public:
             if(vec[j] == column){
               index = j;
             }
-            if(vec[j] == "HcalDigiID"){
-              digiid_index = j;
+            if(vec[j] == "ElLoc"){
+              elloc_index = j;
             }
           }
           secondrow = false;
           continue;
         }
-        if((index > vec.size() - 1) || (digiid_index > vec.size() - 1)){
+        if(column == "TOT_GAIN"){ //This is a hack becuase I can't figure out whitespace issues!
+          index = 5;
+        }
+        if((index > vec.size() - 1) || (elloc_index > vec.size() - 1)){
           std::cout<<"Index is larger than length of row."<<std::endl;
           std::cout<<"Most likely the selected column name does not exist."<<std::endl;
       }
-      std::string key = vec[digiid_index];
+      std::string key = vec[elloc_index];
       m.insert(std::pair<std::string, std::string>(key, vec[index]));
     }
     return m;
@@ -121,7 +124,7 @@ public:
   }
 
   static std::map<std::string, int> getDetIDMap(std::string csv){
-    std::map<std::string, std::string> m = buildThresholdMap(csv, " DetID");
+    std::map<std::string, std::string> m = buildThresholdMap(csv, "DetID");
     std::map<std::string, std::string>::iterator it;
     std::map<std::string, int> outmap;
     for (it = m.begin(); it != m.end(); it++){
@@ -131,7 +134,7 @@ public:
   }
 
   static std::map<std::string, double> getADCPedMap(std::string csv){
-    std::map<std::string, std::string> m = buildThresholdMap(csv, " ADC_PEDESTAL");
+    std::map<std::string, std::string> m = buildThresholdMap(csv, "ADC_PEDESTAL");
     std::map<std::string, std::string>::iterator it;
     std::map<std::string, double> outmap;
     for (it = m.begin(); it != m.end(); it++){
@@ -141,7 +144,7 @@ public:
   }
 
   static std::map<std::string, double> getADCGainMap(std::string csv){
-    std::map<std::string, std::string> m = buildThresholdMap(csv, " ADC_GAIN");
+    std::map<std::string, std::string> m = buildThresholdMap(csv, "ADC_GAIN");
     std::map<std::string, std::string>::iterator it;
     std::map<std::string, double> outmap;
     for (it = m.begin(); it != m.end(); it++){
@@ -151,7 +154,7 @@ public:
   }
 
   static std::map<std::string, double> getTOTPedMap(std::string csv){
-    std::map<std::string, std::string> m = buildThresholdMap(csv, " TOT_PEDESTAL");
+    std::map<std::string, std::string> m = buildThresholdMap(csv, "TOT_PEDESTAL");
     std::map<std::string, std::string>::iterator it;
     std::map<std::string, double> outmap;
     for (it = m.begin(); it != m.end(); it++){
@@ -161,7 +164,7 @@ public:
   }
 
   static std::map<std::string, double> getTOTGainMap(std::string csv){
-    std::map<std::string, std::string> m = buildThresholdMap(csv, " TOT_GAIN");
+    std::map<std::string, std::string> m = buildThresholdMap(csv, "TOT_GAIN");
     std::map<std::string, std::string>::iterator it;
     std::map<std::string, double> outmap;
     for (it = m.begin(); it != m.end(); it++){

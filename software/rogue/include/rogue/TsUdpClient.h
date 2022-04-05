@@ -4,6 +4,9 @@
 #include "rogue/protocols/udp/Client.h"
 #include <rogue/protocols/udp/Core.h>
 
+//memset
+#include <cstring>
+
 
 class TsUdpClient : public rogue::protocols::udp::Client {
   

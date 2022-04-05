@@ -6,6 +6,10 @@ parser = argparse.ArgumentParser(f'ldmx fire {sys.argv[0]}')
 
 parser.add_argument('input_file')
 parser.add_argument('--pause',action='store_true')
+grp = parser.add_mutually_exclusive_group()
+grp.add_argument('--keep_eids',action='store_true',
+        help='Dont translate electronic into detector IDs.')
+grp.add_argument('--recon',help='Attempt to reconstruct.',action='store_true')
 parser.add_argument('--max_events',default=100,type=int)
 parser.add_argument('--pedestals',default=None,type=str)
 
@@ -36,12 +40,18 @@ p.outputFiles = [f'{dir_name}/unpacked_{base_name}.root']
 # where the ntuplizing tree will go
 p.histogramFile = f'adc_{base_name}.root'
 
+if arg.keep_eids :
+    tbl = None
+else :
+    tbl = f'{os.environ["LDMX_BASE"]}/ldmx-sw/Hcal/data/testbeam_connections.csv'
+
 # sequence
 #   1. decode event packet into digi collection
 #   2. ntuplize digi collection
 p.sequence = [ 
         hcal_format.HcalRawDecoder(
             input_file = arg.input_file,
+            connections_table = tbl,
             output_name = 'ChipSettingsTestDigis'
             ),
         dqm.NtuplizeHgcrocDigiCollection(
@@ -49,6 +59,12 @@ p.sequence = [
             pedestal_table = arg.pedestals
             )
         ]
+
+# add recon if requested
+if arg.recon :
+    recon = hcal_digi.HcalRecProducer()
+    recon.digiCollName = 'ChipSettingsTestDigis'
+    p.sequence.append(recon)
 
 if arg.pause :
     p.pause()
