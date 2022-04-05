@@ -178,6 +178,7 @@ void PolarfireProducer::DoConfigure() try {
   if (conf->Get("ATTEMPT_AUTO_CONFIG",false)) {
     EUDAQ_INFO("Attempting to apply configuration...");
     auto& daq = pft_->hcal.daq();
+    daq.enable(false); // disable while configuring
     auto& elinks = pft_->hcal.elinks();
     /****************************************************************************
      * ELINKS menu in pftool
@@ -204,37 +205,57 @@ void PolarfireProducer::DoConfigure() try {
      *    L1APARAMS
      *    MULTISAMPLE
      ***************************************************************************/
-    fpga_id_ = conf->Get("FPGA_ID", 0);
-    uint8_t samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
-    dma_enabled_ = conf->Get("DO_DMA_RO",true);
+    int samples_per_event;
+    {
+      uint8_t spe, id;
+      rwbi()->daq_get_dma_setup(id, spe, dma_enabled_);
+      fpga_id_ = id;
+      samples_per_event = spe;
+    }
+    fpga_id_ = conf->Get("FPGA_ID", fpga_id_);
+    samples_per_event = conf->Get("SAMPLES_PER_EVENT", samples_per_event);
+    dma_enabled_ = conf->Get("DO_DMA_RO",dma_enabled_);
+
+    EUDAQ_INFO("Using FPGA_ID = "+std::to_string(fpga_id_));
+    EUDAQ_INFO("Using SAMPLES_PER_EVENT = "+std::to_string(samples_per_event));
 
     daq.setIds(fpga_id_);
+
+    if (samples_per_event > 1) {
+      // more than one sample per event
+      pft_->hcal.fc().setupMultisample(true,samples_per_event-1);
+    } else {
+      // one sample per event
+      pft_->hcal.fc().setupMultisample(false,0);
+    }
+
     if (dma_enabled_) {
-      rwbi()->daq_dma_enable(dma_enabled_);
-      rwbi()->daq_dma_setup((uint8_t)fpga_id_, (uint8_t)samples_per_event);
+      /// set dma parameters
+      EUDAQ_INFO("Configured to use DMA readout.");
+      rwbi()->daq_dma_setup(fpga_id_, samples_per_event);
     }
+    
+    // enable/disable dma readout
+    rwbi()->daq_dma_enable(dma_enabled_);
   
+    /****************************************************************************
+     * DAQ.SETUP
+     *    L1APARAMS
+     *    STANDARD 
     for (int i{0}; i < elinks.nlinks(); i++) {
-      bool active{conf->Get("LINK_"+std::to_string(i)+"_ACTIVE",false)};
-      elinks.markActive(i,active);
-      if (elinks.isActive(i)) {
-        daq.setupLink(i,false,false,15,40);
-        int delay{conf->Get("LINK_"+std::to_string(i)+"_L1A_DELAY", 15)};
-        int capture{conf->Get("LINK_"+std::to_string(i)+"_L1A_LENGTH", 40)};
-        uint32_t reg = ((delay&0xff)<<8)|((capture&0xff)<<16);
-        pft_->wb->wb_write(pflib::tgt_DAQ_Inbuffer,(i << 7)|1, reg);
-      } else {
-        // fully zero suppress this link
-        daq.setupLink(i,true,true,15,40);
-      }
+      elinks.setBitslipAuto(i,false);
+      elinks.setBitslip(i,
+          conf->Get("ELINK_"+std::to_string(i)+"_BITSLIP", elinks.getBitslip(i)));
+      elinks.setDelay(i,
+          conf->Get("ELINK_"+std::to_string(i)+"_DELAY", 128));
     }
+     ***************************************************************************/
   
     /****************************************************************************
      * ROC menu in pftool
      *    HARDRESET
      *    RESYNCLOAD
      *    LOAD_PARAM
-     ***************************************************************************/
     pft_->hcal.hardResetROCs(); // global reset
     pft_->hcal.resyncLoadROC(); // loops over ROCs if no i_roc provided
     for (int i{0}; i < 4; i++) {
@@ -245,13 +266,12 @@ void PolarfireProducer::DoConfigure() try {
             conf->Get("ROC_"+std::to_string(i)+"_PREPEND_DEFAULTS",false));
       }
     }
+     ***************************************************************************/
+    daq.enable(true); // enable when done configuring
   } // attempt auto config
 
-  /****************************************************************************
-   * check chip if it is dma
-   *    we check the chip itself because we may or may not do the config
-   *    ourselves above
-   ***************************************************************************/
+  /* check chip if it is dma
+   */
   uint8_t samples_per_event, fpga_id;
   rwbi()->daq_get_dma_setup(fpga_id, samples_per_event, dma_enabled_);
   fpga_id_ = fpga_id;
@@ -312,6 +332,7 @@ void PolarfireProducer::DoStartRun()  try {
   }
   // prep run
   EUDAQ_INFO("Preparing for new run.");
+  pft_->prepareNewRun();
   // enable external triggers
   if (the_l1a_mode_ == L1A_MODE::EXTERNAL) {
     EUDAQ_INFO("Enabling external triggering");
