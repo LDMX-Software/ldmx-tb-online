@@ -3,7 +3,7 @@
 export DAQ_INSTALL_PREFIX=/u1/ldmx/server/ldmx-daq/software/install
 
 #Add usr/local/lib
-export LD_LIBRARY_PATH=/usr/local/lib/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:/opt/cactus/lib:$LD_LIBRARY_PATH
 
 #Add DAQ
 export LD_LIBRARY_PATH=$DAQ_INSTALL_PREFIX/lib:$LD_LIBRARY_PATH
