@@ -5,6 +5,12 @@ export DAQ_INSTALL_PREFIX=/u1/ldmx/server/ldmx-tb-online/software/install
 #Add usr/local/lib
 export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:/opt/cactus/lib:$LD_LIBRARY_PATH
 
+#add eudaq
+export eudaq_DIR=/u1/ldmx/server/eudaq
+export LD_LIBRARY_PATH=${eudaq_DIR}/lib:${LD_LIBRARY_PATH}
+export PATH=${eudaq_DIR}/bin:${PATH}
+
+
 #Add DAQ
 export LD_LIBRARY_PATH=$DAQ_INSTALL_PREFIX/lib:$LD_LIBRARY_PATH
 export PATH=$DAQ_INSTALL_PREFIX/bin:$PATH
