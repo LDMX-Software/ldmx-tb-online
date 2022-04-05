@@ -27,6 +27,7 @@ public:
 
       int index = 9999;
       int hgcroc_index = 9999;
+      int pf_index = 9999;
       int channel_index = 9999;
       bool firstrow = true;
       std::map<std::string, int> m;
@@ -40,6 +41,9 @@ public:
               if(vec[j] == column){
                 index = j;
               }
+              if(vec[j] == "Polarfire") {
+                pf_index = j;
+              }
               if(vec[j] == "HGCROC"){
                 hgcroc_index = j;
               }
@@ -50,11 +54,11 @@ public:
             firstrow = false;
             continue;
           }
-          if((index > vec.size() - 1) || (hgcroc_index > vec.size() - 1) || (channel_index > vec.size() - 1)){
+          if((index > vec.size() - 1) || (hgcroc_index > vec.size() - 1) || (channel_index > vec.size() - 1) || (pf_index > vec.size() - 1)){
             std::cout<<"Index is larger than length of row."<<std::endl;
             std::cout<<"Most likely the selected column name does not exist."<<std::endl;
           }
-          std::string key = vec[hgcroc_index] + ":" + vec[channel_index];
+          std::string key = vec[pf_index]+":"+vec[hgcroc_index] + ":" + vec[channel_index];
           m.insert(std::pair<std::string, int>(key, std::stoi(vec[index])));
       }
       return m;
