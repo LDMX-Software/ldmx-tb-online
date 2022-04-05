@@ -176,6 +176,7 @@ void PolarfireProducer::DoConfigure() try {
   EUDAQ_INFO("L1A Trigger Mode set to " + l1a_mode);
 
   if (conf->Get("ATTEMPT_AUTO_CONFIG",false)) {
+    EUDAQ_INFO("Attempting to apply configuration...");
     auto& daq = pft_->hcal.daq();
     auto& elinks = pft_->hcal.elinks();
     /****************************************************************************
