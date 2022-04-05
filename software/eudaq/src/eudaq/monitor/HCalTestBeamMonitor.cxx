@@ -103,7 +103,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     int inlink = el.inlink_channel();
     if(std::count(unusedchans.begin(), unusedchans.end(), channel)) continue;
     //std::cout<<"fpga: "<<fpga<<"  roc: "<<roc<<"  channel: "<<channel<<"  link: "<<link<<"  inlink: "<<inlink<<"  sample size: "<<samples.size()<<std::endl;
-    std::string rocchan = std::to_string(roc+1) + ":" + std::to_string(channel);
+    std::string rocchan = std::string(fpga)+":"+std::to_string(roc) + ":" + std::to_string(channel);
     int cmb = -9999;
     int quadbar = -9999;
     int bar = -9999;
