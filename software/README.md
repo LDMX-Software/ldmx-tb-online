@@ -135,16 +135,15 @@ the full DAQ chain: 1) using emulated data 2) replaying raw data
 3) receiving raw data from a detector subsystem.  For initial testing, 
 the use of 1 and 2 are recommended. 
 
-At minimum, only the run control and `rogue` producer (`RogueTcpClientProducer`)
-are needed to take data.  In this minimal case, the `RogueTcpClientProducer`
-instantiates a `tcp` bridge that allows receiving of data from a server
-on a specific port.  The raw data is then passed to a rogue file writer 
-which dumps the data to disk.  The `RogueTcpClientProducer` also includes 
-the logic to send commands to the server during the run control state 
-transitions which enables initialization and configuration of a subdetector.
+ ⚠️ In the examples below, each `EUDAQ` element needs to be run in a seperate
+ terminal window.  This is denoted by the `Terminal #` specified prior to the command. 
 
-Each `EUDAQ` element needs to be run in a seperate terminal window.  This is 
-denoted by the `Terminal #` specified prior to the command.  
+# Replaying Raw Data
+
+For testing and analysis purposes, producers that can read and stream 
+raw data to a data collector have been developed for both the HCal and Trigger
+Scintillator. The example that follows will be used to demonstrate the 
+replaying and monitoring of trigger scintillator data.  
 
 To begin, the run control can be started as follows
 
@@ -153,92 +152,60 @@ Terminal 1 - Run Control
 euRun -a tcp://4000
 ```
 
-Terminal 2 - Producer
-```bash
-euCliProducer -n RogueTcpClientProducer -t hcal -r tcp://localhost:4000
-```
-
-
-## Emulation using eudaq
-
-In addition to emulation using the stand alone app, eudaq can also be 
-used.  Doing so will require starting the run control, producer, data collector, 
-monitoring and and rogue server in seperate terminals.  This can be
-done by executing the following commands (Note the terminal ID)
-
-Terminal 1 - Run Control
-```
-euRun -n DarkRunControl -a tcp://4000
-```
+The producer used to the read the file and create the events, can be started as follows 
 
 Terminal 2 - Producer
 ```
-euCliProducer -n RogueTcpClientProducer -t hcal -r tcp://localhost:4000
+euCliProducer -n TrigScintFileReaderProducer -t ts_file -r tcp://localhost:4000
 ```
+
+The data collector used to received the streamed events and pass them to the monitoring app 
 
 Terminal 3 - Data Collector 
 ```
 euCliCollector -n TestBeamDataCollector -t test_beam -r tcp://localhost:4000
 ```
 
+Finally, the monitor used to parse the events and read the data can be started as follows
+
 Terminal 4 - Monitor
 ```
-euCliMonitor -n SimpleMonitor -t mon -r tcp://localhost:4000
+euCliMonitor  -n TrigScintTestBeamMonitor -t trig_scint_mon -r tcp://localhost:4000
 ```
 
-Terminal 5 - Rogue Server (HCal)
-```
-ldmx_rogue_server --hcal --emulate
-```
-
-Note, that both the `hcal` and `emulate` flags need to set on the server side.  Emulation 
-of the trigger scintillator can be done by replacing `hcal` with `trig`.   It's also 
-possible to emulate a producer for the trigger scintillator by instatiating 
-an additional producer as follows
-
-Terminal 6 - Trig Scint Producer
-```
-euCliProducer -n RogueTcpClientProducer -t trig -r tcp://localhost:4000
-```
-
-Terminal 7 - Rogue Server (Trigger Scint)
+Once the producer, data collector and run control has been started, you can start going through 
+the state transitions.  For replaying purposes, the .ini will be typically empty
 
 ```
-ldmx_rogue_server --trig --emulate --port 9000
-```
-
-Once the producers and run control has been started, you can start going through 
-the state transitions.  An example of what is contained within an init file is as follows
+[Producer.ts_file]
 
 ```
-[Producer.hcal]
-TCP_ADDR = 127.0.0.1
-TCP_PORT = 8000
-
-[Producer.trig]
-TCP_ADDR = 127.0.0.1
-TCP_PORT = 9000
-```
-
-The `TCP_PORT` parameter should be set to whatever value was passed to the
-rogue server. The default is 8000. 
 
 The configure stage is what is used to connect the producers to the data 
 collectors and monitoring. An example config file will look as follows
 ```
-[Producer.hcal]
+[Producer.ts_file]
 EUDAQ_DC=test_beam
 
 [DataCollector.test_beam]
-EUDAQ_MN=mon
+EUDAQ_MN=trig_scint_mon
+
+EUDAQ_DATACOL_SEND_MONITOR_FRACTION=10
 ```
 
 The variable `EUDAQ_DC` is used to tell the producer the name of the data 
 collector it should connect and send events to. Similarly, the variable
 `EUDAQ_MN` is used to tell the data collector to which monitoring app
-to connect to. 
+to connect to. Finally, the variable `EUDAQ_DATACOL_SEND_MONITOR_FRACTION`
+allows setting the fraction of events that are streamed to the monitor.
+
+Once the run is started, events will continue to stream until the end of 
+file is reached.  At that point, events will stop streaming and the user 
+will need to stop the run to restart. 
 
 ### Legacy
+
+The things below are no longer used. 
 
 There are two parts to the emulator: the server and client. The
 server will make use of "Generators" to build frames and ship
