@@ -1,4 +1,4 @@
-#include "HCalTestBeamMonitor.h"
+c#include "HCalTestBeamMonitor.h"
 
 #include <iostream>
 
@@ -101,9 +101,10 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     int channel = el.channel();
     int link = el.link();
     int inlink = el.inlink_channel();
+    int hgcroc_number = fpga*3 + roc;
     if(std::count(unusedchans.begin(), unusedchans.end(), channel)) continue;
     //std::cout<<"fpga: "<<fpga<<"  roc: "<<roc<<"  channel: "<<channel<<"  link: "<<link<<"  inlink: "<<inlink<<"  sample size: "<<samples.size()<<std::endl;
-    std::string rocchan = std::string(fpga)+":"+std::to_string(roc) + ":" + std::to_string(channel);
+    std::string rocchan = std::to_string(fpga)+":"+std::to_string(roc) + ":" + std::to_string(channel);
     int cmb = -9999;
     int quadbar = -9999;
     int bar = -9999;
@@ -143,9 +144,9 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       int adc_tm1 = sample.adc_tm1(); //not really used without zero suppression
       int adc_t = sample.adc_t();
       if(adc_t > maxadc) maxadc = adc_t;
-      adc_histo_map["ROC " + std::to_string(roc) + " - ADC"]->Fill(channel, adc_t);
-      tot_histo_map["ROC " + std::to_string(roc) + " - TOT"]->Fill(channel, tot);
-      toa_histo_map["ROC " + std::to_string(roc) + " - TOA"]->Fill(channel, toa);
+      adc_histo_map["ROC " + std::to_string(hgcroc_number) + " - ADC"]->Fill(channel, adc_t);
+      tot_histo_map["ROC " + std::to_string(hgcroc_number) + " - TOT"]->Fill(channel, tot);
+      toa_histo_map["ROC " + std::to_string(hgcroc_number) + " - TOA"]->Fill(channel, toa);
       //std::cout<<"isTOT: "<<isTOT<<"  isTOTComplete: "<<isTOTComplete<<"  toa: "<<toa<<"  tot: "<<tot<<"  adc_tm1: "<<adc_tm1<<"  adc_t "<<adc_t<<std::endl;
     }
     double threshold = adcped + mV_per_PE / adcgain * threshold_PE; 
