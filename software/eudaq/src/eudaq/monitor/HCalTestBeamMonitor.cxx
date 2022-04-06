@@ -1,4 +1,4 @@
-c#include "HCalTestBeamMonitor.h"
+#include "HCalTestBeamMonitor.h"
 
 #include <iostream>
 

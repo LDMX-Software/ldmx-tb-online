@@ -84,7 +84,7 @@ void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
     int link = el.link();
     int inlink = el.inlink_channel();
     if(std::count(unusedchans.begin(), unusedchans.end(), channel)) continue;
-    std::string rocchan = std::string(fpga)+":"+std::to_string(roc) + ":" + std::to_string(channel);
+    std::string rocchan = std::to_string(fpga)+":"+std::to_string(roc) + ":" + std::to_string(channel);
     //std::cout<<"fpga: "<<fpga<<"  roc: "<<roc<<"  channel: "<<channel<<"  link: "<<link<<"  inlink: "<<inlink<<"  sample size: "<<samples.size()<<std::endl;
     int cmb = -9999;
     int quadbar = -9999;
