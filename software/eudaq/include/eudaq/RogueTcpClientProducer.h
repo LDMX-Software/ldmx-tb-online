@@ -8,6 +8,7 @@
 #include "rogue/interfaces/stream/TcpClient.h"
 #include "rogue/utilities/fileio/StreamWriter.h"
 #include "rogue/utilities/fileio/StreamWriterChannel.h"
+#include "rogue/TBStreamWriter.h"
 
 //---< ldmx-eudaq >---//
 #include "eudaq/RogueDataSender.h"
@@ -57,7 +58,10 @@ protected:
   std::shared_ptr<RogueDataSender> sender_{nullptr};
 
   /// File writer
-  rogue::utilities::fileio::StreamWriterPtr writer_{rogue::utilities::fileio::StreamWriter::create()};
+  //rogue::utilities::fileio::StreamWriterPtr writer_{rogue::utilities::fileio::StreamWriter::create()};
+
+  rogue::TBStreamWriterPtr writer_{rogue::TBStreamWriter::create()};
+  
   
   /// Output file path
   std::string output_path_{"."};
