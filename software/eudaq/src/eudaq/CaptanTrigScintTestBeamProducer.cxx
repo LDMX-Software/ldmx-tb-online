@@ -37,13 +37,18 @@ namespace eudaq {
 
     // Set how much data to buffer before writing
     writer_->setBufferSize(10000);
+    
+    //Skip the first 2 bytes in the the data stream of the frame.
+    //This should fix removing the extra bytes in the data stream from the captan
+    //make it configurable?
+    writer_->setOffset(2);
     udp_client_->addSlave(writer_->getChannel(0)); 
-
+    
     // Connect the data sender to the TCP client
     udp_client_->addSlave(sender_);
     
   }
-
+  
   void CaptanTrigScintTestBeamProducer::DoConfigure() {
 
     auto conf{GetConfiguration()};
