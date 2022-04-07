@@ -79,6 +79,7 @@ void HCalTestBeamMonitor::AtConfiguration() {
   adcgain_map = CSVParser::getADCGainMap(fullgainfile);
   totped_map = CSVParser::getTOTPedMap(fullgainfile);
   totgain_map = CSVParser::getTOTGainMap(fullgainfile);
+  block_ = conf->Get("FPGA_ID",1);
   
   unusedchans = {8, 17, 26, 35, 44, 53, 62, 71, 72};
   
@@ -91,7 +92,7 @@ void HCalTestBeamMonitor::AtConfiguration() {
 
 void HCalTestBeamMonitor::AtEventReception(EventSP event) {
   // Fill HCal plots
-  auto data = hcal::decode(event->GetBlock(1));
+  auto data = hcal::decode(event->GetBlock(block_));
   
   double PE = 0;
 

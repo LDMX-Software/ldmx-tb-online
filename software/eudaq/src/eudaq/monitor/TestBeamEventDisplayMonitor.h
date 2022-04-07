@@ -40,6 +40,7 @@ private:
   std::map<std::string, double> totgain_map;
   
   std::vector<int> unusedchans;
+  int block_;
   int nPlanes;
   int nevents_reset;
   int nevents;

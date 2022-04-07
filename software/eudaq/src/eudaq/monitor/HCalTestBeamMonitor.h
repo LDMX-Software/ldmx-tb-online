@@ -29,7 +29,7 @@ private:
     int mask{static_cast<int>(pow(2, (high_bit - low_bit + 1)) - 1)};
     return (value >> low_bit) & mask;
   }
-
+  int block_;
   std::map<std::string, TH2D*> adc_histo_map;
   std::map<std::string, TH2D*> tot_histo_map;
   std::map<std::string, TH2D*> toa_histo_map; 
