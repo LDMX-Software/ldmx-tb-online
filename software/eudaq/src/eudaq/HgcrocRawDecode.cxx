@@ -8,7 +8,7 @@
 #include <iostream>
 #include <iomanip>
 // uncomment if you want the very verbose debug commands printed to _terminal_
-//#define DEBUG
+#define DEBUG
 
 namespace hcal {
 namespace utility {
@@ -168,13 +168,16 @@ decode(const std::vector<uint8_t>& binary_data) {
   /// words for reading and decoding
   static uint32_t head1, head2, w;
 
+  // empty event guard
+  if (binary_data.size() == 0) return {};
+
   // wrap byte buffer with reader for getting 32-bit words
   utility::Reader reader(binary_data);
 
   // special header words not counted in event length
   do {
     reader >> head1;
-//#ifdef DEBUG
+#ifdef DEBUG
     if (head1 == 0xbeef2021) {
       std::cout << "Signal words imply version 1" << std::endl;
     } else if (head1 == 0xbeef2022) {
@@ -182,8 +185,11 @@ decode(const std::vector<uint8_t>& binary_data) {
     } else {
       std::cout << "Extra header (inserted by rogue): " << debug::hex(head1) << std::endl;
     }
-//#endif
-  } while (head1 != 0xbeef2021 and head1 != 0xbeef2022);
+#endif
+  } while (reader and head1 != 0xbeef2021 and head1 != 0xbeef2022);
+  if (!reader) {
+    EUDAQ_THROW("HgcrocRawDecode unable to find event-starting signal word.");
+  }
 
   /**
    * Decode event header
@@ -212,7 +218,7 @@ decode(const std::vector<uint8_t>& binary_data) {
   } else {
     EUDAQ_THROW("HgcrocRawDecode only knows version 1 and 2 of DAQ format.");
   }
-//#ifdef DEBUG
+#ifdef DEBUG
   std::cout << debug::hex(head1)
     << " EventHeader(version = " << version
     << ", fpga = " << fpga
@@ -220,7 +226,7 @@ decode(const std::vector<uint8_t>& binary_data) {
     << ", eventlen = " << eventlen
     << ")" << std::endl;
   std::cout << "Sample Lenghts: ";
-//#endif
+#endif
   // sample counters
   int n_words{0};
   std::vector<uint32_t> length_per_sample(nsamples, 0);
@@ -231,13 +237,13 @@ decode(const std::vector<uint8_t>& binary_data) {
     }
     uint32_t shift_in_word = 16*(i_sample%2);
     length_per_sample[i_sample] = (w >> shift_in_word) & utility::mask<12>;
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << "len(" << i_sample << ") = " << length_per_sample[i_sample] << " ";
-//#endif
+#endif
   }
-//#ifdef DEBUG
+#ifdef DEBUG
   std::cout << std::endl;
-//#endif
+#endif
 
   if (version == 2) {
     /**
@@ -245,18 +251,18 @@ decode(const std::vector<uint8_t>& binary_data) {
      * firmware for DMA readout simpler. This means we readout the leftover
      * dummy words to move the pointer on the reader.
      */
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << "Padding words to reach 8 total sample length words." << std::endl;
-//#endif
+#endif
     for (int i_word{n_words}; i_word < 8; i_word++) {
       reader >> head1; i_event++;
-//#ifdef DEBUG
+#ifdef DEBUG
       std::cout << " " << debug::hex(head1);
-//#endif
+#endif
     }
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << std::endl;
-//#endif
+#endif
 
     /**
      * extended event header in version 2
@@ -264,34 +270,34 @@ decode(const std::vector<uint8_t>& binary_data) {
     reader >> head1; i_event++;
     uint32_t spill = ((head1 >> 12) & 0xfff);
     uint32_t bunch = (head1 & 0xfff);
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << " " << debug::hex(head1) 
       << " Spill: " << spill 
       << " Bunch: " << bunch << std::endl;
-//#endif
+#endif
     reader >> head1; i_event++;
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << " " << debug::hex(head1) 
       << " 5 MHz Ticks since Spill: " << head1
       << " Time: " << head1/5e6 << "s" << std::endl;
-//#endif
+#endif
     reader >> head1; i_event++;
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << " " << debug::hex(head1) 
       << " Event Number: " << head1 << std::endl;
-//#endif
+#endif
     reader >> head1; i_event++;
     uint32_t run = (head1 & 0xFFF);
     uint32_t DD = (head1>>23)&0x1F;
     uint32_t MM = (head1>>28)&0xF;
     uint32_t hh = (head1>>18)&0x1F;
     uint32_t mm = (head1>>12)&0x3F;
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << " " << debug::hex(head1) 
       << " Run: " << run << " DD-MM hh:mm "
       << DD << "-" << MM << " " << hh << ":" << mm
       << std::endl;
-//#endif
+#endif
   }
 
   /** 
@@ -305,9 +311,9 @@ decode(const std::vector<uint8_t>& binary_data) {
   std::map<ElectronicsLocation, std::vector<HgcrocSample>> eid_to_samples;
   std::size_t i_sample{0};
   while (i_event < eventlen) {
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << "Decoding sample " << i_sample << " on word " << i_event << std::endl;
-//#endif
+#endif
     reader >> head1 >> head2; i_event += 2;
     /** Decode Bunch Header
      * We have a few words of header material before the actual data.
@@ -326,50 +332,50 @@ decode(const std::vector<uint8_t>& binary_data) {
      */
     //utility::CRC fpga_crc;
     //fpga_crc << head1;
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << debug::hex(head1) << " : ";
-//#endif
+#endif
     uint32_t hgcroc_version = (head1 >> 28) & utility::mask<4>;
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << "hgcroc_version " << hgcroc_version << std::flush;
-//#endif
+#endif
     uint32_t fpga = (head1 >> 20) & utility::mask<8>;
     uint32_t nlinks = (head1 >> 14) & utility::mask<6>;
     uint32_t len = head1 & utility::mask<12>;
 
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << ", fpga: " << fpga << ", nlinks: " << nlinks << ", len: " << len << std::endl;
-//#endif
+#endif
     //fpga_crc << head2;
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << debug::hex(head2) << " : ";
-//#endif
+#endif
 
     uint32_t bx_id = (head2 >> 20) & utility::mask<12>;
     uint32_t rreq = (head2 >> 10) & utility::mask<10>;
     uint32_t orbit = head2 & utility::mask<10>;
 
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << "bx_id: " << bx_id << ", rreq: " << rreq << ", orbit: " << orbit << std::endl;
-//#endif
+#endif
 
     std::vector<uint32_t> length_per_link(nlinks, 0);
     for (uint32_t i_link{0}; i_link < nlinks; i_link++) {
       if (i_link % 4 == 0) {
         i_event++; reader >> w;
         //fpga_crc << w;
-//#ifdef DEBUG
+#ifdef DEBUG
         std::cout << debug::hex(w) << " : Four Link Pack " << std::endl;
-//#endif
+#endif
       }
       uint32_t shift_in_word = 8 * (i_link % 4);
       bool rid_ok = (w >> (shift_in_word + 7)) & utility::mask<1> == 1;
       bool cdc_ok = (w >> (shift_in_word + 6)) & utility::mask<1> == 1;
       length_per_link[i_link] =
           (w >> shift_in_word) & utility::mask<6>;
-//#ifdef DEBUG
+#ifdef DEBUG
       std::cout << "  Link " << i_link << " readout " << length_per_link.at(i_link) << " channels" << std::endl;
-//#endif
+#endif
     }
 
     /** Decode Each Link in Sequence
@@ -383,13 +389,13 @@ decode(const std::vector<uint8_t>& binary_data) {
 
     for (uint32_t i_link{0}; i_link < nlinks; i_link++) {
       // move on from last word counting links or previous link
-//#ifdef DEBUG
+#ifdef DEBUG
       std::cout << "RO Link " << i_link << std::endl;
-//#endif
+#endif
       if (length_per_link.at(i_link) < 2) {
-//#ifdef DEBUG
+#ifdef DEBUG
         std::cout << "DOWN" << std::endl;
-//#endif
+#endif
         continue;
       }
       //utility::CRC link_crc;
@@ -398,10 +404,10 @@ decode(const std::vector<uint8_t>& binary_data) {
       //link_crc << w;
       uint32_t roc_id = (w >> 16) & utility::mask<16>;
       bool crc_ok = (w >> 15) & utility::mask<1> == 1;
-//#ifdef DEBUG
+#ifdef DEBUG
       std::cout << debug::hex(w) << " : roc_id " << roc_id 
         << ", crc_ok (v2 always false) " << std::boolalpha << crc_ok << std::endl;
-//#endif
+#endif
 
       // get readout map from the last 8 bits of this word
       // and the entire next word
@@ -411,10 +417,10 @@ decode(const std::vector<uint8_t>& binary_data) {
       //fpga_crc << w;
       //link_crc << w;
       ro_map |= w;
-//#ifdef DEBUG
+#ifdef DEBUG
       std::cout << debug::hex(w) << " : lower 32 bits of RO map" << std::endl;
       std::cout << "Start looping through channels..." << std::endl;
-//#endif
+#endif
       // loop through channels on this link,
       //  since some channels may have been suppressed because of low
       //  amplitude the channel ID is not the same as the index it
@@ -429,9 +435,9 @@ decode(const std::vector<uint8_t>& binary_data) {
         // next word is this channel
         i_event++; reader >> w;
         //fpga_crc << w;
-//#ifdef DEBUG
+#ifdef DEBUG
         std::cout << debug::hex(w) << " " << j;
-//#endif
+#endif
 
         if (j == 0) {
           /** Special "Header" Word from ROC
@@ -442,9 +448,9 @@ decode(const std::vector<uint8_t>& binary_data) {
            * version 2:
            * 10101010 | BXID (12) | WADD (9) | 1010
            */
-//#ifdef DEBUG
+#ifdef DEBUG
           std::cout << " : ROC Header";
-//#endif
+#endif
           //link_crc << w;
           uint32_t bx_id = (w >> 16) & utility::mask<12>;
           uint32_t short_event = (w >> 10) & utility::mask<6>;
@@ -455,19 +461,19 @@ decode(const std::vector<uint8_t>& binary_data) {
            * 10 | 0000000000 | Common Mode ADC 0 (10) | Common Mode ADC 1 (10)
            */
           //link_crc << w;
-//#ifdef DEBUG
+#ifdef DEBUG
           std::cout << " : Common Mode";
-//#endif
+#endif
         } else if (j == calib_channel) {
-//#ifdef DEBUG
+#ifdef DEBUG
           std::cout << " : Calib";
-//#endif
+#endif
         } else if (j == 39) {
           // CRC checksum from ROC
           uint32_t crc = w;
-//#ifdef DEBUG
+#ifdef DEBUG
           std::cout << " : CRC checksum  : NOT CALCULATING CRC =? " << debug::hex(crc);
-//#endif
+#endif
           /*
           if (link_crc.get() != crc) {
             EXCEPTION_RAISE("BadCRC",
@@ -476,9 +482,9 @@ decode(const std::vector<uint8_t>& binary_data) {
           }
           */
           
-//#ifdef DEBUG
+#ifdef DEBUG
           std::cout << " : CRC";
-//#endif
+#endif
         } else {
           /// DAQ Channels
 
@@ -504,27 +510,27 @@ decode(const std::vector<uint8_t>& binary_data) {
             j - 1 - 1*(j > common_mode_channel) - 1*(j > calib_channel)};
           // copy data into EID->sample map
           eid_to_samples[eid].emplace_back(w);
-//#ifdef DEBUG
+#ifdef DEBUG
           std::cout << " : DAQ Channel "
             << eid.fpga() << " " << eid.link() << " " << eid.inlink_channel() << " ";
-//#endif
+#endif
         }  // type of channel
-//#ifdef DEBUG
+#ifdef DEBUG
         std::cout << std::endl;
-//#endif
+#endif
       }  // loop over channels (j in Table 4)
-//#ifdef DEBUG
+#ifdef DEBUG
       std::cout << "done looping through channels" << std::endl;
-//#endif
+#endif
     }  // loop over links
 
     // another CRC checksum from FPGA
     i_event++; reader >> w;
     uint32_t crc = w;
-//#ifdef DEBUG
+#ifdef DEBUG
     std::cout << "FPGA Checksum : NOT CALCULATED =? " << debug::hex(crc) << std::endl;
     std::cout << " N Sample Words : " << length_per_sample.at(i_sample) << std::endl;
-//#endif
+#endif
     /* TODO
      *  fix calculation of FPGA checksum
      *  I can't figure out why it isn't matching, but there
@@ -538,9 +544,9 @@ decode(const std::vector<uint8_t>& binary_data) {
     // padding to reach 64-bit boundary in version 2
     if (version == 2u and length_per_sample.at(i_sample) % 2 == 1) {
       i_event++; reader >> head1;
-//#ifdef DEBUG
+#ifdef DEBUG
       std::cout << "Padding to reach 64-bit boundary: " << debug::hex(head1) << std::endl;
-//#endif
+#endif
     }
     i_sample++;
   }
