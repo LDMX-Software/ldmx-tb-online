@@ -7,7 +7,6 @@ rogue::TBStreamWriterPtr rogue::TBStreamWriter::create() {
 }
 
 void rogue::TBStreamWriter::writeFile(uint8_t channel, std::shared_ptr<rogue::interfaces::stream::Frame> frame) {
-  std::cout<<"nothing to do here"<<std::endl;
   
   rogue::interfaces::stream::Frame::BufferIterator it;
   uint32_t value;
@@ -36,8 +35,8 @@ void rogue::TBStreamWriter::writeFile(uint8_t channel, std::shared_ptr<rogue::in
     intWrite(&value,4);
     
     // Write buffers
-    for (it=(frame->beginBuffer() + offset_); it != frame->endBuffer(); ++it)
-      intWrite((*it)->begin(),(*it)->getPayload());
+    for (it=(frame->beginBuffer()); it != frame->endBuffer(); ++it)
+      intWrite((*it)->begin() + offset_,(*it)->getPayload() - offset_);
     
     // Update counters
     frameCount_ ++;
