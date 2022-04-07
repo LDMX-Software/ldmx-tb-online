@@ -59,10 +59,9 @@ void TrigScintFileReaderProducer::RunLoop() {
   auto event_count{0};
   
   // The following reads a txt file with raw data line by line and extracts
-  // events. Each event is encapsulated by the header/tail word 
-  // 0xFFFFFFFFFFFFFFFF. Only words found within the header/tail are added 
-  // to the event. Before being added to the event, the hex strings are 
-  // converted to uint64_t.  
+  // events. Each event is separated by the word 0xFFFFFFFFFFFFFFFF. Only 
+  // words found within the 0xFFF... are added to the event. Before being 
+  // added to the event, the hex strings are converted to uint64_t.  
 
   // This is the vector used to hold an event.  This will be added to the
   // eudaq event and shipped to the data collector.
@@ -70,7 +69,7 @@ void TrigScintFileReaderProducer::RunLoop() {
 
   // The following flag is set at the beginning of an event i.e. when the
   // value 0xFFFFFFFFFFFFFFFF is initially found. 
-  bool event_found{false}; 
+  bool found_init_event{false}; 
     
   for (std::string line; getline(*ifile.get(), line); ) {
     
@@ -85,10 +84,17 @@ void TrigScintFileReaderProducer::RunLoop() {
     //std::cout << "[ TrigScintFileReaderProducer ]:  word: "
     //          << std::bitset<64>(val) << std::endl;
 
-    if (!event_found && val != 0xFFFFFFFFFFFFFFFF) { 
-      // Skip words until a begin of event tag is found.
+    if (!found_init_event && val != 0xFFFFFFFFFFFFFFFF) { 
+      // Skip words until a begin of event tag is found.  This is done 
+      // because a file will sometimes include an incomplete event.
       continue;
-    } else if (event_found && val == 0xFFFFFFFFFFFFFFFF) { 
+    } else if (!found_init_event && val == 0xFFFFFFFFFFFFFFFF) { 
+      // A new event has been found, start adding words to the packet.
+      found_init_event = true;
+      continue;
+    }
+
+    if (found_init_event && val == 0xFFFFFFFFFFFFFFFF) { 
       // The end of an event has been reached.  Clear everything, ship the event
       // out and  and prepare for a new event.
 
@@ -102,17 +108,13 @@ void TrigScintFileReaderProducer::RunLoop() {
       SendEvent(std::move(event));
 
       packet.clear();
-      event_found = false;
 
       // Increment event counter. This will be used in the future.
       ++event_count;
 
-    } else if (!event_found && val == 0xFFFFFFFFFFFFFFFF) { 
-      // A new event has been found, start adding words to the packet.
-      event_found = true;
-      continue;
-    }
-      packet.push_back(val); 
+    } 
+      
+    packet.push_back(val); 
   }
 
   // Once all lines have been processed, the end of the file has been reached.
