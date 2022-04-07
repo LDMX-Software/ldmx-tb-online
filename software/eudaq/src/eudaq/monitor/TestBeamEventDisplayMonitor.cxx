@@ -50,6 +50,7 @@ void TestBeamEventDisplayMonitor::AtConfiguration() {
   adcgain_map = CSVParser::getADCGainMap(fullgainfile);
   totped_map = CSVParser::getTOTPedMap(fullgainfile);
   totgain_map = CSVParser::getTOTGainMap(fullgainfile);
+  block_ = conf->Get("FPGA_ID",0);
   
   unusedchans = {8, 17, 26, 35, 44, 53, 62, 71, 72};
   
@@ -71,7 +72,7 @@ void TestBeamEventDisplayMonitor::AtEventReception(EventSP event) {
     hcal_event->Reset();
   }
 
-  auto data = hcal::decode(event->GetBlock(1));
+  auto data = hcal::decode(event->GetBlock(block_));
 
   auto thresh_map{std::map<std::string, int>()};
   

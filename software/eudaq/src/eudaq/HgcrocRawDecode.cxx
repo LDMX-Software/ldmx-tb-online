@@ -8,7 +8,7 @@
 #include <iostream>
 #include <iomanip>
 // uncomment if you want the very verbose debug commands printed to _terminal_
-#define DEBUG
+//#define DEBUG
 
 namespace hcal {
 namespace utility {
