@@ -3,6 +3,10 @@
 //---< ldmx-eudaq >---//
 #include "eudaq/TrigScintDataSender.h"
 
+#include <iomanip>
+#include <ctime>
+#include <sstream>
+
 namespace {
   auto dummy0 = eudaq::Factory<eudaq::Producer>::Register<
     eudaq::CaptanTrigScintTestBeamProducer, const std::string &, const std::string &>(
@@ -50,18 +54,25 @@ namespace eudaq {
   }
   
   void CaptanTrigScintTestBeamProducer::DoConfigure() {
-
+    
     auto conf{GetConfiguration()};
     
     // Get the path to the output file
     output_path_ = conf->Get("OUTPUT_PATH", ".");
     
     // Get the file prefix
-    file_prefix_ = conf->Get("ROGUE_FILE_PATTERN", "test"); 
+    file_prefix_ = conf->Get("ROGUE_FILE_PATTERN", "test");
     
-        
+    // Add the date to the file
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+    
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+    file_prefix_ += oss.str() + "_";
+    
   }
-
+  
   void CaptanTrigScintTestBeamProducer::DoStartRun() {
 
     // Build the file name
