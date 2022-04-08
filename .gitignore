@@ -38,3 +38,6 @@ __pycache__
 .ipynb_checkpoints
 
 *.root
+
+#Emacs cruft
+*~

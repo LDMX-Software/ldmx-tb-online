@@ -42,6 +42,7 @@ add_library(eudaq_core SHARED
   src/eudaq/TcpCommandGenerator.cxx
   src/eudaq/TestBeamDataCollector.cxx
   src/eudaq/TrigScintDataSender.cxx
+  src/eudaq/CaptanCircularBufferDataSender.cxx
   src/eudaq/TrigScintTestBeamProducer.cxx
   )
 target_include_directories(eudaq_core PUBLIC include)
