@@ -1,7 +1,13 @@
-#usage: ldmx python3 7-in-1.py ../adc_<run-number>.root
+#usage: ldmx python3 HCal-dqm-offline.py ../adc_<run-number>.root
+#dqm = data quality monitoring
 
 from mapping import *
 from optparse import OptionParser
+import os
+
+directory = 'plots'
+try: os.stat(directory)
+except: os.mkdir(directory)
  
 parser = OptionParser()	
 parser.add_option('-t','--threshold', dest='includeThresholdPlots', default = True, help='Determines if PE threshold plots should be included. Leave blank or True to inlcude, anything else ot exclude.')
@@ -44,7 +50,6 @@ adc_gain = 1.2 #Dummy Value
 threshold = adc_ped + mV_per_PE / adc_gain * threshold_PE
 print('threshold is an ADC of',threshold)
 def ADC_to_PE(adc): return adc*adc_gain/mV_per_PE 
-
 
 #prepares plots
 hists = {}
@@ -89,7 +94,11 @@ hists["PE-of-channel"] =  r.TH2F("PE-of-channel", "PE-of-channel",
 hists["PE-of-channel"].SetYTitle('PE')
 hists["PE-of-channel"].SetXTitle('Channel')  
 
-
+hists["max_sample-of-channel"] =  r.TH2F("max_sample-of-channel", "max_sample-of-channel", 
+        len(channelRange), channelRange[0]-0.5, channelRange[-1]-0.5,
+        len(timestampRange), timestampRange[0]-0.5, timestampRange[-1]+0.5,)
+hists["max_sample-of-channel"].SetYTitle('Timestamp')
+hists["max_sample-of-channel"].SetXTitle('Channel') 
 
 #Gets data from interesting events
 maxADC=0
@@ -110,13 +119,13 @@ for t in allData : #for timestamp in allData
             if t.i_sample == timestampRange[-1]: 
                 if maxADC>0: #future option for non-PE related threshold
                     hists["event-of-max_sample"].Fill(maxSample)
+                    hists["max_sample-of-channel"].Fill(realChannel,maxSample)
                 if maxADC>threshold:   
                     hists["event-of-PE"].Fill(ADC_to_PE(maxADC))
                     hists["PE-of-channel"].Fill(realChannel,ADC_to_PE(maxADC))
                 maxADC=0
                 maxSample=-1
             
-
 #makes the pdf
 c = r.TCanvas('','', 300, 300)
 c.Divide(3,3)
@@ -135,7 +144,10 @@ if includeThresholdPlots == True:
     hists["event-of-PE"].Draw('HIST')
     c.cd(7)
     hists["PE-of-channel"].Draw('COLZ')
+c.cd(8)
+hists["max_sample-of-channel"].Draw('COLZ')
 
+for i in range(1,10):c.GetPad(i).SetLeftMargin(0.12)
 label = r.TLatex()
 label.SetTextFont(42)
 label.SetTextSize(0.05)
@@ -143,7 +155,7 @@ label.SetNDC()
 if len(eventsOfInterest) == 1: context= "This is only event "+str(eventsOfInterest[0])
 else: context="These are events "+str(eventsOfInterest[0])+" to "+str(eventsOfInterest[-1]) 
 label.DrawLatex(0,  0, context)  
-c.SaveAs("plots/7-in-1.pdf") 
+c.SaveAs("plots/Hcal-dqm.pdf") 
 
 #makes the root histos
 for hist in hists:
