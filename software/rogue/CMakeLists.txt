@@ -13,6 +13,7 @@ add_library(rogue SHARED
   src/rogue/TcpCommandReceiver.cxx
   src/rogue/TrigScintReceiver.cxx
   src/rogue/TsUdpClient.cxx
+  src/rogue/TBStreamWriter.cxx
   )
 target_include_directories(rogue PUBLIC include)
 target_link_libraries(rogue PUBLIC Rogue::Rogue emulators)

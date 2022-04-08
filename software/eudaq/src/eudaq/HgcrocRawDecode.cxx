@@ -168,6 +168,9 @@ decode(const std::vector<uint8_t>& binary_data) {
   /// words for reading and decoding
   static uint32_t head1, head2, w;
 
+  // empty event guard
+  if (binary_data.size() == 0) return {};
+
   // wrap byte buffer with reader for getting 32-bit words
   utility::Reader reader(binary_data);
 
@@ -183,7 +186,10 @@ decode(const std::vector<uint8_t>& binary_data) {
       std::cout << "Extra header (inserted by rogue): " << debug::hex(head1) << std::endl;
     }
 #endif
-  } while (head1 != 0xbeef2021 and head1 != 0xbeef2022);
+  } while (reader and head1 != 0xbeef2021 and head1 != 0xbeef2022);
+  if (!reader) {
+    EUDAQ_THROW("HgcrocRawDecode unable to find event-starting signal word.");
+  }
 
   /**
    * Decode event header

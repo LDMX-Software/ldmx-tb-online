@@ -18,34 +18,34 @@
 #include "pflib/PolarfireTarget.h"
 #include "pflib/rogue/RogueWishboneInterface.h"
 
-/**
- * Rogue data sender translates a received rogue frame into
- * an eudaq event. This is used during DMA readout.
- */
-class DMADataSender : public eudaq::RogueDataSender {
- public:
-  static std::shared_ptr<DMADataSender> create(eudaq::Producer*p) {
-    static auto ptr = std::make_shared<DMADataSender>(p);
-    return ptr;
-  }
-  DMADataSender(eudaq::Producer *producer) : RogueDataSender(producer){};
-  ~DMADataSender() = default;
-  virtual void sendEvent(std::shared_ptr<rogue::interfaces::stream::Frame> frame) final override {
-    static std::size_t i_frame{0};
-    auto lock = frame->lock();
-    std::vector<uint8_t> event_data{frame->begin(), frame->end()};
-    // wrap data in eudaq object and send it downstream to the monitoring
-    auto ev = eudaq::Event::MakeUnique("HgcrocRaw");
-    ev->AddBlock(1, event_data);
-    producer_->SendEvent(std::move(ev));
-  }
-};
 
 /**
  * Interface to a single polarfire 
  */
 class PolarfireProducer : public eudaq::Producer, 
                           public rogue::interfaces::stream::Master {
+  /**
+   * Rogue data sender translates a received rogue frame into
+   * an eudaq event. This is used during DMA readout.
+   */
+  class DMADataSender : public eudaq::RogueDataSender {
+   public:
+    static std::shared_ptr<DMADataSender> create(eudaq::Producer*p) {
+      static auto ptr = std::make_shared<DMADataSender>(p);
+      return ptr;
+    }
+    DMADataSender(eudaq::Producer *producer) : RogueDataSender(producer){};
+    ~DMADataSender() = default;
+    virtual void sendEvent(std::shared_ptr<rogue::interfaces::stream::Frame> frame) final override {
+      static std::size_t i_frame{0};
+      auto lock = frame->lock();
+      std::vector<uint8_t> event_data{frame->begin(), frame->end()};
+      // wrap data in eudaq object and send it downstream to the monitoring
+      auto ev = eudaq::Event::MakeUnique(static_cast<PolarfireProducer*>(producer_)->event_name());
+      ev->AddBlock(static_cast<PolarfireProducer*>(producer_)->block(), event_data); // fpga ID?
+      producer_->SendEvent(std::move(ev));
+    }
+  };
  public:
   PolarfireProducer(const std::string & name, const std::string & runcontrol);
   void DoInitialise() override;
@@ -57,6 +57,21 @@ class PolarfireProducer : public eudaq::Producer,
   /// put onto its own tread by eudaq::CommandReceiver
   void RunLoop() override;
   static const uint32_t factory_id_ = eudaq::cstr2hash("PolarfireProducer");
+  /**
+   * the block in the event we should put the data
+   * unclear on if this should always be the same or if it should be
+   * the id of the polarfire producer
+   */
+  int block() const {
+    return fpga_id_;
+  }
+  /**
+   * name of the event we creat,
+   * unclear on if this is important for event aligning or not
+   */
+  std::string event_name() const {
+    return "PolarfireRaw";
+  }
  private:
   /// pass end-of-run to separate thread
   bool exiting_run_;
@@ -399,8 +414,8 @@ void PolarfireProducer::RunLoop() try {
       std::copy(event_data.begin(), event_data.end(), frame->begin());
       sendFrame(frame);
       // wrap data in eudaq object and send it downstream to the monitoring
-      auto ev = eudaq::Event::MakeUnique("HgcrocRaw");
-      ev->AddBlock(fpga_id_, event_data);
+      auto ev = eudaq::Event::MakeUnique(event_name());
+      ev->AddBlock(block(), event_data);
       SendEvent(std::move(ev));
     }
     // wait current daq window is done

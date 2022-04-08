@@ -3,6 +3,10 @@
 //---< ldmx-eudaq >---//
 #include "eudaq/TrigScintDataSender.h"
 
+#include <iomanip>
+#include <ctime>
+#include <sstream>
+
 namespace {
   auto dummy0 = eudaq::Factory<eudaq::Producer>::Register<
     eudaq::CaptanTrigScintTestBeamProducer, const std::string &, const std::string &>(
@@ -37,26 +41,38 @@ namespace eudaq {
 
     // Set how much data to buffer before writing
     writer_->setBufferSize(10000);
+    
+    //Skip the first 2 bytes in the the data stream of the frame.
+    //This should fix removing the extra bytes in the data stream from the captan
+    //make it configurable?
+    writer_->setOffset(2);
     udp_client_->addSlave(writer_->getChannel(0)); 
-
+    
     // Connect the data sender to the TCP client
     udp_client_->addSlave(sender_);
     
   }
-
+  
   void CaptanTrigScintTestBeamProducer::DoConfigure() {
-
+    
     auto conf{GetConfiguration()};
     
     // Get the path to the output file
     output_path_ = conf->Get("OUTPUT_PATH", ".");
     
     // Get the file prefix
-    file_prefix_ = conf->Get("ROGUE_FILE_PATTERN", "test"); 
+    file_prefix_ = conf->Get("ROGUE_FILE_PATTERN", "test");
     
-        
+    // Add the date to the file
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+    
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%d-%m-%Y_%H-%M-%S");
+    file_prefix_ += oss.str() + "_";
+    
   }
-
+  
   void CaptanTrigScintTestBeamProducer::DoStartRun() {
 
     // Build the file name
