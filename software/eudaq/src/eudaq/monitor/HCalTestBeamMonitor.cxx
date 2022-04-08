@@ -17,11 +17,11 @@ namespace eudaq {
 void HCalTestBeamMonitor::AtConfiguration() {
   auto conf{GetConfiguration()};
 
-  for (int i{0}; i < 6; ++i) {
+  for (int i{0}; i < 6; ++i) { //this is ROC 1 to 6
     adc_histo_map["ROC " + std::to_string(i) + " - ADC"] =
         m_monitor->Book<TH2D>("ROC " + std::to_string(i) + " ADC",
                               "ROC_" + std::to_string(i) + "_ADC", "",
-                              ";Channel;ADC", 72, 0, 72, 1000, 0, 1000);
+                              ";Channel;ADC", 72, 0, 72, 1024, 0, 1024);
     m_monitor->SetDrawOptions(adc_histo_map["ROC " + std::to_string(i) + " - ADC"], "colz");
     adc_histo_map["ROC " + std::to_string(i) + " - ADC"]->SetTitle(("ADC vs Channel, ROC " + std::to_string(i)).c_str());
     adc_histo_map["ROC " + std::to_string(i) + " - ADC"]->SetStats(0);   
@@ -29,7 +29,7 @@ void HCalTestBeamMonitor::AtConfiguration() {
     tot_histo_map["ROC " + std::to_string(i) + " - TOT"] =
         m_monitor->Book<TH2D>("ROC " + std::to_string(i) + " TOT",
                               "ROC_" + std::to_string(i) + "_TOT", "",
-                              ";Channel;TOT", 72, 0, 72, 1000, 0, 1000);
+                              ";Channel;TOT", 72, 0, 72, 1024, 0, 1024);
     m_monitor->SetDrawOptions(tot_histo_map["ROC " + std::to_string(i) + " - TOT"], "colz");
     tot_histo_map["ROC " + std::to_string(i) + " - TOT"]->SetTitle(("TOT vs Channel, ROC " + std::to_string(i)).c_str());
     tot_histo_map["ROC " + std::to_string(i) + " - TOT"]->SetStats(0);   
@@ -37,10 +37,19 @@ void HCalTestBeamMonitor::AtConfiguration() {
     toa_histo_map["ROC " + std::to_string(i) + " - TOA"] =
         m_monitor->Book<TH2D>("ROC " + std::to_string(i) + " TOA",
                               "ROC_" + std::to_string(i) + "_TOA", "",
-                              ";Channel;TOA", 72, 0, 72, 1000, 0, 1000);
+                              ";Channel;TOA", 72, 0, 72, 1024, 0, 1024);
     m_monitor->SetDrawOptions(toa_histo_map["ROC " + std::to_string(i) + " - TOA"], "colz");
     toa_histo_map["ROC " + std::to_string(i) + " - TOA"]->SetTitle(("TOA vs Channel, ROC " + std::to_string(i)).c_str());
-    toa_histo_map["ROC " + std::to_string(i) + " - TOA"]->SetStats(0);                         
+    toa_histo_map["ROC " + std::to_string(i) + " - TOA"]->SetStats(0);        
+
+    //hardcoded 8 time samples
+    max_sample_histo_map["ROC " + std::to_string(i) + " - max_sample"] =
+        m_monitor->Book<TH2D>("ROC " + std::to_string(i) + " max_sample",
+                              "ROC_" + std::to_string(i) + "_max_sample", "",
+                              ";Channel;max_sample", 8, 0, 8, 1024, 0, 1024);
+    m_monitor->SetDrawOptions(max_sample_histo_map["ROC " + std::to_string(i) + " - max_sample"], "colz");
+    max_sample_histo_map["ROC " + std::to_string(i) + " - max_sample"]->SetTitle(("max_sample vs Channel, ROC " + std::to_string(i)).c_str());
+    max_sample_histo_map["ROC " + std::to_string(i) + " - max_sample"]->SetStats(0);                  
   }
 
   nPlanes = 19;
@@ -137,6 +146,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       std::cout << "Key not found: " << rocchan << std::endl;
     }
     double maxadc = -9999.;
+    int timestamp_with_highest_adc = -1;
     for (auto &sample : samples) {
       bool isTOT = sample.isTOTinProgress();
       bool isTOTComplete = sample.isTOTComplete();
@@ -144,16 +154,23 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       int tot = sample.tot();
       int adc_tm1 = sample.adc_tm1(); //not really used without zero suppression
       int adc_t = sample.adc_t();
-      if(adc_t > maxadc) maxadc = adc_t;
+      int timestamp = sample.i_sample(); //it works in python
+      if(adc_t > maxadc){
+        maxadc = adc_t;
+        timestamp_with_highest_adc = timestamp;
+      }
       adc_histo_map["ROC " + std::to_string(hgcroc_number) + " - ADC"]->Fill(channel, adc_t);
       tot_histo_map["ROC " + std::to_string(hgcroc_number) + " - TOT"]->Fill(channel, tot);
       toa_histo_map["ROC " + std::to_string(hgcroc_number) + " - TOA"]->Fill(channel, toa);
       //std::cout<<"isTOT: "<<isTOT<<"  isTOTComplete: "<<isTOTComplete<<"  toa: "<<toa<<"  tot: "<<tot<<"  adc_tm1: "<<adc_tm1<<"  adc_t "<<adc_t<<std::endl;
     }
+    toa_histo_map["ROC " + std::to_string(hgcroc_number) + " - max_sample"]->Fill(channel, timestamp_with_highest_adc);
+
+
     double threshold = adcped + mV_per_PE / adcgain * threshold_PE; 
     if(maxadc >= threshold){
       if(end != 0){
-	hcalhits_top->Fill(plane, barchan);
+        hcalhits_top->Fill(plane, barchan);
       }
       else{
         hcalhits_bot->Fill(plane, barchan);
