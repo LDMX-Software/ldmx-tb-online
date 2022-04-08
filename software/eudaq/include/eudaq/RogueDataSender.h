@@ -57,7 +57,6 @@ protected:
   /// The producer to use to send data
   eudaq::Producer *producer_{nullptr};
 
-private:
   /// RX count
   uint32_t rx_count_{0};
 
