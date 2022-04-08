@@ -1,5 +1,6 @@
 
-//---< ldmx-eudaq >---//
+#include <vector>
+
 #include "eudaq/RogueDataSender.h"
 
 namespace eudaq {
@@ -26,5 +27,10 @@ public:
    */
   virtual void
   sendEvent(std::shared_ptr<rogue::interfaces::stream::Frame> frame);
+
+ private: 
+  /// Buffer to hold trigger scintillator data. This is needed because events
+  /// are split across packets.
+  std::vector<uint64_t> buffer; 
 };
 } // namespace eudaq
