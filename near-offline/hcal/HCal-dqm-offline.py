@@ -127,7 +127,7 @@ for t in allData : #for timestamp in allData
                 maxADC=0
                 maxSample=-1
             
-#makes the pdf
+#makes the overview pdf
 c = r.TCanvas('','', 300, 300)
 c.Divide(3,3)
 c.cd(1)
@@ -157,7 +157,29 @@ if len(eventsOfInterest) == 1: context= "This is only event "+str(eventsOfIntere
 else: context="These are events "+str(eventsOfInterest[0])+" to "+str(eventsOfInterest[-1]) 
 label.DrawLatex(0,  0, context)  
 saveFileName=inputFileName[inputFileName.find('adc'):inputFileName.find('.root')]
-c.SaveAs("plots/Hcal-dqm_"+saveFileName+".pdf") 
+c.SaveAs("plots/Hcal-dqm_overview_"+saveFileName+".pdf") 
+c.Close()
+
+#makes individual pdfs
+import copy
+channelsPerROC=64
+plots=(hists["ADC-of-channel"],hists["TOT-of-channel"],hists["TOA-of-channel"],hists["max_sample-of-channel"])
+for hist in plots:
+    c = r.TCanvas('','', 300, 200)
+    c.Divide(3,2)
+    subplots=[]
+    for i in range(0,6):
+        c.cd(i+1)
+        c.GetPad(i+1).SetLeftMargin(0.12)
+        subplots.append(copy.deepcopy(hist))
+        subplots[-1].GetXaxis().SetRangeUser(i*channelsPerROC, (i+1)*channelsPerROC-1)
+        subplots[-1].SetTitle('ROC '+str(i))
+        subplots[-1].Draw('COLZ')
+    c.SaveAs("plots/Hcal-dqm_"+hist.GetName()+".pdf") 
+    c.Close()
+
+
+
 
 #makes the root histos
 for hist in hists:
