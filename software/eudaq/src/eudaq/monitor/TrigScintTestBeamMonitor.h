@@ -25,7 +25,8 @@ private:
     int mask{static_cast<int>(pow(2, (high_bit - low_bit + 1)) - 1)};
     return (value >> low_bit) & mask;
   }
-
+  static const unsigned int comma_char=0xFBF7;
+  std::vector<uint16_t> event_buffer1,event_buffer2;
   std::map<std::string, TH2D*> histo_map; 
 };
 } // namespace eudaq

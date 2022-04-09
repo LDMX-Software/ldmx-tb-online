@@ -17,12 +17,12 @@ void TestBeamDataCollector::DoConfigure() {
     m_noprint = conf->Get("DISABLE_PRINT", 0);
   }*/
 }
-
+  
 void TestBeamDataCollector::DoReceive(ConnectionSPC id, EventSP ev) {
   // if (!m_noprint)
-	//std::cout << "I'm here" << std::endl;
+  //std::cout << "I'm here" << std::endl;
   //ev->Print(std::cout);
-
+  
   WriteEvent(ev);
 }
 } // namespace eudaq
