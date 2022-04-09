@@ -46,7 +46,7 @@ void HCalTestBeamMonitor::AtConfiguration() {
     max_sample_histo_map["ROC " + std::to_string(i) + " - max_sample"] =
         m_monitor->Book<TH2D>("ROC " + std::to_string(i) + " max_sample",
                               "ROC_" + std::to_string(i) + "_max_sample", "",
-                              ";Channel;max_sample", 8, 0, 8, 1024, 0, 1024);
+                              ";Channel;max_sample", 72, 0, 72, 8, 0, 8);
     m_monitor->SetDrawOptions(max_sample_histo_map["ROC " + std::to_string(i) + " - max_sample"], "colz");
     max_sample_histo_map["ROC " + std::to_string(i) + " - max_sample"]->SetTitle(("max_sample vs Channel, ROC " + std::to_string(i)).c_str());
     max_sample_histo_map["ROC " + std::to_string(i) + " - max_sample"]->SetStats(0);                  
