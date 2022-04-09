@@ -18,7 +18,8 @@ includeThresholdPlots=options.includeThresholdPlots
 eventsOfInterest = range(0,100)
 channelsOfInterest = range(0,40)
 
-inputFile=r.TFile(sys.argv[1], "read")
+inputFileName=sys.argv[1]
+inputFile=r.TFile(inputFileName, "read")
 allData=inputFile.Get('ntuplizehgcroc').Get("hgcroc") #
 r.gStyle.SetOptStat("ne")
 
@@ -155,7 +156,8 @@ label.SetNDC()
 if len(eventsOfInterest) == 1: context= "This is only event "+str(eventsOfInterest[0])
 else: context="These are events "+str(eventsOfInterest[0])+" to "+str(eventsOfInterest[-1]) 
 label.DrawLatex(0,  0, context)  
-c.SaveAs("plots/Hcal-dqm.pdf") 
+saveFileName=inputFileName[inputFileName.find('adc'):inputFileName.find('.root')]
+c.SaveAs("plots/Hcal-dqm_"+saveFileName+".pdf") 
 
 #makes the root histos
 for hist in hists:
