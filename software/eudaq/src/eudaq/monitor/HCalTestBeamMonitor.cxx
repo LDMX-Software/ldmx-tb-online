@@ -164,7 +164,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       toa_histo_map["ROC " + std::to_string(hgcroc_number) + " - TOA"]->Fill(channel, toa);
       //std::cout<<"isTOT: "<<isTOT<<"  isTOTComplete: "<<isTOTComplete<<"  toa: "<<toa<<"  tot: "<<tot<<"  adc_tm1: "<<adc_tm1<<"  adc_t "<<adc_t<<std::endl;
     }
-    toa_histo_map["ROC " + std::to_string(hgcroc_number) + " - max_sample"]->Fill(channel, timestamp_with_highest_adc);
+    max_sample_histo_map["ROC " + std::to_string(hgcroc_number) + " - max_sample"]->Fill(channel, timestamp_with_highest_adc);
 
 
     double threshold = adcped + mV_per_PE / adcgain * threshold_PE; 
