@@ -127,7 +127,7 @@ for t in allData : #for timestamp in allData
                 maxADC=0
                 maxSample=-1
             
-#makes the overview pdf
+#makes the pdf
 c = r.TCanvas('','', 300, 300)
 c.Divide(3,3)
 c.cd(1)
@@ -177,9 +177,6 @@ for hist in plots:
         subplots[-1].Draw('COLZ')
     c.SaveAs("plots/Hcal-dqm_"+hist.GetName()+".pdf") 
     c.Close()
-
-
-
 
 #makes the root histos
 for hist in hists:
