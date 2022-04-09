@@ -147,6 +147,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     }
     double maxadc = -9999.;
     int timestamp_with_highest_adc = -1;
+    int timestamp = 0;
     for (auto &sample : samples) {
       bool isTOT = sample.isTOTinProgress();
       bool isTOTComplete = sample.isTOTComplete();
@@ -154,11 +155,11 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       int tot = sample.tot();
       int adc_tm1 = sample.adc_tm1(); //not really used without zero suppression
       int adc_t = sample.adc_t();
-      int timestamp = sample.i_sample(); //it works in python
       if(adc_t > maxadc){
         maxadc = adc_t;
         timestamp_with_highest_adc = timestamp;
       }
+      timestamp++;
       adc_histo_map["ROC " + std::to_string(hgcroc_number) + " - ADC"]->Fill(channel, adc_t);
       tot_histo_map["ROC " + std::to_string(hgcroc_number) + " - TOT"]->Fill(channel, tot);
       toa_histo_map["ROC " + std::to_string(hgcroc_number) + " - TOA"]->Fill(channel, toa);
