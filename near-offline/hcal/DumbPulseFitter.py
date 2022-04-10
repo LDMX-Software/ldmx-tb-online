@@ -5,17 +5,21 @@ from ROOT import gROOT, gStyle, gSystem, gPad
 
 #Usage: ldmx python3 DumbPulseFitter.py <unpacked file>.root
 
-fitfunc = TF1("fitfunc", "[0]*(x/[2])^4*exp(-(x-[1])/[2]^2)", 1, 8) #A * (t/tau)^n * e^(-(t-B)/tau)
+#fitfunc = TF1("fitfunc", "[0]*((x-[1])/[2])^4*exp(-(x-[1])/[2])", 0, 8) #A * (t/tau)^n * e^(-(t-B)/tau)
+fitfunc = TF1("fitfunc", "[0]*(x/[1])^4*exp(-x/[1])", 0, 8) #A * (t/tau)^n * e^(-t/tau)
 #fitfunc = TF1("fitfunc", "gaus", 2, 8)
 
-def FitPulse(histo, fitfunc, sample1 = 1, sample2 = 8):
-    fitfunc.SetParameters(25., 2, 1)
+def FitPulse(histo, fitfunc, sample1 = 0, sample2 = 8):
+    #fitfunc.SetParameters(25., 2, 1)
+    fitfunc.SetParameters(25., 1)
     fit = histo.Fit(fitfunc, "LSQIM", "", sample1, sample2)
-    peaktime = 4*fit.Get().Parameter(2) #n*tau
+    #peaktime = 4*fit.Get().Parameter(2) #n*tau
+    peaktime = 4*fit.Get().Parameter(1) #n*tau
     fitfunc.SetParameters(fit.Get().Parameter(0),fit.Get().Parameter(1),fit.Get().Parameter(2))
     peak = fitfunc(peaktime)
+    integral = fitfunc.Integral(sample1, sample2)
     #return fit.Get().Parameter(0), fit.Get().Parameter(1) * 25
-    return peak, peaktime * 25
+    return peak, peaktime * 25, integral
 
 gSystem.Load("libFramework.so")
 
@@ -33,6 +37,7 @@ max_adc_hist = {} #histo map to channel
 fitpeak_hist = {} #histo map to channel
 fittime_hist = {} #histo map to channel
 sum_hist = {} #histo map to channel
+integral_hist = {} #histo map to channel
 
 #Pedestal is hard-coded for now
 ped = {}
@@ -61,6 +66,7 @@ for e in tree : #Loop over events in tree
                fitpeak_hist[d.id()] = ROOT.TH1F(f'fitpeak_eid_{d.id()}', f'Fit Peak EID {d.id()}',1000,0,500)
                fittime_hist[d.id()] = ROOT.TH1F(f'fittime_eid_{d.id()}', f'Fit Time EID {d.id()}',100,0,8*25)
                sum_hist[d.id()] = ROOT.TH1F(f'adcsum_eid_{d.id()}', f'ADC Sum EID {d.id()}',1000,0,500)
+               integral_hist[d.id()] = ROOT.TH1F(f'int_eid_{d.id()}', f'Integral EID {d.id()}',250,0,500)
             maxadc = -9999.
             maxsample = -9999
             histotemp = TH1D("histotemp", "histotemp", 8, 0, 8)
@@ -76,8 +82,9 @@ for e in tree : #Loop over events in tree
                sumadc = sumadc + d.at(i).adc_t()
             peakadc = -9999.
             peaktime = -9999.
+            integral = -9999.
             if(d.id() in chanlist and maxadc > minadc):
-                peakadc, peaktime = FitPulse(histotemp, fitfunc)
+                peakadc, peaktime, integral = FitPulse(histotemp, fitfunc)
                 if(plotpulse):
                     histotemp.Draw()
                     c.Print(outfile+".pdf")
@@ -92,6 +99,7 @@ for e in tree : #Loop over events in tree
             fitpeak_hist[d.id()].Fill(peakadc)
             sum_hist[d.id()].Fill(sumadc/8.)
             fittime_hist[d.id()].Fill(peaktime)
+            integral_hist[d.id()].Fill(integral)
             del histotemp
     if (event > maxevent):
         break
@@ -103,5 +111,6 @@ for id in adc_hist:
     fitpeak_hist[id].GetXaxis().SetTitle("Fitted Peak (ADC)")
     fittime_hist[id].GetXaxis().SetTitle("Time at Peak (ns)")
     sum_hist[id].GetXaxis().SetTitle("Sum ADC / 8 (ADC)")
+    integral_hist[id].GetXaxis().SetTitle("Fit Integral (ADC*ns)")
 f.Write()
 f.Close()
