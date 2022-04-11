@@ -74,7 +74,7 @@ namespace eudaq {
       fiber1b = buffer[i+4] << 8 | buffer[i+5];
       fiber2b = buffer[i+6] << 8 | buffer[i+7];
     
-      std::cout<<std::setw(4)<<std::setfill('0')<<std::hex<<fiber1a<<" "<<fiber2a<<" "<<fiber1b<<" "<<fiber2b<<std::dec<<std::endl;
+      // std::cout<<std::setw(4)<<std::setfill('0')<<std::hex<<fiber1a<<" "<<fiber2a<<" "<<fiber1b<<" "<<fiber2b<<std::dec<<std::endl;
     
       // remove all comma chraacters before filling buffer
     
@@ -95,9 +95,9 @@ namespace eudaq {
 
     std::cout << "without CC" << std::endl;
 	  
-    for( int i = 0 ; i < event_buffer1.size() ; i++){
-      std::cout << std::hex << event_buffer1[i] <<  " " << event_buffer2[i] << std::endl;
-    }
+    // for( int i = 0 ; i < event_buffer1.size() ; i++){
+    //   std::cout << std::hex << event_buffer1[i] <<  " " << event_buffer2[i] << std::endl;
+    // }
 
     if (event_buffer1.size() != event_buffer2.size()){
       std::cout<<"Error in decoding. Event buffers have different length"<<std::endl;
@@ -106,7 +106,8 @@ namespace eudaq {
     //else
     //  printf("Good event. event_buffer1.size() = %li\tevent_buffer1.size() = %li\n",event_buffer1.size(),event_buffer2.size());
   
-    TSevent* tse = new TSevent(event_buffer1,event_buffer2);
+    std::cout<<"L109: About to initialize tse\n";
+    TSevent* tse = new TSevent(event_buffer1,event_buffer2); std::cout<<"L110 Just initialized tse\n";
     // for(int i=0;i<event_buffer1.size();i++)
     //   printf("event_buffer1[%i]\t%i",i,event_buffer1[i]);
     // std::cout<<std::endl;
@@ -118,23 +119,23 @@ namespace eudaq {
       std::cout<<std::endl;
     }
     
-    tse->qie1_[0].print();
-    tse->qie2_[0].print();
-    for(int chan=0; chan < 8;chan++){
-      for(int ts = 0; ts < tse->qie1_[chan].adc.size();ts++){
-    	//printf("ts %i\tqie1[%i].adc[%i] %i\n",ts,chan,tse->qie1_[chan].adc[ts]);
-    	h2_ADCvT[chan]->Fill(ts,tse->qie1_[chan].adc[ts]);
-    	h2_TDCvT[chan]->Fill(ts,tse->qie1_[chan].tdc[ts]);
-    	h1_ADC[chan]->Fill(tse->qie1_[chan].adc[ts]);
-    	h1_TDC[chan]->Fill(tse->qie1_[chan].tdc[ts]);
-      }
-      for(int ts = 0; ts < tse->qie2_[chan].adc.size();ts++){
-      	h2_ADCvT[chan+8]->Fill(ts,tse->qie2_[chan].adc[ts]);
-      	h2_TDCvT[chan+8]->Fill(ts,tse->qie2_[chan].tdc[ts]);
-      	h1_ADC[chan+8]->Fill(tse->qie2_[chan].adc[ts]);
-      	h1_TDC[chan+8]->Fill(tse->qie2_[chan].tdc[ts]);
-      }
-    }
+    // tse->qie1_[0].print();
+    // tse->qie2_[0].print();
+    // for(int chan=0; chan < 8;chan++){
+    //   for(int ts = 0; ts < tse->qie1_[chan].adc.size();ts++){
+    // 	//printf("ts %i\tqie1[%i].adc[%i] %i\n",ts,chan,tse->qie1_[chan].adc[ts]);
+    // 	h2_ADCvT[chan]->Fill(ts,tse->qie1_[chan].adc[ts]);
+    // 	h2_TDCvT[chan]->Fill(ts,tse->qie1_[chan].tdc[ts]);
+    // 	h1_ADC[chan]->Fill(tse->qie1_[chan].adc[ts]);
+    // 	h1_TDC[chan]->Fill(tse->qie1_[chan].tdc[ts]);
+    //   }
+    //   for(int ts = 0; ts < tse->qie2_[chan].adc.size();ts++){
+    //   	h2_ADCvT[chan+8]->Fill(ts,tse->qie2_[chan].adc[ts]);
+    //   	h2_TDCvT[chan+8]->Fill(ts,tse->qie2_[chan].tdc[ts]);
+    //   	h1_ADC[chan+8]->Fill(tse->qie2_[chan].adc[ts]);
+    //   	h1_TDC[chan+8]->Fill(tse->qie2_[chan].tdc[ts]);
+    //   }
+    // }
   
     //Slow
     event_buffer1.clear();
