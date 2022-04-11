@@ -17,6 +17,16 @@ namespace eudaq {
 void HCalTestBeamMonitor::AtConfiguration() {
   auto conf{GetConfiguration()};
 
+  nevents = 0;
+  auto nreset{conf->Get("NRESET", "")};
+  nevents_reset = std::stoi(nreset);
+  nPlanes = 19;
+
+  hcal_event = m_monitor->Book<TH2D>("hcal_event", "hcal_event", "", ";Plane;Bar", nPlanes+1, 0, nPlanes+1, 12, 0, 12);
+  m_monitor->SetDrawOptions(hcal_event, "colz");
+  hcal_event->SetTitle("Hcal Event PEs per Bar");
+  hcal_event->SetStats(0);
+  
   for (int i{0}; i < 6; ++i) { //this is ROC 1 to 6
     adc_histo_map["ROC " + std::to_string(i) + " - ADC"] =
         m_monitor->Book<TH2D>("ROC " + std::to_string(i) + " ADC",
@@ -52,7 +62,6 @@ void HCalTestBeamMonitor::AtConfiguration() {
     max_sample_histo_map["ROC " + std::to_string(i) + " - max_sample"]->SetStats(0);                  
   }
 
-  nPlanes = 19;
   hcalhits_top = m_monitor->Book<TH2D>("hcalhits_top", "hcalhits_top", "", ";Plane;Bar", nPlanes+1, 0, nPlanes+1, 12, 0, 12);
   hcalhits_bot = m_monitor->Book<TH2D>("hcalhits_bot", "hcalhits_bot", "", ";Plane;Bar", nPlanes+1, 0, nPlanes+1, 12, 0, 12);
   m_monitor->SetDrawOptions(hcalhits_top, "colz");
@@ -103,7 +112,15 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
   // Fill HCal plots
   auto data = hcal::decode(event->GetBlock(block_));
   
+  bool newSpill = nevents%nevents_reset == 0;
+  
+  if(newSpill){
+    hcal_event->Reset();
+  }
+  
   double PE = 0;
+  
+  std::map<std::string, double> physical_map;
 
   for (const auto& [el, samples] : data) {
     int fpga = el.fpga();
@@ -145,6 +162,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     else{
       std::cout << "Key not found: " << rocchan << std::endl;
     }
+    std::string location = std::to_string(plane) + ":" + std::to_string(barchan) + ":" + std::to_string(end);
     double maxadc = -9999.;
     int timestamp_with_highest_adc = -1;
     int timestamp = 0;
@@ -179,7 +197,23 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     }
     double PE_chan = (maxadc - adcped) / mV_per_PE * adcgain; 
     PE = PE + PE_chan;
+    if(PE_chan < 0) PE_chan = 0;
+    physical_map.insert(std::pair<std::string, double>(location, PE_chan));
   }
   total_PE->Fill(PE);
+  for(int i = 1; i < nPlanes+1; i++){
+    for(int j = 0; j < 12; j++){
+      std::string key0 = std::to_string(i) + ":" + std::to_string(j) + ":0";
+      std::string key1 = std::to_string(i) + ":" + std::to_string(j) + ":1";
+      double PEsum = 0;
+      if(physical_map.count(key0) > 0 && physical_map.count(key1) > 0){
+        PEsum = physical_map.at(key0) + physical_map.at(key1);
+      }
+      if(newSpill){
+        hcal_event->Fill(i, j, PEsum);
+      }
+    }
+  }
+  nevents++;
 }
 } // namespace eudaq

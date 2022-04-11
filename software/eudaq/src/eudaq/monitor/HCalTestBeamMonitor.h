@@ -37,6 +37,7 @@ private:
   TH2D* hcalhits_top; 
   TH2D* hcalhits_bot; 
   TH1D* total_PE; 
+  TH2D* hcal_event;
   
   std::map<std::string, int> cmb_map;
   std::map<std::string, int> quadbar_map;
@@ -49,8 +50,10 @@ private:
   std::map<std::string, double> totped_map;
   std::map<std::string, double> totgain_map;
 
-  int nPlanes;
   std::vector<int> unusedchans;
+  int nPlanes;
+  int nevents_reset;
+  int nevents;
   
   double threshold_PE; //aribtrary for now
   double energy_per_mip; //MeV/MIP
