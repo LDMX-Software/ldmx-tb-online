@@ -50,7 +50,7 @@ void QIE::print(){
 TSevent::TSevent(std::vector<uint16_t> fiber1,
 	  std::vector<uint16_t> fiber2){
 
-    printf("TrigScintRawDecode.cxx L52 fiber1.size() = %li\tfiber2.size() = %li\n",fiber1.size(),fiber2.size());
+  if(debug) printf("TrigScintRawDecode.cxx L52 fiber1.size() = %li\tfiber2.size() = %li\n",fiber1.size(),fiber2.size());
     // extract time since the start of spill from
     // the event
     time|=uint64_t(fiber2[1]);
