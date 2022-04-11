@@ -8,6 +8,8 @@
 
 namespace eudaq {
 
+static const unsigned int n_channels=16;
+
 class TrigScintTestBeamMonitor : public eudaq::ROOTMonitor {
 public:
   TrigScintTestBeamMonitor(const std::string &name, const std::string &runcontrol)
@@ -27,7 +29,17 @@ private:
   }
   static const unsigned int comma_char=0xFBF7;
   std::vector<uint16_t> event_buffer1,event_buffer2;
-  std::map<std::string, TH2D*> histo_map; 
+  std::map<std::string, TH2D*> histo_map;
+
+  // [Niramay] List of histograms to plot.
+  std::vector<TH2F*> h2_ADCvT;			// histograms of ADC vs time sample
+  std::vector<TH2F*> h2_TDCvT;			// histograms of TDC vs time sample
+  std::vector<TH1F*> h1_ADC;			// histograms of ADCs
+  std::vector<TH1F*> h1_TDC;			// histograms of TDCs
+  std::vector<TH1F*> h1_CID1;			// histogram of CIDs for fiber 1
+  std::vector<TH1F*> h1_CID2;			// histogram of CIDs for fiber 2
+  std::vector<TH1F*> h1_time;			// histogram of trigger times
+  
 };
 } // namespace eudaq
 #endif // EUDAQ_TRIGSCINTTESTBEAMMONITOR_H
