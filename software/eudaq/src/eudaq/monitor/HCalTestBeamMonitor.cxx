@@ -34,7 +34,7 @@ void HCalTestBeamMonitor::AtConfiguration() {
                               "FPGA " + std::to_string(block_) + "_ROC_" + std::to_string(i) + "_ADC", "",
                               ";Channel;ADC", 72, 0, 72, 1024, 0, 1024);
     m_monitor->SetDrawOptions(adc_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - ADC"], "colz");
-    adc_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - ADC"]->SetTitle(("ADC vs Channel, FPGA " + std::to_string(_block) +": ROC " + std::to_string(i)).c_str());
+    adc_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - ADC"]->SetTitle(("ADC vs Channel, FPGA " + std::to_string(block_) +": ROC " + std::to_string(i)).c_str());
     adc_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - ADC"]->SetStats(0);
 
     tot_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - TOT"] =
@@ -42,7 +42,7 @@ void HCalTestBeamMonitor::AtConfiguration() {
                               "FPGA " + std::to_string(block_) + "_ROC_" + std::to_string(i) + "_TOT", "",
                               ";Channel;TOT", 72, 0, 72, 1024, 0, 1024);
     m_monitor->SetDrawOptions(tot_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - TOT"], "colz");
-    tot_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - TOT"]->SetTitle(("TOT vs Channel, FPGA " + std::to_string(_block) +": ROC " + std::to_string(i)).c_str());
+    tot_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - TOT"]->SetTitle(("TOT vs Channel, FPGA " + std::to_string(block_) +": ROC " + std::to_string(i)).c_str());
     tot_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - TOT"]->SetStats(0);
 
     toa_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - TOA"] =
@@ -50,7 +50,7 @@ void HCalTestBeamMonitor::AtConfiguration() {
                               "FPGA " + std::to_string(block_) + "_ROC_" + std::to_string(i) + "_TOA", "",
                               ";Channel;TOA", 72, 0, 72, 1024, 0, 1024);
     m_monitor->SetDrawOptions(toa_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - TOA"], "colz");
-    toa_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - TOA"]->SetTitle(("TOA vs Channel, FPGA " + std::to_string(_block) + ": ROC " + std::to_string(i)).c_str());
+    toa_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - TOA"]->SetTitle(("TOA vs Channel, FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i)).c_str());
     toa_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - TOA"]->SetStats(0);
 
     //hardcoded 8 time samples
@@ -59,7 +59,7 @@ void HCalTestBeamMonitor::AtConfiguration() {
                               "FPGA " + std::to_string(block_) + "_ROC_" + std::to_string(i) + "_max_sample", "",
                               ";Channel;max_sample", 72, 0, 72, 8, 0, 8);
     m_monitor->SetDrawOptions(max_sample_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - max_sample"], "colz");
-    max_sample_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - max_sample"]->SetTitle(("max_sample vs Channel, FPGA " + std::to_string(_block) + ": ROC " + std::to_string(i)).c_str());
+    max_sample_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - max_sample"]->SetTitle(("max_sample vs Channel, FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i)).c_str());
     max_sample_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - max_sample"]->SetStats(0);
   }
 
