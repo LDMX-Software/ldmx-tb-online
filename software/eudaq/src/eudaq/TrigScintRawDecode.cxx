@@ -6,8 +6,8 @@
     // data members of this class
 void QIE::add_data(std::vector<uint8_t> data){
       
-      if ( data.size() != 12 ){
-	std::cout << "OOPS! received " << data.size() << "/12 bytes" << std::endl;
+      if (data.size() != 12 ){
+	if (debug) std::cout << "OOPS! received " << data.size() << "/12 bytes" << std::endl;
 	return;
       }
     
