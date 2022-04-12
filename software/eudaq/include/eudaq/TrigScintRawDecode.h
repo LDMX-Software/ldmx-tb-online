@@ -6,8 +6,8 @@
 #include <fstream>
 
 bool debug=false;
-const int new_event_mark=0xFFFF;
-const int comma_char=0xFBF7;
+//const int new_event_mark=0xFFFF;
+//const uint16_t comma_char=0xF7FB;
 
 // class for managing QIE "frame"
 // in which data for 8 channels and

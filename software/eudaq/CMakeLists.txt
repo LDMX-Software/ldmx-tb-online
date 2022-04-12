@@ -44,6 +44,7 @@ add_library(eudaq_core SHARED
   src/eudaq/TrigScintRawDecode.cxx
   src/eudaq/TrigScintDataSender.cxx
   src/eudaq/TrigScintTestBeamProducer.cxx
+  src/eudaq/SimQIE.cxx
   )
 target_include_directories(eudaq_core PUBLIC include)
 target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue rogue)

@@ -57,7 +57,8 @@ void TrigScintDataSender::sendEvent(
 
       //Remove the first corrupted event
       //at least 400 bytes. A typical event is 816 bytes.
-      if (buffer.size() > 50) 
+      if (buffer.size() > 50)
+	//std::cout<<"Sending event"<<std::endl;
 	producer_->SendEvent(std::move(event));
       buffer.clear();
     }
