@@ -128,7 +128,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     int channel = el.channel();
     int link = el.link();
     int inlink = el.inlink_channel();
-    int hgcroc_number = fpga*3 + roc;
+    //int hgcroc_number = fpga*3 + roc;
     int hgcroc_number = roc;
     if(std::count(unusedchans.begin(), unusedchans.end(), channel)) continue;
     //std::cout<<"fpga: "<<fpga<<"  roc: "<<roc<<"  channel: "<<channel<<"  link: "<<link<<"  inlink: "<<inlink<<"  sample size: "<<samples.size()<<std::endl;
@@ -210,7 +210,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     for(int j = 0; j < 12; j++){
       std::string key0 = std::to_string(i) + ":" + std::to_string(j) + ":0";
       std::string key1 = std::to_string(i) + ":" + std::to_string(j) + ":1";
-      //double PEsum = 0;
+      double PEsum = 0;
       if(physical_map.count(key0) > 0 && physical_map.count(key1) > 0){
         PEsum = physical_map.at(key0) + physical_map.at(key1);
       }
