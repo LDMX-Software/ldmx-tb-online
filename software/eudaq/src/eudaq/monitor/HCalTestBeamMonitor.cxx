@@ -189,7 +189,9 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
 
     //double threshold = adcped + mV_per_PE / adcgain * threshold_PE;
     double threshold = adcped + 20; //hard-coded for now
+    int isAboveThreshold = 0;
     if(maxadc >= threshold){
+      isAboveThreshold = 1;
       if(end != 0){
         hcalhits_top->Fill(plane, barchan);
       }
@@ -197,17 +199,18 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
         hcalhits_bot->Fill(plane, barchan);
       }
     }
-    double PE_chan = (maxadc - adcped) / mV_per_PE * adcgain;
-    PE = PE + PE_chan;
-    if(PE_chan < 0) PE_chan = 0;
-    physical_map.insert(std::pair<std::string, double>(location, PE_chan));
+    //double PE_chan = (maxadc - adcped) / mV_per_PE * adcgain;
+    //PE = PE + PE_chan;
+    //if(PE_chan < 0) PE_chan = 0;
+    //physical_map.insert(std::pair<std::string, double>(location, PE_chan));
+    physical_map.insert(std::pair<std::string, double>(location, isAboveThreshold));
   }
-  total_PE->Fill(PE);
+  //total_PE->Fill(PE);
   for(int i = 1; i < nPlanes+1; i++){
     for(int j = 0; j < 12; j++){
       std::string key0 = std::to_string(i) + ":" + std::to_string(j) + ":0";
       std::string key1 = std::to_string(i) + ":" + std::to_string(j) + ":1";
-      double PEsum = 0;
+      //double PEsum = 0;
       if(physical_map.count(key0) > 0 && physical_map.count(key1) > 0){
         PEsum = physical_map.at(key0) + physical_map.at(key1);
       }
