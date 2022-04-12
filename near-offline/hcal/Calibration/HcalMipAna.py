@@ -7,12 +7,12 @@ import csv
 #Usage: ldmx python3 SampleMipAna.py <unpacked file>.root <pedestal file>.csv
 
 def MIPFit(histo, canvas, outfile):
-    fitfunc = TF1("fitfunc", "landau", 0, 5000)
-    fit = histo.Fit(fitfunc, "LSQIM", "", 0, 5000)
+    fitfunc = TF1("fitfunc", "landau", 50, 5000)
+    fit = histo.Fit(fitfunc, "LSQIM", "", 50, 5000)
     histo.Draw()
     canvas.Print(outfile+".pdf")
     mpv = fit.Get().Parameter(0)
-    width = 4 * fit.Get().Parameter(1) #Double check this width
+    width = fit.Get().Parameter(1) #Double check this width
     isGoodFit = 1 #Update Goodness of Fit test
     return mpv, width, isGoodFit
 
@@ -65,9 +65,9 @@ for d in tree: #Loop over events in tree
         roc = int(link / 2) #ROC ID in tuple starts at 1, needs to start at 1
         roc_index = (roc)%3
         elloc = "{0}:{1}:{2}".format(fpga+1, roc_index, chan)
-        adc = d.adc
+        adc = d.adc - 175
         if elloc not in maxadc_histo : #Create map key if not already there
-            maxadc_histo[elloc] = ROOT.TH1F(f'maxadc_eloc_{elloc}', f'Max ADC Eloc {elloc}',1024,0,1024)
+            maxadc_histo[elloc] = ROOT.TH1F(f'maxadc_eloc_{elloc}', f'Max ADC Eloc {elloc}',100,0,400)
             maxsample_histo[elloc] = ROOT.TH1F(f'maxsample_eid_{elloc}', f'Max Sample Eloc {elloc}',8,0,8)
             alladc_histo[elloc] = ROOT.TH1F(f'adc_eloc_3_{elloc}', f'ADCs Eloc {elloc}',1024,0,1024)
             sumadc_histo[elloc] = ROOT.TH1F(f'sumadc_eloc_{elloc}', f'Sum ADC Eloc {elloc}',1024*4,0,1024*4)
@@ -96,21 +96,22 @@ for id in maxadc_histo:
     sumadc_histo[id].GetXaxis().SetTitle("Sum ADC")
     alladc_histo[id].GetXaxis().SetTitle("ADC")
 
-mpv_histo = ROOT.TH1F('mpv', 'MIP MPV ADC Sum',400,0,400)
-mipwidth_histo = ROOT.TH1F('mipwidth', 'MIP Width ADC Sum',400,0,400)
-coverage_histo = ROOT.TH2F('coverage', 'In Muon Beam Acceptance',20, 0, 20, 12, 0, 12)
+mpv_histo = ROOT.TH1F('mpv', 'MIP MPV ADC Max',5,0,5)
+mipwidth_histo = ROOT.TH1F('mipwidth', 'MIP Width ADC Max',5,0,5)
+#coverage_histo = ROOT.TH2F('coverage', 'In Muon Beam Acceptance',20, 0, 20, 12, 0, 12)
 
 c.Print(outfile+".pdf[")
+c.SetLogy(0)
 csvfile = open(outputMipCsvName+".csv", 'w', newline='')
 writer = csv.writer(csvfile, delimiter=',', quotechar='"')
 header = ["DetID","ElLoc","ADC_PEDESTAL","MIPMPV_ADC","MIPWIDTH_ADC"]
 writer.writerow(header)
 i = 0
 for id in sumadc_histo:
-    mpv, width, isGoodFit = MIPFit(sumadc_histo[id], c, outfile)
+    mpv, width, isGoodFit = MIPFit(maxadc_histo[id], c, outfile)
     mpv_histo.Fill(i, mpv)
     mipwidth_histo.Fill(i, width)
-    coverage_histo.Fill(0,0) #Update
+    #coverage_histo.Fill(0,0) #Update
     #elloc = e_loc[id]
     #pedestal = ped[id]
     elloc = "-9999"
@@ -118,13 +119,16 @@ for id in sumadc_histo:
     line = [str(id), elloc, str(pedestal), str(mpv), str(width)]
     writer.writerow(line)
     i = i + 1
+    if(i > 3):
+        break
 
-mpv_histo.Draw()
+c.SetLogy(0)
+mpv_histo.Draw("hist")
 c.Print(outfile+".pdf")
-mipwidth_histo.Draw()
+mipwidth_histo.Draw("hist")
 c.Print(outfile+".pdf")
-coverage_histo.Draw()
-c.Print(outfile+".pdf")
+#coverage_histo.Draw("COLZ")
+#c.Print(outfile+".pdf")
 
 c.Print(outfile+".pdf]")
 
