@@ -11,19 +11,19 @@ void QIE::add_data(std::vector<uint8_t> data){
 	return;
       }
     
-      bc0     =  (data[1]&1);
+      bc0     = ((data[1]>>0)&1);
       cide    = ((data[1]>>1)&1);
       cid     = ((data[1]>>2)&3);
       reserve = ((data[1]>>4)&7);
-    
+      
       // stitch together TDC words
       uint16_t TDCs = (data[10]<<8)&data[11];
       //printf("TrigScintRawDecode.cxx L20 TDCs %i\n",TDCs);
     
       // extract ADC and TDC values
       for ( int q = 0 ; q < 8 ; q++ ){
-	adc.push_back(data[q+2]);
-	tdc.push_back(( TDCs>>(q*2) )&3);
+	adc[q] = data[q+2];
+	tdc[1] = ( TDCs>>(q*2) )&3;
       }
   
     }// end QIE::add_data
@@ -50,7 +50,7 @@ void QIE::print(){
 TSevent::TSevent(std::vector<uint16_t> fiber1,
 	  std::vector<uint16_t> fiber2){
 
-    printf("TrigScintRawDecode.cxx L52 fiber1.size() = %li\tfiber2.size() = %li\n",fiber1.size(),fiber2.size());
+  if(debug) printf("TrigScintRawDecode.cxx L52 fiber1.size() = %li\tfiber2.size() = %li\n",fiber1.size(),fiber2.size());
     // extract time since the start of spill from
     // the event
     time|=uint64_t(fiber2[1]);
@@ -198,8 +198,8 @@ TSevent::TSevent(std::vector<uint16_t> fiber1,
   }// end of TSevent::TSevent
 
 bool TSevent::start_of_time_sample(uint16_t word){
-    return ( (word&0xFF) == 0xBC ) || ( (word&0xFF) == 0xFC );
-  }// end TSevent::start_of_time_sample
+  return ( ( (word>>8) & 0xFF ) == 0xBC ) || ( ( (word>>8) & 0xFF ) == 0xFC );
+}// end TSevent::start_of_time_sample
 
 void TSevent::print(){
     std::cout << "[[TSevent]]" << std::endl;
