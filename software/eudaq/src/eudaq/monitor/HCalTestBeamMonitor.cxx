@@ -19,7 +19,7 @@ void HCalTestBeamMonitor::AtConfiguration() {
 
   nevents = 0;
   auto nreset{conf->Get("NRESET", 1000)};
-  nevents_reset = std::stoi(nreset);
+  nevents_reset = nreset;
   nPlanes = 19;
   block_ = conf->Get("FPGA_ID",1);
 
