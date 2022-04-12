@@ -9,14 +9,18 @@ import csv
 
 gSystem.Load("libFramework.so")
 
-inputFile=TFile(sys.argv[1], "read") #input file from arguments
+#inputFile=TFile(sys.argv[1], "read") #input file from arguments
 outputFileName = 'DumbReconConditions.csv' #hardcoded name for now
-tree=inputFile.Get("ntuplizehgcroc/hgcroc") #get tree
+#tree=inputFile.Get("ntuplizehgcroc/hgcroc") #get tree
 
-ledfile = ""
-mipfile = ""
+#ledfile = open(sys.argv[1], 'r', newline='')
+#mipfile = open(sys.argv[2], 'r', newline='')
 
-elloc = {}
+ledfile = sys.argv[1]
+mipfile = sys.argv[2]
+
+#elloc = {}
+did = {}
 ped = {}
 adc_gain = {}
 tot_ped = {}
@@ -28,25 +32,30 @@ led_med = {}
 with open(ledfile, 'r', newline = "") as datafile:
     reader = csv.DictReader(datafile)
     for row in reader:
-        did = int(row["DetID"])
-        elloc[did] = row["ElLoc"]
-        ped[did] = str(row["ADC_PEDESTAL"])
-        led_med[did] = str(row["LED_MEDIAN"])
+        #did = row["DetID"]
+        #elloc[did] = row["ElLoc"]
+        elloc = row["ElLoc"]
+        did[elloc] = row["DetID"]
+        ped[elloc] = str(row["ADC_PEDESTAL"])
+        led_med[elloc] = str(row["LED_MEDIAN"])
 
 with open(mipfile, 'r', newline = "") as datafile:
     reader = csv.DictReader(datafile)
     for row in reader:
-        did = int(row["DetID"])
-        mipmpv[did] = str(row["ADC_PEDESTAL"])
-        mipwidth[did] = str(row["LED_MEDIAN"])
+        #did = row["DetID"]
+        elloc = row["ElLoc"]
+        #elloc[did] = row["ElLoc"]
+        mipmpv[elloc] = str(row["MIPMPV_ADC"])
+        mipwidth[elloc] = str(row["MIPWIDTH_ADC"])
 
 header1 = ["# ElLoc Format: (polarfire:hgcrocindex:channel)"]
 header2 = ["DetID", "ElLoc", "ADC_PEDESTAL", "ADC_GAIN", "TOT_PEDESTAL", "TOT_GAIN", "MIPMPV_ADC", "MIPWIDTH_ADC", "LED_MEDIAN"]
+csvfile = open(outputFileName, 'w', newline='')
+writer = csv.writer(csvfile, delimiter=',', quotechar='"')
 
-with open(outputFileName, mode='w', newline="") as datafile:
-    writer = csv.writer(datafile, delimiter=',', quotechar='"')
-    writer.writerow(header1)
-    writer.writerow(header2)
-    for did in elloc:
-        line = [str(did), elloc[did], ped[did], gain[did], tot_ped[did], tot_gain[did], mipmpv[did], mipwidth[did], led_med[did]]
-        writer.writerow[line]
+writer.writerow(header1)
+writer.writerow(header2)
+for did in elloc:
+    line = ["-9999", "-9999", "-9999", "-9999", "-9999", "-9999", "-9999", "-9999", "-9999"]
+    #line = [str(did), elloc[did], ped[did], gain[did], tot_ped[did], tot_gain[did], mipmpv[did], mipwidth[did], led_med[did]]
+    writer.writerow(line)

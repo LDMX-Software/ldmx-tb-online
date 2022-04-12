@@ -21,7 +21,8 @@ gSystem.Load("libFramework.so")
 inputFile=TFile(sys.argv[1], "read") #input file from arguments
 outputFileName = 'hist_mip_'+sys.argv[1] #ouptut file name
 outputMipCsvName = 'hist_mip_'+sys.argv[1] #ouptut file name
-tree=inputFile.Get("LDMX_Events") #get tree
+#tree=inputFile.Get("LDMX_Events") #get tree
+tree = inputFile.Get('ntuplizehgcroc').Get("hgcroc")
 pedfile = sys.argv[2]
 
 f = ROOT.TFile(outputFileName,'recreate') #create root output file
@@ -29,41 +30,64 @@ c = TCanvas("c","c",800,600)
 outfile = "test"
 
 ped = {}
-e_loc = {}
+did = {}
+#e_loc = {}
 with open(pedfile, 'r', newline = "") as datafile:
     reader = csv.DictReader(datafile)
     for row in reader:
-        did = int(row['DetID'])
-        pedestal = float(row['ADC_PEDESTAL'])
+        #did = int(row['DetID'])
         eloc = row['ElLoc']
-        ped[did] = pedestal
-        e_loc[did] = eloc
+        did[eloc] = int(row['DetID'])
+        pedestal = float(row['ADC_PEDESTAL'])
+        ped[eloc] = pedestal
+        #e_loc[did] = eloc
 
 maxadc_histo = {} #histo map to channel
 alladc_histo = {}
 maxsample_histo = {}
 sumadc_histo = {}
-for e in tree : #Loop over events in tree
-    if True:
-        for d in e.ChipSettingsTestDigis_unpack : #Loop over channels
-            if d.id() not in maxadc_histo : #Create map key if not already there
-               maxadc_histo[d.id()] = ROOT.TH1F(f'maxadc_eid_{d.id()}', f'Max ADC EID {d.id()}',1024,0,1024)
-               maxsample_histo[d.id()] = ROOT.TH1F(f'maxsample_eid_{d.id()}', f'Max Sample EID {d.id()}',8,0,8)
-               alladc_histo[d.id()] = ROOT.TH1F(f'adc_eid_3_{d.id()}', f'ADCs EID {d.id()}',1024,0,1024)
-               sumadc_histo[d.id()] = ROOT.TH1F(f'sumadc_eid_{d.id()}', f'Sum ADC EID {d.id()}',1024*4,0,1024*4)
-            maxadc = -9999.
+
+prevID = 0
+maxadc = -9999
+maxsample = -9999
+sumadc = -9999
+n = 0
+for d in tree: #Loop over events in tree
+        #if(n > 100):
+        #    break
+        n = n + 1
+    #for d in e:
+        link = d.link
+        fpga = d.fpga
+        channel = d.channel
+        chan = (link%2) * 36 + channel #Get correct chan for odd numbered links
+        raw_id = d.raw_id
+        roc = int(link / 2) #ROC ID in tuple starts at 1, needs to start at 1
+        roc_index = (roc)%3
+        elloc = "{0}:{1}:{2}".format(fpga+1, roc_index, chan)
+        adc = d.adc
+        if elloc not in maxadc_histo : #Create map key if not already there
+            maxadc_histo[elloc] = ROOT.TH1F(f'maxadc_eloc_{elloc}', f'Max ADC Eloc {elloc}',1024,0,1024)
+            maxsample_histo[elloc] = ROOT.TH1F(f'maxsample_eid_{elloc}', f'Max Sample Eloc {elloc}',8,0,8)
+            alladc_histo[elloc] = ROOT.TH1F(f'adc_eloc_3_{elloc}', f'ADCs Eloc {elloc}',1024,0,1024)
+            sumadc_histo[elloc] = ROOT.TH1F(f'sumadc_eloc_{elloc}', f'Sum ADC Eloc {elloc}',1024*4,0,1024*4)
+        if(raw_id != prevID):
+            maxadc_histo[elloc].Fill(maxadc) #Fill ADC count
+            maxsample_histo[elloc].Fill(maxsample)
+            sumadc_histo[elloc].Fill(sumadc)
+            maxadc = -9999
             maxsample = -9999
             sumadc = 0
-            for i in range(d.size()) : #Loop over sample number
-               adc_ped = d.at(i).adc_t() - ped[d.id()]
-               alladc_histo[d.id()].Fill(adc_ped)
-               sumadc = sumadc + adc_ped
-               if(adc_ped > maxadc):
-                   maxsample = i
-                   maxadc = adc_ped
-            maxadc_histo[d.id()].Fill(maxadc) #Fill ADC count
-            maxsample_histo[d.id()].Fill(maxsample)
-            sumadc_histo[d.id()].Fill(sumadc)
+            sample = 0
+        #adc_ped = adc - ped[elloc]
+        adc_ped = adc
+        alladc_histo[elloc].Fill(adc_ped)
+        sumadc = sumadc + adc_ped
+        if(adc_ped > maxadc):
+            maxsample = sample
+            maxadc = adc_ped
+        prevID = raw_id
+        sample = sample + 1
 
 #Close and write file
 for id in maxadc_histo:
@@ -77,17 +101,20 @@ mipwidth_histo = ROOT.TH1F('mipwidth', 'MIP Width ADC Sum',400,0,400)
 coverage_histo = ROOT.TH2F('coverage', 'In Muon Beam Acceptance',20, 0, 20, 12, 0, 12)
 
 c.Print(outfile+".pdf[")
+csvfile = open(outputMipCsvName+".csv", 'w', newline='')
+writer = csv.writer(csvfile, delimiter=',', quotechar='"')
 header = ["DetID","ElLoc","ADC_PEDESTAL","MIPMPV_ADC","MIPWIDTH_ADC"]
-writer = csv.writer(outputMipCsvName, delimiter=',', quotechar='"',)
 writer.writerow(header)
 i = 0
 for id in sumadc_histo:
     mpv, width, isGoodFit = MIPFit(sumadc_histo[id], c, outfile)
     mpv_histo.Fill(i, mpv)
     mipwidth_histo.Fill(i, width)
-    coverage.Fill(0,0) #Update 
-    elloc = e_loc[id]
-    pedestal = ped[id]
+    coverage_histo.Fill(0,0) #Update
+    #elloc = e_loc[id]
+    #pedestal = ped[id]
+    elloc = "-9999"
+    pedestal = "-9999"
     line = [str(id), elloc, str(pedestal), str(mpv), str(width)]
     writer.writerow(line)
     i = i + 1
