@@ -25,7 +25,7 @@ void HCalTestBeamMonitor::AtConfiguration() {
 
   hcal_event = m_monitor->Book<TH2D>("hcal_event", "hcal_event", "", ";Plane;Bar", nPlanes+1, 0, nPlanes+1, 12, 0, 12);
   m_monitor->SetDrawOptions(hcal_event, "colz");
-  hcal_event->SetTitle("Hcal Event PEs per Bar");
+  hcal_event->SetTitle("Hcal Event: Channels Above Threshold per Bar");
   hcal_event->SetStats(0);
 
   for (int i{0}; i < 3; ++i) { //this is ROC 1 to 6
