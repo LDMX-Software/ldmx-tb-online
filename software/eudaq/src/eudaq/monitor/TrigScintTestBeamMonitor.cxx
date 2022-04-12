@@ -1,3 +1,4 @@
+
 #include "TrigScintTestBeamMonitor.h"
 #include "eudaq/TrigScintRawDecode.h"
 #include <iostream>
@@ -15,19 +16,30 @@ namespace eudaq {
      * Book plots here.
      */
     for( int i = 0 ; i < n_channels ; i++ ){
+
+      h2_QvT.push_back( m_monitor->Book<TH2F>("h2_QvT_"+std::to_string(i),
+					      "Q vs time (Chan "+std::to_string(i)+")",
+					      ("h2_QvT_"+std::to_string(i)).data(),
+					      ";time sample;Q",30,0,30,200,0,50000) );
+      m_monitor->SetDrawOptions(h2_QvT[i],"colz");
+      char temp[50];
+      sprintf(temp,"Q vs time (Chan %i)",i);
+      h2_QvT[i]->SetTitle(temp);
+
+      
+      
       h2_ADCvT.push_back( m_monitor->Book<TH2F>("h2_ADCvT_"+std::to_string(i),
 						"ADC vs time (Chan "+std::to_string(i)+")",
 						("h2_ADCvT_"+std::to_string(i)).data(),
-						";time sample;ADC",60,0,60,256,0,256) );
+						";time sample;ADC",30,0,30,256,0,256) );
       m_monitor->SetDrawOptions(h2_ADCvT[i],"colz");
-      char temp[50];
       sprintf(temp,"ADC vs time (Chan %i)",i);
       h2_ADCvT[i]->SetTitle(temp);
 
       h2_TDCvT.push_back( m_monitor->Book<TH2F>("h2_TDCvT_"+std::to_string(i),
 						"TDC vs time (Chan "+std::to_string(i)+")",
 						("h2_TDCvT_"+std::to_string(i)).data(),
-						";time sample;TDC",60,0,60,256,0,256) );
+						";time sample;TDC",30,0,30,256,0,256) );
       m_monitor->SetDrawOptions(h2_TDCvT[i],"colz");
       sprintf(temp,"TDC vs time (Chan %i)",i);
       h2_TDCvT[i]->SetTitle(temp);
@@ -42,6 +54,22 @@ namespace eudaq {
       sprintf(temp,"ADC (Chan %i)",i);
       h1_ADC[i]->SetTitle(temp);
 
+      h1_Q.push_back( m_monitor->Book<TH1F>("h1_Q_"+std::to_string(i),
+					    "Q Distribution (Chan "+std::to_string(i)+")",
+					    ("h1_Q_"+std::to_string(i)).data(),
+					    ";Q;Events",50,0,5000) );
+      m_monitor->SetDrawOptions(h1_Q[i],"colz");
+      sprintf(temp,"Q (Chan %i)",i);
+      h1_Q[i]->SetTitle(temp);
+
+      h1_sum_Q.push_back( m_monitor->Book<TH1F>("h1_sum_Q_"+std::to_string(i),
+					    "SumQ Distribution (Chan "+std::to_string(i)+")",
+					    ("h1_sum_Q_"+std::to_string(i)).data(),
+					    ";Sum(Q);Events",50,0,5000) );
+      m_monitor->SetDrawOptions(h1_sum_Q[i],"colz");
+      sprintf(temp,"SumQ (Chan %i)",i);
+      h1_sum_Q[i]->SetTitle(temp);
+      
       h1_TDC.push_back( m_monitor->Book<TH1F>("h1_TDC_"+std::to_string(i),
 					      "TDC Distribution (Chan "+std::to_string(i)+")",
 					      ("h1_TDC_"+std::to_string(i)).data(),
@@ -49,7 +77,31 @@ namespace eudaq {
       m_monitor->SetDrawOptions(h1_TDC[i],"colz");
       sprintf(temp,"TDC (Chan %i)",i);
       h1_TDC[i]->SetTitle(temp);
-    }
+     
+    } // loop over n channels
+
+    /*
+    h1_CID1 = m_monitor->Book<TH1F>("h1_CID1",
+				    "Fiber 1 Cap ID",
+				    ("h1_CID1",
+				     ";Cap ID;Events",4,-0.5,3.5));
+    m_monitor->SetDrawOptions(h1_CID1,"colz");
+    h1_CID1->SetTitle("Fiber 1 Cap ID");
+    
+    h1_CID2 = m_monitor->Book<TH1F>("h1_CID2",
+				    "Fiber 2 Cap ID",
+				    ("h1_CID2",
+				     ";Cap ID;Events",4,-0.5,3.5));
+    m_monitor->SetDrawOptions(h1_CID2,"colz");
+    h1_CID2->SetTitle("Fiber 2 Cap ID");
+
+    h1_time = m_monitor->Book<TH1F>("h1_time",
+				    "Time",
+				    ("h1_time",
+				     ";Time;Events",100,0.,50000000.));
+    m_monitor->SetDrawOptions(h1_time,"colz");
+    h1_time->SetTitle("Time");
+    */
   
   }// end TrigScintTestBeamMonitor::AtConfiguration
 
@@ -70,72 +122,84 @@ namespace eudaq {
     for (unsigned int i=0; i < buffer.size();i+=8 ) {
 
       fiber1a = buffer[i]   << 8 | buffer[i+1];
-      fiber2a = buffer[i+2] << 8 | buffer[i+3];
-      fiber1b = buffer[i+4] << 8 | buffer[i+5];
+      fiber1b = buffer[i+2] << 8 | buffer[i+3];
+      fiber2a = buffer[i+4] << 8 | buffer[i+5];
       fiber2b = buffer[i+6] << 8 | buffer[i+7];
     
-      // std::cout<<std::setw(4)<<std::setfill('0')<<std::hex<<fiber1a<<" "<<fiber2a<<" "<<fiber1b<<" "<<fiber2b<<std::dec<<std::endl;
+      //std::cout<<std::setw(4)<<std::setfill('0')<<std::hex<<fiber1a<<" "<< std::setw(4)<<std::setfill('0')<<std::hex << fiber2a<<" "<< std::setw(4)<<std::setfill('0')<<std::hex << fiber1b<<" "<<std::setw(4)<<std::setfill('0')<<std::hex << fiber2b<<std::dec<<std::endl;
     
       // remove all comma chraacters before filling buffer
     
       // Slow    
-      if( fiber1b != comma_char )
-	event_buffer1.push_back(fiber1b);
-
       if( fiber1a != comma_char)
 	event_buffer1.push_back(fiber1a);
-    
-      if( fiber2b != comma_char )
-	event_buffer2.push_back(fiber2b);
 
       if( fiber2a != comma_char )
 	event_buffer2.push_back(fiber2a);
 
+      if( fiber1b != comma_char )
+	event_buffer1.push_back(fiber1b);
+
+      if( fiber2b != comma_char )
+	event_buffer2.push_back(fiber2b);
+
     }
 
-    std::cout << "without CC" << std::endl;
+    //std::cout << "without CC (" << std::setw(4)<<std::setfill('0') << comma_char << ") " << std::endl;
 	  
-    // for( int i = 0 ; i < event_buffer1.size() ; i++){
-    //   std::cout << std::hex << event_buffer1[i] <<  " " << event_buffer2[i] << std::endl;
-    // }
+    //for( int i = 0 ; i < event_buffer1.size() ; i++){
+    //  std::cout << std::setw(4)<<std::setfill('0') << std::hex << event_buffer1[i] <<  " " << std::setw(4)<<std::setfill('0') << std::hex << event_buffer2[i] << std::endl;
+    //}
 
     if (event_buffer1.size() != event_buffer2.size()){
       std::cout<<"Error in decoding. Event buffers have different length"<<std::endl;
       printf("event_buffer1.size() = %li\tevent_buffer1.size() = %li\n",event_buffer1.size(),event_buffer2.size());
-    }
-    //else
-    //  printf("Good event. event_buffer1.size() = %li\tevent_buffer1.size() = %li\n",event_buffer1.size(),event_buffer2.size());
+    }//else
+    //printf("Good event. event_buffer1.size() = %li\tevent_buffer1.size() = %li\n",event_buffer1.size(),event_buffer2.size());
   
-    std::cout<<"L109: About to initialize tse\n";
-    TSevent* tse = new TSevent(event_buffer1,event_buffer2); std::cout<<"L110 Just initialized tse\n";
+    //std::cout<<"L109: About to initialize tse\n";
+    TSevent* tse = new TSevent(event_buffer1,event_buffer2); //std::cout<<"L110 Just initialized tse\n";
     // for(int i=0;i<event_buffer1.size();i++)
     //   printf("event_buffer1[%i]\t%i",i,event_buffer1[i]);
     // std::cout<<std::endl;
   
-    printf("tse->qie1_.size() %li\n",tse->qie1_.size());
-    for(int i=0;i<tse->qie1_.size();i++){
-      for(int j=0;j<tse->qie1_[i].adc.size();j++)
-    	printf("qie1_[%i].adc[%i] = %i",i,j,tse->qie1_[i].adc[j]);
-      std::cout<<std::endl;
-    }
+    // printf("tse->qie1_.size() %li\n",tse->qie1_.size());
+    // for(int i=0;i<tse->qie1_.size();i++){
+    //   for(int j=0;j<tse->qie1_[i].adc.size();j++)
+    // 	printf("qie1_[%i].adc[%i] = %i",i,j,tse->qie1_[i].adc[j]);
+    //   std::cout<<std::endl;
+    // }
     
     // tse->qie1_[0].print();
     // tse->qie2_[0].print();
-    // for(int chan=0; chan < 8;chan++){
-    //   for(int ts = 0; ts < tse->qie1_[chan].adc.size();ts++){
-    // 	//printf("ts %i\tqie1[%i].adc[%i] %i\n",ts,chan,tse->qie1_[chan].adc[ts]);
-    // 	h2_ADCvT[chan]->Fill(ts,tse->qie1_[chan].adc[ts]);
-    // 	h2_TDCvT[chan]->Fill(ts,tse->qie1_[chan].tdc[ts]);
-    // 	h1_ADC[chan]->Fill(tse->qie1_[chan].adc[ts]);
-    // 	h1_TDC[chan]->Fill(tse->qie1_[chan].tdc[ts]);
-    //   }
-    //   for(int ts = 0; ts < tse->qie2_[chan].adc.size();ts++){
-    //   	h2_ADCvT[chan+8]->Fill(ts,tse->qie2_[chan].adc[ts]);
-    //   	h2_TDCvT[chan+8]->Fill(ts,tse->qie2_[chan].tdc[ts]);
-    //   	h1_ADC[chan+8]->Fill(tse->qie2_[chan].adc[ts]);
-    //   	h1_TDC[chan+8]->Fill(tse->qie2_[chan].tdc[ts]);
-    //   }
-    // }
+
+    //h1_time->Fill(tse->time);
+    std::vector<float> sumQ_={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    for(int chan=0; chan < 8;chan++){
+      for(int ts = 0; ts < tse->qie1_.size();ts++){
+    	//printf("ts %i\tqie1[%i].adc[%i] %i\n",ts,chan,tse->qie1_[chan].adc[ts]);
+    	h2_ADCvT[chan]->Fill(ts,tse->qie1_[ts].adc[chan]);
+	h2_QvT[chan]->Fill(ts,qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
+    	h2_TDCvT[chan]->Fill(ts,tse->qie1_[ts].tdc[chan]);
+    	h1_ADC[chan]->Fill(tse->qie1_[ts].adc[chan]);
+	h1_Q[chan]->Fill(qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
+    	h1_TDC[chan]->Fill(tse->qie1_[ts].tdc[chan]);
+	//h1_CID1->Fill(tse->qie1_[ts].cid);
+	sumQ_[chan] += qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]);
+      }
+      for(int ts = 0; ts < tse->qie2_.size();ts++){
+      	h2_ADCvT[chan+8]->Fill(ts,tse->qie2_[ts].adc[chan]);
+	h2_QvT[chan+8]->Fill(ts,qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
+      	h2_TDCvT[chan+8]->Fill(ts,tse->qie2_[ts].tdc[chan]);
+      	h1_ADC[chan+8]->Fill(tse->qie2_[ts].adc[chan]);
+	h1_Q[chan+8]->Fill(qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
+      	h1_TDC[chan+8]->Fill(tse->qie2_[ts].tdc[chan]);
+	//h1_CID2->Fill(tse->qie2_[ts].cid);
+	sumQ_[chan+8] += qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]);
+      }
+      h1_sum_Q[chan]->Fill(sumQ_[chan]);
+      h1_sum_Q[chan+8]->Fill(sumQ_[chan+8]);
+    }
   
     //Slow
     event_buffer1.clear();
