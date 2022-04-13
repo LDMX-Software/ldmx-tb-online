@@ -15,6 +15,23 @@ namespace eudaq {
     /**
      * Book plots here.
      */
+      char temp[70];
+    h2_EvtDisp = m_monitor->Book<TH2F>("h2_EvtDisp",
+				     "Charge deposited so far",
+				     "h2_EvtDisp",
+				      ";chan id in the layer;layer number",8,0,8,2,0,2);
+    m_monitor->SetDrawOptions(h2_EvtDisp,"colz");
+    sprintf(temp,"Charge gathered by every channel in both layers");
+    h2_EvtDisp->SetTitle(temp);
+
+    h1_AllQSum = m_monitor->Book<TH1F>("h1_AllQSum",
+				     "Total charge in the module",
+				     "h1_AllQSum",
+				      ";Charge [fC];layer number",3000,0.5,100000);
+    m_monitor->SetDrawOptions(h1_AllQSum,"hist");
+    sprintf(temp,"Charge recorded in all time samples, by all instrumented channels");
+    h1_AllQSum->SetTitle(temp);
+    
     for( int i = 0 ; i < n_channels ; i++ ){
 
       h2_QvT.push_back( m_monitor->Book<TH2F>("h2_QvT_"+std::to_string(i),
@@ -22,7 +39,6 @@ namespace eudaq {
 					      ("h2_QvT_"+std::to_string(i)).data(),
 					      ";time sample;Q",30,0,30,200,0,50000) );
       m_monitor->SetDrawOptions(h2_QvT[i],"colz");
-      char temp[50];
       sprintf(temp,"Q vs time (Chan %i)",i);
       h2_QvT[i]->SetTitle(temp);
 
@@ -227,6 +243,15 @@ namespace eudaq {
 
     h1_time->Fill(tse->time);
     h1_mult->Fill(num_hits);
+    for(Double_t chan=0.;chan<8.;chan++){
+      h2_EvtDisp->Fill(chan,0.,sum_charge[chan]);
+      h2_EvtDisp->Fill(chan,1.,sum_charge[chan+8]);
+    }
+    
+    double FullQ{sum_charge[0]}; // charge summed up over all ts, all instrumented channels
+    for(int i=1;i<12;i++)
+      FullQ+=sum_charge[i];
+    h1_AllQSum->Fill(FullQ);
     
     //Slow
     event_buffer1.clear();
