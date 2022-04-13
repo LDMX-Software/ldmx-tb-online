@@ -19,11 +19,11 @@ public:
 
   ~HCalTestBeamMonitor() = default;
 
-  void AtConfiguration() override;
-  void AtEventReception(eudaq::EventSP ev) override;
+  void AtConfiguration() override; 
+  void AtEventReception(eudaq::EventSP ev) override; 
 
   static const uint32_t factory_id_{eudaq::cstr2hash("HCalTestBeamMonitor")};
-
+  
 private:
   int getField(int value, int high_bit, int low_bit) {
     int mask{static_cast<int>(pow(2, (high_bit - low_bit + 1)) - 1)};
@@ -32,13 +32,12 @@ private:
   int block_;
   std::map<std::string, TH2D*> adc_histo_map;
   std::map<std::string, TH2D*> tot_histo_map;
-  std::map<std::string, TH2D*> toa_histo_map;
-  std::map<std::string, TH2D*> max_sample_histo_map;
-  TH2D* hcalhits_top;
-  TH2D* hcalhits_bot;
-  //TH1D* total_PE; 
-  TH2D* hcal_event;
-
+  std::map<std::string, TH2D*> toa_histo_map; 
+  std::map<std::string, TH2D*> max_sample_histo_map; 
+  TH2D* hcalhits_top; 
+  TH2D* hcalhits_bot; 
+  TH1D* total_PE; 
+  
   std::map<std::string, int> cmb_map;
   std::map<std::string, int> quadbar_map;
   std::map<std::string, int> bar_map;
@@ -50,11 +49,9 @@ private:
   std::map<std::string, double> totped_map;
   std::map<std::string, double> totgain_map;
 
-  std::vector<int> unusedchans;
   int nPlanes;
-  int nevents_reset;
-  int nevents;
-
+  std::vector<int> unusedchans;
+  
   double threshold_PE; //aribtrary for now
   double energy_per_mip; //MeV/MIP
   double voltage_hcal; //mV/PE
