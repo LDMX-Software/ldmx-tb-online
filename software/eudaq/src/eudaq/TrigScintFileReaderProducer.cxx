@@ -1,21 +1,37 @@
-#include "eudaq/TrigScintFileReaderProducer.h" 
 
 //---< C++ >---//
 #include <bitset>
 #include <chrono>
 #include <sstream>
 #include <string>
+#include <fstream>
 
 //---< eudaq >---//
 #include "eudaq/RunControl.hh"
+#include "eudaq/Producer.hh"
+
+class TrigScintFileReaderProducer : public eudaq::Producer {
+ public:
+  TrigScintFileReaderProducer(const std::string &name, const std::string &runcontrol);
+  void DoInitialise() override;
+  void DoConfigure() override;
+  void DoStartRun() override;
+  void DoStopRun() override;
+  void DoTerminate() override;
+  void DoReset() override;
+  void RunLoop() override;
+  static const uint32_t factory_id_{eudaq::cstr2hash("TrigScintFileReaderProducer")};
+ private:
+  /// Function to convert hex to binary
+  uint64_t hex2Bin(const std::string& shex); 
+  std::shared_ptr<std::ifstream> ifile; 
+};
 
 namespace {
 auto dummy0 = eudaq::Factory<eudaq::Producer>::Register<
-    eudaq::TrigScintFileReaderProducer, const std::string &, const std::string &>(
-    eudaq::TrigScintFileReaderProducer::factory_id_);
+    TrigScintFileReaderProducer, const std::string &, const std::string &>(
+    TrigScintFileReaderProducer::factory_id_);
 }
-
-namespace eudaq {
 
 TrigScintFileReaderProducer::TrigScintFileReaderProducer(
     const std::string &name, const std::string &runcontrol)
@@ -132,4 +148,3 @@ uint64_t TrigScintFileReaderProducer::hex2Bin(const std::string& shex) {
   return n; 
 }
 
-} // namespace eudaq
