@@ -29,6 +29,23 @@ private:
   }
   static const unsigned int comma_char=0xF7FB;
   SimQIE qie_converter;
+  std::vector<int> chan_map{0,//0
+                            2,  //1
+                            10, //2
+                            4,  //3
+                            3,  //4
+                            1,  //5
+                            5,  //6
+                            11, //7
+                            12, //8
+                            6,  //9
+                            13, //10
+                            8,  //11
+                            7,  //12
+                            14, //13
+                            9,  //14
+                            15}; //15
+  
   std::vector<uint16_t> event_buffer1,event_buffer2;
   //std::map<std::string, TH2D*> histo_map;
 
@@ -37,12 +54,15 @@ private:
   std::vector<TH2F*> h2_QvT;			// histograms of Q vs time sample
   std::vector<TH2F*> h2_TDCvT;			// histograms of TDC vs time sample
   std::vector<TH1F*> h1_ADC;			// histograms of ADCs
-  std::vector<TH1F*> h1_sum_Q;			// histograms of Q summed over all time samples
-  std::vector<TH1F*> h1_Q;			// histograms of Q
+  std::vector<TH1F*> h1_sumQ;			// histograms of sum of charge
+  std::vector<TH1F*> h1_sumQ_wide;		// histograms of sum of charge in wide range
   std::vector<TH1F*> h1_TDC;			// histograms of TDCs
-  //TH1F* h1_CID1;        			// histogram of CIDs for fiber 1
-  //TH1F* h1_CID2;	         		// histogram of CIDs for fiber 2
-  //TH1F* h1_time;         			// histogram of trigger times
+  TH1F* h1_CID1;			// histogram of CIDs for fiber 1
+  TH1F* h1_CID2;			// histogram of CIDs for fiber 2
+  TH1F* h1_time;			// histogram of trigger times
+  TH1F* h1_mult;			// histogram of hit multiplicity
+  TH1F* h1_hit_dist;			// histogram of number of hits per bar
+  TH2F* h2_event_sum;                   // histogram of sum of charge in all time sample per channel
   
 };
 } // namespace eudaq

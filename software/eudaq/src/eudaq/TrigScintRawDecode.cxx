@@ -6,8 +6,8 @@
     // data members of this class
 void QIE::add_data(std::vector<uint8_t> data){
       
-      if (data.size() != 12 ){
-	if (debug) std::cout << "OOPS! received " << data.size() << "/12 bytes" << std::endl;
+      if ( data.size() != 12 ){
+	if( debug ) std::cout << "OOPS! received " << data.size() << "/12 bytes" << std::endl;
 	return;
       }
     
@@ -23,7 +23,7 @@ void QIE::add_data(std::vector<uint8_t> data){
       // extract ADC and TDC values
       for ( int q = 0 ; q < 8 ; q++ ){
 	adc[q] = data[q+2];
-	tdc[1] = ( TDCs>>(q*2) )&3;
+	tdc[q] = ( TDCs>>(q*2) )&3;
       }
   
     }// end QIE::add_data
@@ -90,8 +90,8 @@ TSevent::TSevent(std::vector<uint16_t> fiber1,
       //skip words between 2 and first 0xBC (or 0xFC which occurs every 3564 time samples)
       if( first && !start_of_time_sample(word) ){
 	if( debug ) std::cout << "skip words until first 0xBC" << std::endl;
-	res_buffer.push_back(word&0xF);
-	res_buffer.push_back((word>>8)&0xF);
+	res_buffer.push_back(word&0xFF);
+	res_buffer.push_back((word>>8)&0xFF);
 	iword++;
 	continue;
       }
@@ -111,8 +111,8 @@ TSevent::TSevent(std::vector<uint16_t> fiber1,
 	if( debug ) std::cout << "first fournd" << std::endl;
 	first =false;
       }
-      buffer.push_back(word&0xF);
-      buffer.push_back((word>>8)&0xF);
+      buffer.push_back(word&0xFF);
+      buffer.push_back((word>>8)&0xFF);
       iword++;
     }
 
@@ -149,8 +149,8 @@ TSevent::TSevent(std::vector<uint16_t> fiber1,
       //skip words between 2 and first 0xBC (or 0xFC which occurs every 3564 time samples)
       if( first && !start_of_time_sample(word)){
 	if( debug ) std::cout << "skip words until first 0xBC" << std::endl;
-	res_buffer.push_back(word&0xF);
-	res_buffer.push_back((word>>8)&0xF);
+	res_buffer.push_back(word&0xFF);
+	res_buffer.push_back((word>>8)&0xFF);
 	iword++;
 	continue;
       }
@@ -168,8 +168,8 @@ TSevent::TSevent(std::vector<uint16_t> fiber1,
 	if( debug ) std::cout << "first fournd" << std::endl;
 	first =false;
       }
-      buffer.push_back(word&0xF);
-      buffer.push_back((word>>8)&0xF);
+      buffer.push_back(word&0xFF);
+      buffer.push_back((word>>8)&0xFF);
       iword++;
     }
 

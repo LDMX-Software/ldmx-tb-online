@@ -42,6 +42,7 @@ add_library(eudaq_core SHARED
   src/eudaq/TcpCommandGenerator.cxx
   src/eudaq/TestBeamDataCollector.cxx
   src/eudaq/TrigScintRawDecode.cxx
+  src/eudaq/SimQIE.cxx
   src/eudaq/TrigScintDataSender.cxx
   src/eudaq/TrigScintTestBeamProducer.cxx
   src/eudaq/SimQIE.cxx

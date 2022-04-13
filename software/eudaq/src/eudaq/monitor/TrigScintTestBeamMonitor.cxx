@@ -36,6 +36,14 @@ namespace eudaq {
       sprintf(temp,"ADC vs time (Chan %i)",i);
       h2_ADCvT[i]->SetTitle(temp);
 
+      h2_QvT.push_back( m_monitor->Book<TH2F>("h2_QvT_"+std::to_string(i),
+                                              "Q vs time (Chan "+std::to_string(i)+")",
+                                              ("h2_QvT_"+std::to_string(i)).data(),
+                                              ";time ple;Q",30,-0.5,29.5,200,0,50000) );
+      m_monitor->SetDrawOptions(h2_QvT[i],"colz");
+      sprintf(temp,"Q vs time (Chan %i)",i);
+      h2_ADCvT[i]->SetTitle(temp);
+      
       h2_TDCvT.push_back( m_monitor->Book<TH2F>("h2_TDCvT_"+std::to_string(i),
 						"TDC vs time (Chan "+std::to_string(i)+")",
 						("h2_TDCvT_"+std::to_string(i)).data(),
@@ -54,22 +62,22 @@ namespace eudaq {
       sprintf(temp,"ADC (Chan %i)",i);
       h1_ADC[i]->SetTitle(temp);
 
-      h1_Q.push_back( m_monitor->Book<TH1F>("h1_Q_"+std::to_string(i),
-					    "Q Distribution (Chan "+std::to_string(i)+")",
-					    ("h1_Q_"+std::to_string(i)).data(),
-					    ";Q;Events",50,0,5000) );
-      m_monitor->SetDrawOptions(h1_Q[i],"colz");
-      sprintf(temp,"Q (Chan %i)",i);
-      h1_Q[i]->SetTitle(temp);
+      h1_sumQ.push_back( m_monitor->Book<TH1F>("h1_sumQ_"+std::to_string(i),
+					      "sumQ Distribution (Chan "+std::to_string(i)+")",
+					      ("h1_sumQ_"+std::to_string(i)).data(),
+					      ";Sum Q [fC];Events",200,0,5000) );
+      m_monitor->SetDrawOptions(h1_sumQ[i],"colz");
+      sprintf(temp,"Sum Q (Chan %i)",i);
+      h1_sumQ[i]->SetTitle(temp);
 
-      h1_sum_Q.push_back( m_monitor->Book<TH1F>("h1_sum_Q_"+std::to_string(i),
-					    "SumQ Distribution (Chan "+std::to_string(i)+")",
-					    ("h1_sum_Q_"+std::to_string(i)).data(),
-					    ";Sum(Q);Events",50,0,5000) );
-      m_monitor->SetDrawOptions(h1_sum_Q[i],"colz");
-      sprintf(temp,"SumQ (Chan %i)",i);
-      h1_sum_Q[i]->SetTitle(temp);
-      
+      h1_sumQ_wide.push_back( m_monitor->Book<TH1F>("h1_sumQ_wide_"+std::to_string(i),
+					      "sumQ Wide Distribution (Chan "+std::to_string(i)+")",
+					      ("h1_sumQ_wide_"+std::to_string(i)).data(),
+					      ";Sum Q [fC];Events",200,0,100000) );
+      m_monitor->SetDrawOptions(h1_sumQ_wide[i],"colz");
+      sprintf(temp,"Sum Q (Chan %i)",i);
+      h1_sumQ_wide[i]->SetTitle(temp);
+
       h1_TDC.push_back( m_monitor->Book<TH1F>("h1_TDC_"+std::to_string(i),
 					      "TDC Distribution (Chan "+std::to_string(i)+")",
 					      ("h1_TDC_"+std::to_string(i)).data(),
@@ -77,32 +85,32 @@ namespace eudaq {
       m_monitor->SetDrawOptions(h1_TDC[i],"colz");
       sprintf(temp,"TDC (Chan %i)",i);
       h1_TDC[i]->SetTitle(temp);
-     
-    } // loop over n channels
+    }// end loop over channels
 
-    /*
-    h1_CID1 = m_monitor->Book<TH1F>("h1_CID1",
-				    "Fiber 1 Cap ID",
-				    ("h1_CID1",
-				     ";Cap ID;Events",4,-0.5,3.5));
+    h1_CID1 = m_monitor->Book<TH1F>("h1_CID1","Cap ID (Fiber 1)",
+                                    "h1_CID1",";Cap ID;Time Samples",4,-0.5,3.5);
     m_monitor->SetDrawOptions(h1_CID1,"colz");
-    h1_CID1->SetTitle("Fiber 1 Cap ID");
-    
-    h1_CID2 = m_monitor->Book<TH1F>("h1_CID2",
-				    "Fiber 2 Cap ID",
-				    ("h1_CID2",
-				     ";Cap ID;Events",4,-0.5,3.5));
-    m_monitor->SetDrawOptions(h1_CID2,"colz");
-    h1_CID2->SetTitle("Fiber 2 Cap ID");
 
-    h1_time = m_monitor->Book<TH1F>("h1_time",
-				    "Time",
-				    ("h1_time",
-				     ";Time;Events",100,0.,50000000.));
+    h1_CID2 = m_monitor->Book<TH1F>("h1_CID2","Cap ID (Fiber 2)",
+                                    "h1_CID2",";Cap ID;Time Samples",4,-0.5,3.5);
+    m_monitor->SetDrawOptions(h1_CID2,"colz");
+
+    h1_time = m_monitor->Book<TH1F>("h1_time","Trigger Time",
+                                    "h1_time",";Tick;Events",200,0,10000000);
     m_monitor->SetDrawOptions(h1_time,"colz");
-    h1_time->SetTitle("Time");
-    */
-  
+
+    h1_mult = m_monitor->Book<TH1F>("h1_mult","Hit Multiplicity",
+                                    "h1_mult",";Num. Hits;Events",10,-0.5,9.5);
+    m_monitor->SetDrawOptions(h1_mult,"colz");
+
+    h1_hit_dist = m_monitor->Book<TH1F>("h1_hit_dist","Hit Distribution",
+                                    "h1_hit_dist",";Channel;Hits",12,-0.5,11.5);
+    m_monitor->SetDrawOptions(h1_hit_dist,"colz");
+
+    h2_event_sum = m_monitor->Book<TH2F>("h2_event_sum","Event Summary",
+                                         "h2_event_sum",";Channel;Sum Q [fC]",12,-0.5,11.5,200,0,50000);
+    m_monitor->SetDrawOptions(h2_event_sum,"colz");    
+    
   }// end TrigScintTestBeamMonitor::AtConfiguration
 
   void TrigScintTestBeamMonitor::AtEventReception(EventSP event) {
@@ -170,37 +178,54 @@ namespace eudaq {
     //   std::cout<<std::endl;
     // }
     
-    // tse->qie1_[0].print();
-    // tse->qie2_[0].print();
+    if( debug ){
+      tse->qie1_[0].print();
+      tse->qie2_[0].print();
+    }
 
-    //h1_time->Fill(tse->time);
-    std::vector<float> sumQ_={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    int num_hits=0;
+    std::vector<float> sum_charge={0,0,0,0,
+                                  0,0,0,0,
+                                  0,0,0,0,
+                                  0,0,0,0};
     for(int chan=0; chan < 8;chan++){
       for(int ts = 0; ts < tse->qie1_.size();ts++){
-    	//printf("ts %i\tqie1[%i].adc[%i] %i\n",ts,chan,tse->qie1_[chan].adc[ts]);
     	h2_ADCvT[chan]->Fill(ts,tse->qie1_[ts].adc[chan]);
-	h2_QvT[chan]->Fill(ts,qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
+        h2_QvT[chan]->Fill(ts,qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
     	h2_TDCvT[chan]->Fill(ts,tse->qie1_[ts].tdc[chan]);
     	h1_ADC[chan]->Fill(tse->qie1_[ts].adc[chan]);
-	h1_Q[chan]->Fill(qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
+        h1_sumQ[chan]->Fill(qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
+        h1_sumQ_wide[chan]->Fill(qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
     	h1_TDC[chan]->Fill(tse->qie1_[ts].tdc[chan]);
-	//h1_CID1->Fill(tse->qie1_[ts].cid);
-	sumQ_[chan] += qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]);
-      }
+        h1_CID1->Fill(tse->qie1_[ts].cid);
+        sum_charge[chan]+=qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]);
+      }// end loop over fiber 1 time samples
       for(int ts = 0; ts < tse->qie2_.size();ts++){
       	h2_ADCvT[chan+8]->Fill(ts,tse->qie2_[ts].adc[chan]);
-	h2_QvT[chan+8]->Fill(ts,qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
+        h2_QvT[chan+8]->Fill(ts,qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
       	h2_TDCvT[chan+8]->Fill(ts,tse->qie2_[ts].tdc[chan]);
       	h1_ADC[chan+8]->Fill(tse->qie2_[ts].adc[chan]);
-	h1_Q[chan+8]->Fill(qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
+        h1_sumQ[chan+8]->Fill(qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
+        h1_sumQ_wide[chan+8]->Fill(qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
       	h1_TDC[chan+8]->Fill(tse->qie2_[ts].tdc[chan]);
-	//h1_CID2->Fill(tse->qie2_[ts].cid);
-	sumQ_[chan+8] += qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]);
+        h1_CID2->Fill(tse->qie2_[ts].cid);
+        sum_charge[chan+8]+=qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]);
+      }// end loop over fiber 2 time samples
+      if( sum_charge[chan] > 20000 ){
+        num_hits++;
+        h1_hit_dist->Fill(chan_map[chan]);
       }
-      h1_sum_Q[chan]->Fill(sumQ_[chan]);
-      h1_sum_Q[chan+8]->Fill(sumQ_[chan+8]);
-    }
-  
+      if( sum_charge[chan+8] > 20000 ){
+        num_hits++;
+        h1_hit_dist->Fill(chan_map[chan+8]);
+      }
+      h2_event_sum->Fill(chan_map[chan],sum_charge[chan]);
+      h2_event_sum->Fill(chan_map[chan+8],sum_charge[chan+8]);
+    }// end loop over channels
+
+    h1_time->Fill(tse->time);
+    h1_mult->Fill(num_hits);
+    
     //Slow
     event_buffer1.clear();
     event_buffer2.clear();
