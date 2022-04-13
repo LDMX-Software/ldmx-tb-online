@@ -191,25 +191,25 @@ namespace eudaq {
     for(int chan=0; chan < 8;chan++){
       for(int ts = 0; ts < tse->qie1_.size();ts++){
     	h2_ADCvT[chan]->Fill(ts,tse->qie1_[ts].adc[chan]);
-        h2_QvT[chan]->Fill(ts,qie_.ADC2Q(tse->qie1_[ts].adc[chan]));
+        h2_QvT[chan]->Fill(ts,qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
     	h2_TDCvT[chan]->Fill(ts,tse->qie1_[ts].tdc[chan]);
     	h1_ADC[chan]->Fill(tse->qie1_[ts].adc[chan]);
-        h1_sumQ[chan]->Fill(qie_.ADC2Q(tse->qie1_[ts].adc[chan]));
-        h1_sumQ_wide[chan]->Fill(qie_.ADC2Q(tse->qie1_[ts].adc[chan]));
+        h1_sumQ[chan]->Fill(qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
+        h1_sumQ_wide[chan]->Fill(qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
     	h1_TDC[chan]->Fill(tse->qie1_[ts].tdc[chan]);
         h1_CID1->Fill(tse->qie1_[ts].cid);
-        sum_charge[chan]+=qie_.ADC2Q(tse->qie1_[ts].adc[chan]);
+        sum_charge[chan]+=qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]);
       }// end loop over fiber 1 time samples
       for(int ts = 0; ts < tse->qie2_.size();ts++){
       	h2_ADCvT[chan+8]->Fill(ts,tse->qie2_[ts].adc[chan]);
-        h2_QvT[chan+8]->Fill(ts,qie_.ADC2Q(tse->qie2_[ts].adc[chan]));
+        h2_QvT[chan+8]->Fill(ts,qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
       	h2_TDCvT[chan+8]->Fill(ts,tse->qie2_[ts].tdc[chan]);
       	h1_ADC[chan+8]->Fill(tse->qie2_[ts].adc[chan]);
-        h1_sumQ[chan+8]->Fill(qie_.ADC2Q(tse->qie2_[ts].adc[chan]));
-        h1_sumQ_wide[chan+8]->Fill(qie_.ADC2Q(tse->qie2_[ts].adc[chan]));
+        h1_sumQ[chan+8]->Fill(qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
+        h1_sumQ_wide[chan+8]->Fill(qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
       	h1_TDC[chan+8]->Fill(tse->qie2_[ts].tdc[chan]);
         h1_CID2->Fill(tse->qie2_[ts].cid);
-        sum_charge[chan+8]+=qie_.ADC2Q(tse->qie2_[ts].adc[chan]);
+        sum_charge[chan+8]+=qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]);
       }// end loop over fiber 2 time samples
       if( sum_charge[chan] > 20000 ){
         num_hits++;
