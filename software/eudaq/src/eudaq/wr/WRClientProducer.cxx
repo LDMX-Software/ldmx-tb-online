@@ -41,13 +41,11 @@ void WRClientProducer::DoStartRun() {
   std::string runNumber = std::to_string(GetRunNumber());
   client->setRunNumber(runNumber);  
   
-  //Call the DIP client connect
   client->connect();
   
 }
 
 void WRClientProducer::DoStopRun() {
-  // Call the DIP client disconnect
   client->disconnect();
 }
 
@@ -56,7 +54,7 @@ void WRClientProducer::DoReset() {
 }
 
 void WRClientProducer::DoTerminate() {
-    
+  client->terminate();
 }
 
 void WRClientProducer::RunLoop() {

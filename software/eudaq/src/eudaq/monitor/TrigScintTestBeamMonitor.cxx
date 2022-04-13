@@ -15,6 +15,23 @@ namespace eudaq {
     /**
      * Book plots here.
      */
+      char temp[70];
+    h2_EvtDisp = m_monitor->Book<TH2F>("h2_EvtDisp",
+				     "Charge deposited so far",
+				     "h2_EvtDisp",
+				      ";chan id in the layer;layer number",8,0,8,2,0,2);
+    m_monitor->SetDrawOptions(h2_EvtDisp,"colz");
+    sprintf(temp,"Charge gathered by every channel in both layers");
+    h2_EvtDisp->SetTitle(temp);
+
+    h1_AllQSum = m_monitor->Book<TH1F>("h1_AllQSum",
+				     "Total charge in the module",
+				     "h1_AllQSum",
+				      ";Charge [fC];layer number",3000,0.5,100000);
+    m_monitor->SetDrawOptions(h1_AllQSum,"hist");
+    sprintf(temp,"Charge recorded in all time samples, by all instrumented channels");
+    h1_AllQSum->SetTitle(temp);
+    
     for( int i = 0 ; i < n_channels ; i++ ){
 
       h2_QvT.push_back( m_monitor->Book<TH2F>("h2_QvT_"+std::to_string(i),
@@ -22,7 +39,6 @@ namespace eudaq {
 					      ("h2_QvT_"+std::to_string(i)).data(),
 					      ";time sample;Q",30,0,30,200,0,50000) );
       m_monitor->SetDrawOptions(h2_QvT[i],"colz");
-      char temp[50];
       sprintf(temp,"Q vs time (Chan %i)",i);
       h2_QvT[i]->SetTitle(temp);
 
@@ -159,7 +175,7 @@ namespace eudaq {
     //  std::cout << std::setw(4)<<std::setfill('0') << std::hex << event_buffer1[i] <<  " " << std::setw(4)<<std::setfill('0') << std::hex << event_buffer2[i] << std::endl;
     //}
 
-    if (event_buffer1.size() != event_buffer2.size()){
+    if ( ( event_buffer1.size() - event_buffer2.size() ) > 2 ){
       std::cout<<"Error in decoding. Event buffers have different length"<<std::endl;
       printf("event_buffer1.size() = %li\tevent_buffer1.size() = %li\n",event_buffer1.size(),event_buffer2.size());
     }//else
@@ -190,12 +206,10 @@ namespace eudaq {
                                   0,0,0,0};
     for(int chan=0; chan < 8;chan++){
       for(int ts = 0; ts < tse->qie1_.size();ts++){
-    	h2_ADCvT[chan]->Fill(ts,tse->qie1_[ts].adc[chan]);
+   	h2_ADCvT[chan]->Fill(ts,tse->qie1_[ts].adc[chan]);
         h2_QvT[chan]->Fill(ts,qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
     	h2_TDCvT[chan]->Fill(ts,tse->qie1_[ts].tdc[chan]);
     	h1_ADC[chan]->Fill(tse->qie1_[ts].adc[chan]);
-        h1_sumQ[chan]->Fill(qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
-        h1_sumQ_wide[chan]->Fill(qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
     	h1_TDC[chan]->Fill(tse->qie1_[ts].tdc[chan]);
         h1_CID1->Fill(tse->qie1_[ts].cid);
         sum_charge[chan]+=qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]);
@@ -205,12 +219,16 @@ namespace eudaq {
         h2_QvT[chan+8]->Fill(ts,qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
       	h2_TDCvT[chan+8]->Fill(ts,tse->qie2_[ts].tdc[chan]);
       	h1_ADC[chan+8]->Fill(tse->qie2_[ts].adc[chan]);
-        h1_sumQ[chan+8]->Fill(qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
-        h1_sumQ_wide[chan+8]->Fill(qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
       	h1_TDC[chan+8]->Fill(tse->qie2_[ts].tdc[chan]);
         h1_CID2->Fill(tse->qie2_[ts].cid);
         sum_charge[chan+8]+=qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]);
       }// end loop over fiber 2 time samples
+
+      h1_sumQ[chan]->Fill(sum_charge[chan]);
+      h1_sumQ_wide[chan]->Fill(sum_charge[chan]);
+      h1_sumQ[chan+8]->Fill(sum_charge[chan+8]);
+      h1_sumQ_wide[chan+8]->Fill(sum_charge[chan+8]);
+
       if( sum_charge[chan] > 20000 ){
         num_hits++;
         h1_hit_dist->Fill(chan_map[chan]);
@@ -225,6 +243,15 @@ namespace eudaq {
 
     h1_time->Fill(tse->time);
     h1_mult->Fill(num_hits);
+    for(Double_t chan=0.;chan<8.;chan++){
+      h2_EvtDisp->Fill(chan,0.,sum_charge[chan]);
+      h2_EvtDisp->Fill(chan,1.,sum_charge[chan+8]);
+    }
+    
+    double FullQ{sum_charge[0]}; // charge summed up over all ts, all instrumented channels
+    for(int i=1;i<12;i++)
+      FullQ+=sum_charge[i];
+    h1_AllQSum->Fill(FullQ);
     
     //Slow
     event_buffer1.clear();

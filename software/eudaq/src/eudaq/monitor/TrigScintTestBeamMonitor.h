@@ -63,6 +63,8 @@ private:
   TH1F* h1_mult;			// histogram of hit multiplicity
   TH1F* h1_hit_dist;			// histogram of number of hits per bar
   TH2F* h2_event_sum;                   // histogram of sum of charge in all time sample per channel
+  TH2F* h2_EvtDisp;			// A crude event display with total energy deposits 
+  TH1F* h1_AllQSum;			// Total charge seen by the module per event
   
 };
 } // namespace eudaq
