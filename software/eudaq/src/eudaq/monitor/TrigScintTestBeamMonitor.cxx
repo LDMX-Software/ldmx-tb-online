@@ -47,7 +47,7 @@ namespace eudaq {
       h2_TDCvT.push_back( m_monitor->Book<TH2F>("h2_TDCvT_"+std::to_string(i),
 						"TDC vs time (Chan "+std::to_string(i)+")",
 						("h2_TDCvT_"+std::to_string(i)).data(),
-						";time sample;TDC",30,0,30,256,0,256) );
+						";time sample;TDC",30,0,30,4,-0.5,3.5) );
       m_monitor->SetDrawOptions(h2_TDCvT[i],"colz");
       sprintf(temp,"TDC vs time (Chan %i)",i);
       h2_TDCvT[i]->SetTitle(temp);
