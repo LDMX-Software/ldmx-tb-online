@@ -62,7 +62,7 @@ void TrigScintFileReaderProducer::DoConfigure() {
   }
   EUDAQ_INFO("Reading events from " + filepath_);
 
-  n_bytes_per_event_ = conf->Get("N_BYTES_PER_EVENT",1500);
+  n_bytes_per_event_ = conf->Get("N_BYTES_PER_EVENT",1440);
 
   file_.open(filepath_);
   if (not file_) {
