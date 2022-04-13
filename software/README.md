@@ -39,6 +39,9 @@ Once
 the depdendencies have been installed, `eudaq` can be built as follows
 ```bash
 git clone https://github.com/eudaq/eudaq.git eudaq 
+```
+In order to allow us to forward data onto the monitoring without writing extraneous files, we need to make change the member variables in eudaq::DataCollector to be protected rather than private. Notes in [issue 75](https://github.com/LDMX-Software/ldmx-tb-online/issues/75)
+```bash
 mkdir build
 cd build
 cmake -DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON ..
