@@ -213,14 +213,14 @@ namespace eudaq {
       }// end loop over fiber 2 time samples
       if( sum_charge[chan] > 20000 ){
         num_hits++;
-        h1_hit_dist->Fill(chan);
+        h1_hit_dist->Fill(chan_map[chan]);
       }
       if( sum_charge[chan+8] > 20000 ){
         num_hits++;
-        h1_hit_dist->Fill(chan+8);
+        h1_hit_dist->Fill(chan_map[chan+8]);
       }
-      h2_event_sum->Fill(chan,sum_charge[chan]);
-      h2_event_sum->Fill(chan+8,sum_charge[chan+8]);
+      h2_event_sum->Fill(chan_map[chan],sum_charge[chan]);
+      h2_event_sum->Fill(chan_map[chan+8],sum_charge[chan+8]);
     }// end loop over channels
 
     h1_time->Fill(tse->time);
