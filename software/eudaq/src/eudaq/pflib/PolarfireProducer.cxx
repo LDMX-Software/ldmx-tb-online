@@ -30,10 +30,6 @@ class PolarfireProducer : public eudaq::Producer,
    */
   class DMADataSender : public eudaq::RogueDataSender {
    public:
-    static std::shared_ptr<DMADataSender> create(eudaq::Producer*p) {
-      static auto ptr = std::make_shared<DMADataSender>(p);
-      return ptr;
-    }
     DMADataSender(eudaq::Producer *producer) : RogueDataSender(producer){};
     ~DMADataSender() = default;
     virtual void sendEvent(std::shared_ptr<rogue::interfaces::stream::Frame> frame) final override {
@@ -271,7 +267,7 @@ void PolarfireProducer::DoConfigure() try {
 
   // construct pipeline depending on readout mode
   if (dma_enabled_) {
-    dma_sender_ = DMADataSender::create(this);
+    dma_sender_ = std::make_shared<DMADataSender>(this);
     EUDAQ_DEBUG("DMADataSender created");
     rwbi()->daq_dma_dest(dma_sender_);
     EUDAQ_DEBUG("Receiver connected to TCP");
@@ -321,6 +317,7 @@ void PolarfireProducer::DoStartRun()  try {
   }
   // prep run
   EUDAQ_INFO("Preparing for new run.");
+  pft_->prepareNewRun();
   // enable external triggers
   if (the_l1a_mode_ == L1A_MODE::EXTERNAL) {
     EUDAQ_INFO("Enabling external triggering");
@@ -379,6 +376,12 @@ void PolarfireProducer::RunLoop() try {
   // don't do anything if in external trigger mode
   if (dma_enabled_ and the_l1a_mode_ == L1A_MODE::EXTERNAL) {
     EUDAQ_INFO("DMA Readout and External trigger means nothing for RunLoop to do.");
+    while (not exiting_run_) {
+      int spill,occ,occ_max,vetoed,event;
+      pft_->backend->fc_read_counters(spill,occ,occ_max,event,vetoed);
+      EUDAQ_INFO("Read "+std::to_string(event)+" events according to FC");
+      sleep(1);
+    }
     return;
   }
   EUDAQ_INFO("Run loop beginning");

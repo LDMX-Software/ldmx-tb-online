@@ -86,7 +86,7 @@ else()
   message(WARNING "Unable to find FiberTrackerClient.h or Dip.h - DipClientProducer will not be built.")
 endif()
 
-find_package(pflib 2.0.4 QUIET)
+find_package(pflib 2.4 QUIET)
 if (pflib_FOUND)
   add_library(eudaq_pflib SHARED
     src/eudaq/pflib/PolarfireProducer.cxx)
