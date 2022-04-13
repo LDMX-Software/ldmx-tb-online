@@ -17,7 +17,7 @@ void QIE::add_data(std::vector<uint8_t> data){
       reserve = ((data[1]>>4)&7);
       
       // stitch together TDC words
-      uint16_t TDCs = (data[10]<<8)&data[11];
+      uint16_t TDCs = (data[10]<<8)|data[11];
       //printf("TrigScintRawDecode.cxx L20 TDCs %i\n",TDCs);
     
       // extract ADC and TDC values
