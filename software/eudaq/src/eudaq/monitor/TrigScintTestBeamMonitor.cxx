@@ -159,7 +159,7 @@ namespace eudaq {
     //  std::cout << std::setw(4)<<std::setfill('0') << std::hex << event_buffer1[i] <<  " " << std::setw(4)<<std::setfill('0') << std::hex << event_buffer2[i] << std::endl;
     //}
 
-    if (event_buffer1.size() != event_buffer2.size()){
+    if ( ( event_buffer1.size() - event_buffer2.size() ) > 2 ){
       std::cout<<"Error in decoding. Event buffers have different length"<<std::endl;
       printf("event_buffer1.size() = %li\tevent_buffer1.size() = %li\n",event_buffer1.size(),event_buffer2.size());
     }//else
@@ -190,12 +190,10 @@ namespace eudaq {
                                   0,0,0,0};
     for(int chan=0; chan < 8;chan++){
       for(int ts = 0; ts < tse->qie1_.size();ts++){
-    	h2_ADCvT[chan]->Fill(ts,tse->qie1_[ts].adc[chan]);
+   	h2_ADCvT[chan]->Fill(ts,tse->qie1_[ts].adc[chan]);
         h2_QvT[chan]->Fill(ts,qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
     	h2_TDCvT[chan]->Fill(ts,tse->qie1_[ts].tdc[chan]);
     	h1_ADC[chan]->Fill(tse->qie1_[ts].adc[chan]);
-        h1_sumQ[chan]->Fill(qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
-        h1_sumQ_wide[chan]->Fill(qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]));
     	h1_TDC[chan]->Fill(tse->qie1_[ts].tdc[chan]);
         h1_CID1->Fill(tse->qie1_[ts].cid);
         sum_charge[chan]+=qie_converter.ADC2Q(tse->qie1_[ts].adc[chan]);
@@ -205,12 +203,16 @@ namespace eudaq {
         h2_QvT[chan+8]->Fill(ts,qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
       	h2_TDCvT[chan+8]->Fill(ts,tse->qie2_[ts].tdc[chan]);
       	h1_ADC[chan+8]->Fill(tse->qie2_[ts].adc[chan]);
-        h1_sumQ[chan+8]->Fill(qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
-        h1_sumQ_wide[chan+8]->Fill(qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]));
       	h1_TDC[chan+8]->Fill(tse->qie2_[ts].tdc[chan]);
         h1_CID2->Fill(tse->qie2_[ts].cid);
         sum_charge[chan+8]+=qie_converter.ADC2Q(tse->qie2_[ts].adc[chan]);
       }// end loop over fiber 2 time samples
+
+      h1_sumQ[chan]->Fill(sum_charge[chan]);
+      h1_sumQ_wide[chan]->Fill(sum_charge[chan]);
+      h1_sumQ[chan+8]->Fill(sum_charge[chan+8]);
+      h1_sumQ_wide[chan+8]->Fill(sum_charge[chan+8]);
+
       if( sum_charge[chan] > 20000 ){
         num_hits++;
         h1_hit_dist->Fill(chan_map[chan]);
