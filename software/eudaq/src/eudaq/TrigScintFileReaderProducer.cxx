@@ -10,6 +10,9 @@
 #include "eudaq/RunControl.hh"
 #include "eudaq/Producer.hh"
 
+// us
+#include "eudaq/FileReader.h"
+
 class TrigScintFileReaderProducer : public eudaq::Producer {
  public:
   TrigScintFileReaderProducer(const std::string &name, const std::string &runcontrol);
@@ -24,11 +27,18 @@ class TrigScintFileReaderProducer : public eudaq::Producer {
  private:
   /// Function to convert hex to binary
   uint64_t hex2Bin(const std::string& shex); 
-  std::shared_ptr<std::ifstream> ifile; 
+ private:
+  /// file to read from
+  std::string filepath_;
+  /// bytes to extract per event in file
+  int n_bytes_per_event_;
+ private:
+  /// the file stream we are reading from
+  FileReader file_;
 };
 
 namespace {
-auto dummy0 = eudaq::Factory<eudaq::Producer>::Register<
+auto d = eudaq::Factory<eudaq::Producer>::Register<
     TrigScintFileReaderProducer, const std::string &, const std::string &>(
     TrigScintFileReaderProducer::factory_id_);
 }
@@ -46,25 +56,24 @@ void TrigScintFileReaderProducer::DoConfigure() {
   auto conf{GetConfiguration()};
 
   // Get the file to open from the configuration
-  auto file_path{conf->Get("FILE", "")};
-  EUDAQ_INFO("Reading events from " + file_path);
+  filepath_ = conf->Get("FILE","");
+  if (filepath_.empty()) {
+    EUDAQ_THROW("No file given to TrigScientFileReader.");
+  }
+  EUDAQ_INFO("Reading events from " + filepath_);
 
-  // Open the file for reading. If the file can't be opened, throw and
-  // exception.
-  ifile = std::make_shared<std::ifstream>(file_path.c_str(), std::ios::binary);
-  if (!ifile->is_open()) {
-    EUDAQ_THROW("Failed to open file " + file_path);
+  n_bytes_per_event_ = conf->Get("N_BYTES_PER_EVENT",1500);
+
+  file_.open(filepath_);
+  if (not file_) {
+    EUDAQ_THROW("Unable to open file "+filepath_);
   }
 }
 
 void TrigScintFileReaderProducer::DoStartRun() {}
 
 void TrigScintFileReaderProducer::DoStopRun() {
-  // If open, close the file to which data is being written to.
-  if (ifile->is_open())
-    ifile->close();
-
-  std::cout << "File closed: " << std::endl;
+  file_.close();
 }
 
 void TrigScintFileReaderProducer::DoReset() {}
@@ -74,77 +83,16 @@ void TrigScintFileReaderProducer::DoTerminate() {}
 void TrigScintFileReaderProducer::RunLoop() {
   auto event_count{0};
   
-  // The following reads a txt file with raw data line by line and extracts
-  // events. Each event is separated by the word 0xFFFFFFFFFFFFFFFF. Only 
-  // words found within the 0xFFF... are added to the event. Before being 
-  // added to the event, the hex strings are converted to uint64_t.  
-
-  // This is the vector used to hold an event.  This will be added to the
-  // eudaq event and shipped to the data collector.
-  std::vector<uint64_t> packet;
-
-  // The following flag is set at the beginning of an event i.e. when the
-  // value 0xFFFFFFFFFFFFFFFF is initially found. 
-  bool found_init_event{false}; 
-    
-  for (std::string line; getline(*ifile.get(), line); ) {
-    
-    // Skip DAQ messages
-    if (line[0] == 's' || line[0] == 'r' || line.empty()) { 
-      continue; 
-    }
-    //std::cout << "[ TrigScintFileReaderProducer ]:  word: 0x" 
-    //	      << line << std::endl; 
-    // Convert the word from a string to a uint64_t
-    uint64_t val{hex2Bin("0x"+line)}; 
-    //std::cout << "[ TrigScintFileReaderProducer ]:  word: "
-    //          << std::bitset<64>(val) << std::endl;
-
-    if (!found_init_event && val != 0xFFFFFFFFFFFFFFFF) { 
-      // Skip words until a begin of event tag is found.  This is done 
-      // because a file will sometimes include an incomplete event.
-      continue;
-    } else if (!found_init_event && val == 0xFFFFFFFFFFFFFFFF) { 
-      // A new event has been found, start adding words to the packet.
-      found_init_event = true;
-      continue;
-    }
-
-    if (found_init_event && val == 0xFFFFFFFFFFFFFFFF) { 
-      // The end of an event has been reached.  Clear everything, ship the event
-      // out and  and prepare for a new event.
-
-      // Create an eudaq event to ship to the data collector.
+  while(file_) {
+    std::vector<uint8_t> packet;
+    if (file_.read(packet,n_bytes_per_event_)) {
       auto event{eudaq::Event::MakeUnique("TrigScintRaw")};
-    
-      // Copy the data block from the rogue frame
       event->AddBlock(0x2, packet);
-
-      // Send the event
-      SendEvent(std::move(event));
-
-      packet.clear();
-
-      // Increment event counter. This will be used in the future.
-      ++event_count;
-
-    } 
-      
-    packet.push_back(val); 
+      this->SendEvent(std::move(event));
+    }
   }
 
-  // Once all lines have been processed, the end of the file has been reached.
-  // Stop the run at this point. 
-  if (ifile->eof()) {
-    EUDAQ_WARN("End of file reached.");
-  }
-}
-
-uint64_t TrigScintFileReaderProducer::hex2Bin(const std::string& shex) { 
-	std::stringstream ss;
-  ss << std::hex << shex;
-  uint64_t n;
-  ss >> n; 
-  return n; 
+  EUDAQ_WARN("End of file reached.");
+  SetStatus(eudaq::Status::STATE_STOPPED, "Stopped");
 }
 
