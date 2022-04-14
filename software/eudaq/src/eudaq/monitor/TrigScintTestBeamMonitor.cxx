@@ -15,7 +15,7 @@ namespace eudaq {
     /**
      * Book plots here.
      */
-      char temp[70];
+    char temp[70];
     h2_EvtDisp = m_monitor->Book<TH2F>("h2_EvtDisp",
 				     "Charge deposited so far",
 				     "h2_EvtDisp",
@@ -33,16 +33,6 @@ namespace eudaq {
     h1_AllQSum->SetTitle(temp);
     
     for( int i = 0 ; i < n_channels ; i++ ){
-
-      h2_QvT.push_back( m_monitor->Book<TH2F>("h2_QvT_"+std::to_string(i),
-					      "Q vs time (Chan "+std::to_string(i)+")",
-					      ("h2_QvT_"+std::to_string(i)).data(),
-					      ";time sample;Q",30,0,30,200,0,50000) );
-      m_monitor->SetDrawOptions(h2_QvT[i],"colz");
-      sprintf(temp,"Q vs time (Chan %i)",i);
-      h2_QvT[i]->SetTitle(temp);
-
-      
       
       h2_ADCvT.push_back( m_monitor->Book<TH2F>("h2_ADCvT_"+std::to_string(i),
 						"ADC vs time (Chan "+std::to_string(i)+")",
@@ -58,7 +48,7 @@ namespace eudaq {
                                               ";time ple;Q",30,-0.5,29.5,200,0,50000) );
       m_monitor->SetDrawOptions(h2_QvT[i],"colz");
       sprintf(temp,"Q vs time (Chan %i)",i);
-      h2_ADCvT[i]->SetTitle(temp);
+      h2_QvT[i]->SetTitle(temp);
       
       h2_TDCvT.push_back( m_monitor->Book<TH2F>("h2_TDCvT_"+std::to_string(i),
 						"TDC vs time (Chan "+std::to_string(i)+")",
@@ -112,7 +102,7 @@ namespace eudaq {
     m_monitor->SetDrawOptions(h1_CID2,"colz");
 
     h1_time = m_monitor->Book<TH1F>("h1_time","Trigger Time",
-                                    "h1_time",";Tick;Events",200,0,10000000);
+                                    "h1_time",";Tick;Events",200,0,6e7);
     m_monitor->SetDrawOptions(h1_time,"colz");
 
     h1_mult = m_monitor->Book<TH1F>("h1_mult","Hit Multiplicity",
