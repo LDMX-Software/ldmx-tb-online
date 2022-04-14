@@ -12,4 +12,3 @@ sleep 1
 
 euCliProducer -n DipClientProducer -t dip -r tcp://192.168.1.11:4000 &
 sleep 1
-
