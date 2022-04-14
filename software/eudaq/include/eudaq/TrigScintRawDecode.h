@@ -38,7 +38,7 @@ public:
   // there are typically 32 times samples, but data corruptions
   // can cause less
   std::vector<QIE> qie1_,qie2_;
-  uint64_t time=0; 
+  uint32_t time=0; 
   TSevent(std::vector<uint16_t> fiber1,
 	  std::vector<uint16_t> fiber2);
 
