@@ -5,10 +5,12 @@ from mapping import *
 from optparse import OptionParser
 import os
 
-directory = 'plots'
-try: os.stat(directory)
-except: os.mkdir(directory)
- 
+
+for directory in ['Plots','Raws','Decoded','LEDs','Pedestals']:
+    try: os.stat(directory)
+    except: os.mkdir(directory)
+
+
 parser = OptionParser()	
 parser.add_option('-t','--threshold', dest='includeThresholdPlots', default = True, help='Determines if PE threshold plots should be included. Leave blank or True to inlcude, anything else ot exclude.')
 options = parser.parse_args()[0]
