@@ -54,6 +54,15 @@ protected:
     return (value >> low_bit) & mask;
   }
 
+
+  uint64_t swapLong(uint64_t X) {
+    uint64_t x = X;
+    x = (x & 0x00000000FFFFFFFF) << 32 | (x & 0xFFFFFFFF00000000) >> 32;
+    x = (x & 0x0000FFFF0000FFFF) << 16 | (x & 0xFFFF0000FFFF0000) >> 16;
+    x = (x & 0x00FF00FF00FF00FF) << 8  | (x & 0xFF00FF00FF00FF00) >> 8;
+    return x;
+  }
+  
   /// The producer to use to send data
   eudaq::Producer *producer_{nullptr};
 

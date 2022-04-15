@@ -3,6 +3,7 @@
 #include <bitset>
 #include <cstring>
 #include <iostream>
+//#include <inttypes.h>
 
 #include "rogue/interfaces/stream/Frame.h"
 #include "rogue/interfaces/stream/FrameIterator.h"
@@ -20,10 +21,10 @@ void TrigScintDataSender::sendEvent(
     return;
   }
 
-  // Drop the first 32 bit word that contains the event count. This is causing
+  // Drop the first 2 byte containing the packet count. This is causing
   // words to be shifted and is going to break the parsing.
   // TODO(OM) Check again how many words need to be dropped.
-  it += 4; 
+  it += 2; 
 
   // Start buffering words until the end of event word 0xFFFFFFFFFFFFFFFF is 
   // reached.  Once the end of the end of the event is reached, create a 
@@ -32,7 +33,15 @@ void TrigScintDataSender::sendEvent(
 
   while (it != frame->end()) { 
     rogue::interfaces::stream::fromFrame(it, 8, &word);
+
+    // reorder the bytes when reading 8 bytes in a row
+    // Apparently this is wrong. 
+    //word = swapLong(word);
     
+    //check the word being collected
+    //std::cout<<"read word:"<<std::setw(16)<<std::setfill('0')<<std::hex<<word<<std::dec<<std::endl;
+    //printf("%" PRIx64 "\n", word);
+
     if (word ==  0xFFFFFFFFFFFFFFFF) { 
       // The end of an event has been reached.  Clear everything, ship the event
       // out and  and prepare for a new event.
@@ -44,13 +53,19 @@ void TrigScintDataSender::sendEvent(
       event->SetDeviceN(0x2); 
 
       // Send the event
-      //event->Print(std::cout); 
-      producer_->SendEvent(std::move(event));
+      //std::cout<<"Data sender:: sending event"<<std::endl;
 
+      //Remove the first corrupted event
+      //at least 400 bytes. A typical event is 816 bytes.
+      if (buffer.size() > 50)
+	//std::cout<<"Sending event"<<std::endl;
+	producer_->SendEvent(std::move(event));
       buffer.clear();
     }
-  
-    buffer.push_back(word); 
+    
+    else {
+      buffer.push_back(word);
+    }
   }
 }
 } // namespace eudaq

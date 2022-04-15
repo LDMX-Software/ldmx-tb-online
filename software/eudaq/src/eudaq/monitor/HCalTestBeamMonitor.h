@@ -33,6 +33,7 @@ private:
   std::map<std::string, TH2D*> adc_histo_map;
   std::map<std::string, TH2D*> tot_histo_map;
   std::map<std::string, TH2D*> toa_histo_map; 
+  std::map<std::string, TH2D*> max_sample_histo_map; 
   TH2D* hcalhits_top; 
   TH2D* hcalhits_bot; 
   TH1D* total_PE; 
