@@ -74,12 +74,9 @@ void WRClientProducer::RunLoop() {
         if(data_words.size() > 0){
             const uint8_t *ptr = reinterpret_cast<const uint8_t*>(&data_words[0]);
             std::vector<uint8_t> data(ptr, ptr + sizeof(uint32_t)*data_words.size());
-            auto size = data.size();
-            auto frame = reqFrame(size, true);
-            frame->setPayload(size);
-            std::copy(data.begin(), data.end(), frame->begin());
-            sendFrame(frame);
-            auto ev = eudaq::Event::MakeUnique(event_name());
+            
+	    auto ev = eudaq::Event::MakeUnique(event_name());
+            ev->AddBlock(99, data);
             SendEvent(std::move(ev));
         }
 
