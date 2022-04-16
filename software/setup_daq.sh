@@ -29,7 +29,9 @@ export dip_DIR=/u1/ldmx/server/FiberTrackerDAQ/dip-5.7.0/
 export LD_LIBRARY_PATH=/u1/ldmx/server/FiberTrackerDAQ/dip-5.7.0/lib64:$LD_LIBRARY_PATH
 
 #Add WR library
-export WRTiming_DIR=/u1/ldmx/server/WRTimestamping
+#export WRTiming_DIR=/u1/ldmx/server/WRTimestamping
+export WRTiming_DIR=/home/gm/WRTimestamping
+
 export LD_LIBRARY_PATH=${WRTiming_DIR}/build:$LD_LIBRARY_PATH
 
 #Paths to FMC TDC headers and libs
