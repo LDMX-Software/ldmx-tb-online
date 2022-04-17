@@ -239,19 +239,57 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
         minadc = adc_t;
       }
       timestamp++;
-      adc_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - ADC"]->Fill(channel, adc_t);
-      tot_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - TOT"]->Fill(channel, tot);
-      toa_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - TOA"]->Fill(channel, toa);
+      if(adc_histo_map.count("FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - ADC") > 0){
+        adc_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - ADC"]->Fill(channel, adc_t);
+      }
+      else{
+        std::cout<<"Map for FPGA " << std::to_string(block_) << ": ROC " << std::to_string(hgcroc_number) << " - ADC not found!" <<std::endl;
+      }
+      if(tot_histo_map.count("FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - TOT") > 0){
+        tot_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - TOT"]->Fill(channel, tot);
+      }
+      else{
+        std::cout<<"Map for FPGA " << std::to_string(block_) << ": ROC " << std::to_string(hgcroc_number) << " - TOT not found!" <<std::endl;
+      }
+      if(toa_histo_map.count("FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - TOA") > 0){
+        toa_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - TOA"]->Fill(channel, toa);
+      }
+      else{
+        std::cout<<"Map for FPGA " << std::to_string(block_) << ": ROC " << std::to_string(hgcroc_number) << " - TOA not found!" <<std::endl;
+      }
 
-      adc_histo_map_reset["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - ADC"]->Fill(channel, adc_t);
-      tot_histo_map_reset["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - TOT"]->Fill(channel, tot);
-      toa_histo_map_reset["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - TOA"]->Fill(channel, toa);
+      if(adc_histo_map_reset.count("Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - ADC") > 0){
+        adc_histo_map_reset["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - ADC"]->Fill(channel, adc_t);
+      }
+      else{
+        std::cout<<" Reset Map for FPGA " << std::to_string(block_) << ": ROC " << std::to_string(hgcroc_number) << " - ADC not found!" <<std::endl;
+      }
+      if(tot_histo_map_reset.count("Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - TOT") > 0){
+        tot_histo_map_reset["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - TOT"]->Fill(channel, tot);
+      }
+      else{
+        std::cout<<" Reset Map for FPGA " << std::to_string(block_) << ": ROC " << std::to_string(hgcroc_number) << " - TOT not found!" <<std::endl;
+      }
+      if(toa_histo_map_reset.count("Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - TOA") > 0){
+        toa_histo_map_reset["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - TOA"]->Fill(channel, toa);
+      }
+      else{
+        std::cout<<" Reset Map for FPGA " << std::to_string(block_) << ": ROC " << std::to_string(hgcroc_number) << " - TOA not found!" <<std::endl;
+      }
       //std::cout<<"isTOT: "<<isTOT<<"  isTOTComplete: "<<isTOTComplete<<"  toa: "<<toa<<"  tot: "<<tot<<"  adc_tm1: "<<adc_tm1<<"  adc_t "<<adc_t<<std::endl;
     }
-    max_sample_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - max_sample"]->Fill(channel, timestamp_with_highest_adc);
-
-    max_sample_histo_map_reset["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - max_sample"]->Fill(channel, timestamp_with_highest_adc);
-
+    if(max_sample_histo_map.count("FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - max_sample") > 0){
+      max_sample_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - max_sample"]->Fill(channel, timestamp_with_highest_adc);
+    }
+    else{
+      std::cout<<"Map for FPGA " << std::to_string(block_) << ": ROC " << std::to_string(hgcroc_number) << " - max_sample not found!" <<std::endl;
+    }
+    if(max_sample_histo_map_reset.count("Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - max_sample") > 0){
+      max_sample_histo_map_reset["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - max_sample"]->Fill(channel, timestamp_with_highest_adc);
+    }
+    else{
+      std::cout<<" Reset Map for FPGA " << std::to_string(block_) << ": ROC " << std::to_string(hgcroc_number) << " - max_sample not found!" <<std::endl;
+    }
 
     //double threshold = adcped + mV_per_PE / adcgain * threshold_PE;
     //double threshold = adcped + 20; //hard-coded for now
