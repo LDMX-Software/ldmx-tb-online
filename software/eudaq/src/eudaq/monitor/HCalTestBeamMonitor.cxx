@@ -98,6 +98,23 @@ void HCalTestBeamMonitor::AtConfiguration() {
     max_sample_histo_map_reset["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - max_sample"]->SetStats(0);
   }
 
+  maxsample_maxadc_1 = m_monitor->Book<TH2D>("maxsample_maxadc_1", "maxsample_maxadc_1", "", ";max adc;max sample", 1024, 0, 1024, 8, 0, 8);
+  maxsample_maxadc_2 = m_monitor->Book<TH2D>("maxsample_maxadc_2", "maxsample_maxadc_2", "", ";max adc;max sample", 1024, 0, 1024, 8, 0, 8);
+  maxsample_maxadc_3 = m_monitor->Book<TH2D>("maxsample_maxadc_3", "maxsample_maxadc_3", "", ";max adc;max sample", 1024, 0, 1024, 8, 0, 8);
+  maxsample_maxadc_4 = m_monitor->Book<TH2D>("maxsample_maxadc_4", "maxsample_maxadc_4", "", ";max adc;max sample", 1024, 0, 1024, 8, 0, 8);
+  m_monitor->SetDrawOptions(maxsample_maxadc_1, "colz");
+  m_monitor->SetDrawOptions(maxsample_maxadc_2, "colz");
+  m_monitor->SetDrawOptions(maxsample_maxadc_3, "colz");
+  m_monitor->SetDrawOptions(maxsample_maxadc_4, "colz");
+  maxsample_maxadc_1->SetTitle("Max Sample vs. Max ADC Plane 1 Bar 3 End 0");
+  maxsample_maxadc_2->SetTitle("Max Sample vs. Max ADC Plane 1 Bar 3 End 1");
+  maxsample_maxadc_3->SetTitle("Max Sample vs. Max ADC Plane 1 Bar 4 End 0");
+  maxsample_maxadc_4->SetTitle("Max Sample vs. Max ADC Plane 1 Bar 4 End 1");
+  maxsample_maxadc_1->SetStats(0);
+  maxsample_maxadc_2->SetStats(0);
+  maxsample_maxadc_3->SetStats(0);
+  maxsample_maxadc_4->SetStats(0);
+
   hcalhits_top = m_monitor->Book<TH2D>("hcalhits_top", "hcalhits_top", "", ";Plane;Bar", nPlanes+1, 0, nPlanes+1, 12, 0, 12);
   hcalhits_bot = m_monitor->Book<TH2D>("hcalhits_bot", "hcalhits_bot", "", ";Plane;Bar", nPlanes+1, 0, nPlanes+1, 12, 0, 12);
   m_monitor->SetDrawOptions(hcalhits_top, "colz");
@@ -278,6 +295,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       }
       //std::cout<<"isTOT: "<<isTOT<<"  isTOTComplete: "<<isTOTComplete<<"  toa: "<<toa<<"  tot: "<<tot<<"  adc_tm1: "<<adc_tm1<<"  adc_t "<<adc_t<<std::endl;
     }
+
     if(max_sample_histo_map.count("FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - max_sample") > 0){
       max_sample_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - max_sample"]->Fill(channel, timestamp_with_highest_adc);
     }
@@ -290,7 +308,18 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     else{
       std::cout<<" Reset Map for FPGA " << std::to_string(block_) << ": ROC " << std::to_string(hgcroc_number) << " - max_sample not found!" <<std::endl;
     }
-
+    if(location == "1:3:0"){
+      maxsample_maxadc_1->Fill(maxadc, timestamp_with_highest_adc);
+    }
+    if(location == "1:3:1"){
+      maxsample_maxadc_2->Fill(maxadc, timestamp_with_highest_adc);
+    }
+    if(location == "1:4:0"){
+      maxsample_maxadc_3->Fill(maxadc, timestamp_with_highest_adc);
+    }
+    if(location == "1:4:1"){
+      maxsample_maxadc_4->Fill(maxadc, timestamp_with_highest_adc);
+    }
     //double threshold = adcped + mV_per_PE / adcgain * threshold_PE;
     //double threshold = adcped + 20; //hard-coded for now
     double threshold = minadc + adcthreshold; //hard-coded for now

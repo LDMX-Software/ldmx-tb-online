@@ -40,6 +40,11 @@ private:
   std::map<std::string, TH2D*> toa_histo_map_reset;
   std::map<std::string, TH2D*> max_sample_histo_map_reset;
 
+  TH2D* maxsample_maxadc_1;
+  TH2D* maxsample_maxadc_2;
+  TH2D* maxsample_maxadc_3;
+  TH2D* maxsample_maxadc_4;
+
   TH2D* hcalhits_top;
   TH2D* hcalhits_bot;
   TH2D* hcalhits_top_reset;
