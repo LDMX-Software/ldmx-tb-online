@@ -34,9 +34,15 @@ private:
   std::map<std::string, TH2D*> tot_histo_map;
   std::map<std::string, TH2D*> toa_histo_map;
   std::map<std::string, TH2D*> max_sample_histo_map;
+
+  std::map<std::string, TH2D*> adc_histo_map_reset;
+  std::map<std::string, TH2D*> tot_histo_map_reset;
+  std::map<std::string, TH2D*> toa_histo_map_reset;
+  std::map<std::string, TH2D*> max_sample_histo_map_reset;
+
   TH2D* hcalhits_top;
   TH2D* hcalhits_bot;
-  //TH1D* total_PE; 
+  //TH1D* total_PE;
   TH2D* hcal_event;
 
   std::map<std::string, int> cmb_map;
@@ -53,6 +59,7 @@ private:
   std::vector<int> unusedchans;
   int nPlanes;
   int nevents_reset;
+  int nevents_spill;
   int nevents;
 
   double threshold_PE; //aribtrary for now
