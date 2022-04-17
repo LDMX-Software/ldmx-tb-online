@@ -183,10 +183,22 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
   }
 
   if(resetplots){
-    adc_histo_map_reset->Reset();
-    tot_histo_map_reset->Reset();
-    toa_histo_map_reset->Reset();
-    max_sample_histo_map_reset->Reset();
+    std::map<std::string, std::TH2D*>::iterator it_adc;
+    for (it_adc = adc_histo_map_reset.begin(); it_adc != adc_histo_map_reset.end(); it_adc++){
+      it_adc->second->Reset();
+    }
+    std::map<std::string, std::TH2D*>::iterator it_tot;
+    for (it_tot = tot_histo_map_reset.begin(); it_tot != tot_histo_map_reset.end(); it_tot++){
+      it_tot->second->Reset();
+    }
+    std::map<std::string, std::TH2D*>::iterator it_toa;
+    for (it_toa = toa_histo_map_reset.begin(); it_toa != toa_histo_map_reset.end(); it_toa++){
+      it_toa->second->Reset();
+    }
+    std::map<std::string, std::TH2D*>::iterator it_max;
+    for (it_max = max_sample_histo_map_reset.begin(); it_max != max_sample_histo_map_reset.end(); it_max++){
+      it_max->second->Reset();
+    }
     hcalhits_top_reset->Reset();
     hcalhits_bot_reset->Reset();
   }
