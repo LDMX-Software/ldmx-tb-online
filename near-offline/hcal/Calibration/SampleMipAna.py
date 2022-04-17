@@ -85,7 +85,7 @@ for id in sumadc_histo:
     mpv, width, isGoodFit = MIPFit(sumadc_histo[id], c, outfile)
     mpv_histo.Fill(i, mpv)
     mipwidth_histo.Fill(i, width)
-    coverage.Fill(0,0) #Update 
+    coverage.Fill(0,0) #Update
     elloc = e_loc[id]
     pedestal = ped[id]
     line = [str(id), elloc, str(pedestal), str(mpv), str(width)]

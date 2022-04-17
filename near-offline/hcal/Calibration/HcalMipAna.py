@@ -68,8 +68,8 @@ pedfile = sys.argv[len(sys.argv)-1]
 outputFileName = os.path.basename('hist_mip_'+sys.argv[1]).replace("_fpga_0", "").replace("_fpga_1", "") #ouptut file name
 outputMipCsvName = os.path.basename('mip_calib_'+sys.argv[1]).replace('.root','.csv').replace("_fpga_0", "").replace("_fpga_1", "") #ouptut file name
 fitfile1 = os.path.basename("mip_fits_landua_"+sys.argv[1]).replace('.root','').replace("_fpga_0", "").replace("_fpga_1", "")
-fitfile2 = os.path.basename("mip_fits_linear_"+sys.argv[1]).replace('.root','pdf').replace("_fpga_0", "").replace("_fpga_1", "")
-#trees = []
+fitfile2 = os.path.basename("mip_fits_linear_"+sys.argv[1]).replace('.root','.pdf').replace("_fpga_0", "").replace("_fpga_1", "")
+
 infiles = []
 for i in range(1, len(sys.argv)-1):
     infiles.append(TFile(sys.argv[i], "read"))
@@ -112,14 +112,15 @@ hasMIPs = [1275070250, 1275070251, 1275070252, 1275070254, 1275070255, 127507025
     1275068551, 1275068552, 1275068555, 1275068556, 1275068562, 1275068570,
     1275068573, 1275068581, 1275068585, 1275068596, 1275068601, 1275068602,
     1275068626, 1275068628, 1275068631, 1275068632]
-n=0
+n = 0
 for infile in infiles:
     tree = infile.Get('ntuplizehgcroc').Get("hgcroc")
     for d in tree: #Loop over events in tree
-        if(n > 1000*200):
-            break
+        #if(n > 72*3*5000*8):
+        #    break
+        n = n + 1
         raw_id = d.raw_id
-        if(raw_id not in hasMIPs): continue
+        #if(raw_id not in hasMIPs): continue
         link = d.link
         fpga = d.fpga
         channel = d.channel
@@ -141,8 +142,11 @@ for infile in infiles:
             maxsample = -9999
             sumadc = 0
             sample = 0
-        adc_ped = adc - ped[did]
-        #adc_ped = adc
+        if(raw_id in ped):
+            adc_ped = adc - ped[raw_id]
+        else:
+            #print("Key {0} and Eloc {1} not found. Setting pedestal to 0".format(raw_id, elloc))
+            adc_ped = adc
         alladc_histo[raw_id].Fill(adc_ped)
         sumadc = sumadc + adc_ped
         if(adc_ped > maxadc):
@@ -160,7 +164,7 @@ for id in maxadc_histo:
 
 mpv_histo = ROOT.TH1F('mpv', 'MIP MPV ADC Max',100,0,100)
 mipwidth_histo = ROOT.TH1F('mipwidth', 'MIP Width ADC Max',100,0,100)
-mipslope_histo = ROOT.TH1F('mipslope', 'MIP Slop MeV/ADC',100,0,100)
+mipslope_histo = ROOT.TH1F('mipslope', 'MIP Slope MeV/ADC',100,0,100)
 #coverage_histo = ROOT.TH2F('coverage', 'In Muon Beam Acceptance',20, 0, 20, 12, 0, 12)
 
 c.Print(fitfile1+".pdf[")

@@ -20,6 +20,8 @@ maxadc_histo = {} #histo map to channel
 alladc_histo = {}
 maxsample_histo = {}
 sumadc_histo = {}
+max_histo = {}
+n = 0
 for e in tree : #Loop over events in tree
     if True:
         for d in e.ChipSettingsTestDigis_unpack : #Loop over channels
@@ -28,6 +30,7 @@ for e in tree : #Loop over events in tree
                alladc_histo[d.id()] = ROOT.TH1F(f'alladc_eid_{d.id()}', f'All ADC EID {d.id()}',1024,0,1024)
                maxsample_histo[d.id()] = ROOT.TH1F(f'maxsample_eid_{d.id()}', f'Max Sample EID {d.id()}',8,0,8)
                sumadc_histo[d.id()] = ROOT.TH1F(f'sumadc_eid_{d.id()}', f'Sum ADC EID {d.id()}',1024*4,0,1024*4)
+               max_histo[d.id()] = ROOT.TH2F(f'max_eid_{d.id()}', f'Max Sample vs Max ADC EID {d.id()}',1024,0,1024,8,0,8)
             maxadc = -9999.
             sumadc = 0
             maxsample = -9999
@@ -37,9 +40,15 @@ for e in tree : #Loop over events in tree
                if(d.at(i).adc_t() > maxadc):
                    maxadc = d.at(i).adc_t()
                    maxsample = i
+            #if(maxadc > 150 and d.id() == 1275070249):
+            #    print(maxsample)
             maxadc_histo[d.id()].Fill(maxadc) #Fill ADC count
             maxsample_histo[d.id()].Fill(maxsample)
             sumadc_histo[d.id()].Fill(sumadc)
+            max_histo[d.id()].Fill(maxadc, maxsample)
+    #if(n > 5000):
+    #    break
+    #n = n + 1
 
 #Close and write file
 f.Write()
