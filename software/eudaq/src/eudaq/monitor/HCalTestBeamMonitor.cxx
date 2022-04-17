@@ -106,6 +106,16 @@ void HCalTestBeamMonitor::AtConfiguration() {
   hcalhits_bot->SetTitle("Hits Above Threshold Bot/Left");
   hcalhits_top->SetStats(0);
   hcalhits_bot->SetStats(0);
+
+  hcalhits_top_reset = m_monitor->Book<TH2D>("hcalhits_top_reset", "hcalhits_top_reset", "", ";Plane;Bar", nPlanes+1, 0, nPlanes+1, 12, 0, 12);
+  hcalhits_bot_reset = m_monitor->Book<TH2D>("hcalhits_bot_reset", "hcalhits_bot_reset", "", ";Plane;Bar", nPlanes+1, 0, nPlanes+1, 12, 0, 12);
+  m_monitor->SetDrawOptions(hcalhits_top, "colz");
+  m_monitor->SetDrawOptions(hcalhits_bot, "colz");
+  hcalhits_top_reset->SetTitle("Hits Above Threshold Top/Right");
+  hcalhits_bot_reset->SetTitle("Hits Above Threshold Bot/Left");
+  hcalhits_top_reset->SetStats(0);
+  hcalhits_bot_reset->SetStats(0);
+
   //total_PE = m_monitor->Book<TH1D>("total_PE", "total_PE", "", ";PEs;", 100, 0, 1000);
   //total_PE->SetTitle("Total PEs per Event");
   //total_PE->SetStats(0);
@@ -141,6 +151,7 @@ void HCalTestBeamMonitor::AtConfiguration() {
   voltage_hcal = 5.; //mV/PE
   PE_per_mip = 68.; //PEs/mip
   mV_per_PE = 1/energy_per_mip * voltage_hcal * PE_per_mip; //mV per MIP is about 73 for now
+  adcthreshold = 20.;
 }
 
 void HCalTestBeamMonitor::AtEventReception(EventSP event) {
@@ -159,6 +170,8 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     tot_histo_map_reset->Reset();
     toa_histo_map_reset->Reset();
     max_sample_histo_map_reset->Reset();
+    hcalhits_top_reset->Reset();
+    hcalhits_bot_reset->Reset();
   }
 
   double PE = 0;
@@ -208,6 +221,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     }
     std::string location = std::to_string(plane) + ":" + std::to_string(barchan) + ":" + std::to_string(end);
     double maxadc = -9999.;
+    double minadc = 9999.;
     int timestamp_with_highest_adc = -1;
     int timestamp = 0;
     for (auto &sample : samples) {
@@ -220,6 +234,9 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       if(adc_t > maxadc){
         maxadc = adc_t;
         timestamp_with_highest_adc = timestamp;
+      }
+      if(adc_t < minadc){
+        minadc = adc_t;
       }
       timestamp++;
       adc_histo_map["FPGA " + std::to_string(block_) + ": ROC " + std::to_string(hgcroc_number) + " - ADC"]->Fill(channel, adc_t);
@@ -237,15 +254,18 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
 
 
     //double threshold = adcped + mV_per_PE / adcgain * threshold_PE;
-    double threshold = adcped + 20; //hard-coded for now
+    //double threshold = adcped + 20; //hard-coded for now
+    double threshold = minadc + adcthreshold; //hard-coded for now
     int isAboveThreshold = 0;
     if(maxadc >= threshold){
       isAboveThreshold = 1;
       if(end != 0){
         hcalhits_top->Fill(plane, barchan);
+        hcalhits_top_reset->Fill(plane, barchan);
       }
       else{
         hcalhits_bot->Fill(plane, barchan);
+        hcalhits_bot_reset->Fill(plane, barchan);
       }
     }
     //double PE_chan = (maxadc - adcped) / mV_per_PE * adcgain;

@@ -42,6 +42,8 @@ private:
 
   TH2D* hcalhits_top;
   TH2D* hcalhits_bot;
+  TH2D* hcalhits_top_reset;
+  TH2D* hcalhits_bot_reset;
   //TH1D* total_PE;
   TH2D* hcal_event;
 
@@ -67,6 +69,7 @@ private:
   double voltage_hcal; //mV/PE
   double PE_per_mip; //PEs/mip
   double mV_per_PE; //mV per MIP is about 73 for now
+  double adcthreshold;
 };
 } // namespace eudaq
 #endif // EUDAQ_HCALTESTBEAMMONITOR_H
