@@ -18,9 +18,9 @@ void HCalTestBeamMonitor::AtConfiguration() {
   auto conf{GetConfiguration()};
 
   nevents = 0;
-  auto nreset{conf->Get("NRESET", 5000)};
+  auto nreset{conf->Get("NRESET", 500)};
   nevents_reset = nreset;
-  auto nspill{conf->Get("NSPILL", 500)};
+  auto nspill{conf->Get("NSPILL", 50)};
   nevents_spill = nspill;
   nPlanes = 19;
   block_ = conf->Get("FPGA_ID",1);
@@ -93,7 +93,7 @@ void HCalTestBeamMonitor::AtConfiguration() {
         m_monitor->Book<TH2D>("Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " max_sample",
                               "Reset_FPGA_" + std::to_string(block_) + "_ROC_" + std::to_string(i) + "_max_sample", "",
                               ";Channel;max_sample", 72, 0, 72, 8, 0, 8);
-    m_monitor->SetDrawOptions(max_sample_histo_map["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - max_sample"], "colz");
+    m_monitor->SetDrawOptions(max_sample_histo_map_reset["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - max_sample"], "colz");
     max_sample_histo_map_reset["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - max_sample"]->SetTitle(("max_sample vs Channel, FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i)).c_str());
     max_sample_histo_map_reset["Reset FPGA " + std::to_string(block_) + ": ROC " + std::to_string(i) + " - max_sample"]->SetStats(0);
   }
