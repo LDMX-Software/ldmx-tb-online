@@ -68,6 +68,8 @@ private:
   int nevents_reset;
   int nevents_spill;
   int nevents;
+  int nreset;
+  int nspill;
 
   double threshold_PE; //aribtrary for now
   double energy_per_mip; //MeV/MIP
