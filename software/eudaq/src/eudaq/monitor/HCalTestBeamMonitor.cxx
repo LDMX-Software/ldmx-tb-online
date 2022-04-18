@@ -240,7 +240,11 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       std::cout << "Key not found: " << rocchan << std::endl;
     }
     int end = cmb%2;
-    int barchan = (4 - bar) + (quadbar - 1) * 4;
+    //int barchan = (4 - bar) + (quadbar - 1) * 4;
+    int barchan = (bar - 1) + (quadbar - 1) * 4;
+    if(plane%2 == 1){
+      barchan = (4 - bar) + (quadbar - 1) * 4;
+    }
     int detid = -9999;
     double adcped = -9999.;
     double adcgain = -9999.;
@@ -369,9 +373,11 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       double PEsum = 0;
       if(physical_map.count(key0) > 0 && physical_map.count(key1) > 0){
         PEsum = physical_map.at(key0) + physical_map.at(key1);
+        std::cout<<"PE Sum "<<i<<" "<<j<<" "<<PEsum<<" "<<nevents<<" "<<newSpill<<std::endl;
       }
       if(newSpill){
         hcal_event->Fill(i, j, PEsum);
+        std::cout<<"Fill Event Display "<<i<<" "<<j<<" "<<PEsum<<std::endl;
       }
     }
   }
