@@ -350,6 +350,9 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     int isAboveThreshold = 0;
     if(maxadc >= threshold){
       isAboveThreshold = 1;
+      if(plane < 10){
+        barchan = barchan + 2;
+      }
       if(end != 0){
         hcalhits_top->Fill(plane, barchan);
         hcalhits_top_reset->Fill(plane, barchan);
@@ -375,7 +378,12 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
         PEsum = physical_map.at(key0) + physical_map.at(key1);
       }
       if(newSpill){
-        hcal_event->Fill(i, j, PEsum);
+        if(plane < 10){
+          hcal_event->Fill(i, j+2, PEsum);
+        }
+        else{
+          hcal_event->Fill(i, j, PEsum);
+        }
       }
     }
   }
