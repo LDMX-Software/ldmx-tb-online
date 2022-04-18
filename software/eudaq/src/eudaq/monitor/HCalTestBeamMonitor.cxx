@@ -348,10 +348,8 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     //double threshold = adcped + 20; //hard-coded for now
     double threshold = minadc + adcthreshold; //hard-coded for now
     int isAboveThreshold = 0;
-    std::cout<<"maxadc "<<maxadc<<"  minadc "<<minadc<<"  threshold "<<threshold<<std::endl;
     if(maxadc >= threshold){
       isAboveThreshold = 1;
-      std::cout<<"isAboveThreshold1 "<<isAboveThreshold<<std::endl;
       if(end != 0){
         hcalhits_top->Fill(plane, barchan);
         hcalhits_top_reset->Fill(plane, barchan);
@@ -365,7 +363,6 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     //PE = PE + PE_chan;
     //if(PE_chan < 0) PE_chan = 0;
     //physical_map.insert(std::pair<std::string, double>(location, PE_chan));
-    std::cout<<"isAboveThreshold2 "<<isAboveThreshold<<std::endl;
     physical_map.insert(std::pair<std::string, double>(location, isAboveThreshold));
   }
   //total_PE->Fill(PE);
@@ -376,11 +373,9 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
       double PEsum = 0;
       if(physical_map.count(key0) > 0 && physical_map.count(key1) > 0){
         PEsum = physical_map.at(key0) + physical_map.at(key1);
-        std::cout<<"PE Sum "<<i<<" "<<j<<" "<<PEsum<<" "<<nevents<<" "<<newSpill<<std::endl;
       }
       if(newSpill){
         hcal_event->Fill(i, j, PEsum);
-        std::cout<<"Fill Event Display "<<i<<" "<<j<<" "<<PEsum<<std::endl;
       }
     }
   }
