@@ -106,10 +106,18 @@ void HCalTestBeamMonitor::AtConfiguration() {
   m_monitor->SetDrawOptions(maxsample_maxadc_2, "colz");
   m_monitor->SetDrawOptions(maxsample_maxadc_3, "colz");
   m_monitor->SetDrawOptions(maxsample_maxadc_4, "colz");
-  maxsample_maxadc_1->SetTitle("Max Sample vs. Max ADC Plane 1 Bar 3 End 0");
-  maxsample_maxadc_2->SetTitle("Max Sample vs. Max ADC Plane 1 Bar 3 End 1");
-  maxsample_maxadc_3->SetTitle("Max Sample vs. Max ADC Plane 1 Bar 4 End 0");
-  maxsample_maxadc_4->SetTitle("Max Sample vs. Max ADC Plane 1 Bar 4 End 1");
+  if(block_ == 0){
+    maxsample_maxadc_1->SetTitle("Max Sample vs. Max ADC Plane 1 Bar 3 End 0");
+    maxsample_maxadc_2->SetTitle("Max Sample vs. Max ADC Plane 1 Bar 3 End 1");
+    maxsample_maxadc_3->SetTitle("Max Sample vs. Max ADC Plane 1 Bar 4 End 0");
+    maxsample_maxadc_4->SetTitle("Max Sample vs. Max ADC Plane 1 Bar 4 End 1");
+  }
+  else{
+    maxsample_maxadc_1->SetTitle("Max Sample vs. Max ADC Plane 12 Bar 5 End 0");
+    maxsample_maxadc_2->SetTitle("Max Sample vs. Max ADC Plane 12 Bar 5 End 1");
+    maxsample_maxadc_3->SetTitle("Max Sample vs. Max ADC Plane 12 Bar 6 End 0");
+    maxsample_maxadc_4->SetTitle("Max Sample vs. Max ADC Plane 12 Bar 6 End 1");
+  }
   maxsample_maxadc_1->SetStats(0);
   maxsample_maxadc_2->SetStats(0);
   maxsample_maxadc_3->SetStats(0);
@@ -320,16 +328,16 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
     else{
       std::cout<<" Reset Map for FPGA " << std::to_string(block_) << ": ROC " << std::to_string(hgcroc_number) << " - max_sample not found!" <<std::endl;
     }
-    if(location == "1:3:0"){
+    if(location == "1:3:0" || location == "12:5:0"){
       maxsample_maxadc_1->Fill(maxadc, timestamp_with_highest_adc);
     }
-    if(location == "1:3:1"){
+    if(location == "1:3:1" || location == "12:5:1"){
       maxsample_maxadc_2->Fill(maxadc, timestamp_with_highest_adc);
     }
-    if(location == "1:4:0"){
+    if(location == "1:4:0" || location == "12:6:0"){
       maxsample_maxadc_3->Fill(maxadc, timestamp_with_highest_adc);
     }
-    if(location == "1:4:1"){
+    if(location == "1:4:1" || location == "12:6:1"){
       maxsample_maxadc_4->Fill(maxadc, timestamp_with_highest_adc);
     }
     //double threshold = adcped + mV_per_PE / adcgain * threshold_PE;
