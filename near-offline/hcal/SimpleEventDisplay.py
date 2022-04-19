@@ -52,7 +52,7 @@ adc_thresh = 30
 c.Print(outfile+".pdf[")
 
 for d in tree: #Loop over events in tree
-    event = d.event
+    event = d.aligned_event
     if event not in horizontal : #Create map key if not already there
         horizontal[event] = ROOT.TH2F(f'horizontal_event_{event}', f' Event {event}', 20, 0, 20, 12, 0, 12)
         vertical[event] = ROOT.TH2F(f'vertical_event_{event}', f' Event {event}', 20, 0, 20, 12, 0, 12)
