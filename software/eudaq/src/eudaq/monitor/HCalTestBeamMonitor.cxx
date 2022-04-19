@@ -378,7 +378,7 @@ void HCalTestBeamMonitor::AtEventReception(EventSP event) {
         PEsum = physical_map.at(key0) + physical_map.at(key1);
       }
       if(newSpill){
-        if(j < 10){
+        if(i < 10){
           hcal_event->Fill(i, j+2, PEsum);
         }
         else{
