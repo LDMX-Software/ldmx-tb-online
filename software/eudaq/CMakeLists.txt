@@ -95,7 +95,7 @@ if (pflib_FOUND)
   symlink_to_eudaq(pflib)
   install(TARGETS eudaq_pflib DESTINATION lib)
 else()
-  message(WARNING "pflib version >= 2 not found - PolarfireProducer will not be available.")
+  message(WARNING "pflib version >= 2.5 not found - PolarfireProducer will not be available.")
 endif()
 
 option(BUILD_MONITORING "Build online monitoring based off ROOT and EUDAQ" ON)
