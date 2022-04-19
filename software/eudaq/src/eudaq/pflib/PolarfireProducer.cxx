@@ -124,22 +124,13 @@ PolarfireProducer::PolarfireProducer(const std::string & name, const std::string
 /**
  * Initialization procedures
  *
- * We open the connection to the wishbone interface and pass
- * this interface connection to our PolarfireTarget object which holds 
- * more of the "high-level" functions. We also open the connection
- * to the backend. With Rogue, the wishbone interface and
- * the backend are the same.
+ * We get the host and port to which we will connect for data collection.
  */
-void PolarfireProducer::DoInitialise() try {
+void PolarfireProducer::DoInitialise() {
   auto ini = GetInitConfiguration();
-
   host_ = ini->Get("TCP_ADDR", "127.0.0.1");
   port_ = ini->Get("TCP_PORT", 8000);
-  pft_ = std::make_unique<pflib::PolarfireTarget>(
-      new pflib::rogue::RogueWishboneInterface(host_,port_));
-  EUDAQ_INFO("TCP client listening on " + host_ + ":" + std::to_string(port_));
-} catch (const pflib::Exception& e) {
-  EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
+  EUDAQ_INFO("TCP client will be listening on " + host_ + ":" + std::to_string(port_));
 }
 
 /**
@@ -147,19 +138,10 @@ void PolarfireProducer::DoInitialise() try {
  *
  * Besides the trigger type for the run and the configuratino
  * of the output raw files, all of the configuration of the
- * chip must be done _prior_ to launching this producer within
- * pftool.
- *
- * ## Cases to Handle
- *  - instance of this class for each polarfire in real world
- *  - specify which polarfire we are
- *  - specify which ROCs are actually there
- *  - every ROC has its own config file
- *  - beam runs, charge injection runs, ...
- *  - e.g. set charge injection amplitude from here
- *  - (pflib) get links up and running properly
+ * chip must be done within pftool during the "uninitialized"
+ * run control state.
  */
-void PolarfireProducer::DoConfigure() try {
+void PolarfireProducer::DoConfigure() {
   auto conf = GetConfiguration();
 
   // expected number of milliseconds the PF is busy
@@ -185,76 +167,21 @@ void PolarfireProducer::DoConfigure() try {
     EUDAQ_THROW("Unrecognized L1A mode "+l1a_mode);
   }
   EUDAQ_INFO("L1A Trigger Mode set to " + l1a_mode);
+}
 
-  auto& daq = pft_->hcal.daq();
-  auto& elinks = pft_->hcal.elinks();
-  /****************************************************************************
-   * ELINKS menu in pftool
-   *    RELINK
-   *    or manual DELAY and BITSLIP values
-  if (conf->Get("ELINKS_DO_RELINK",true)) {
-    pft_->elink_relink(2);
-  } else {
-    for (int i{0}; i < elinks.nlinks(); i++) {
-      elinks.setBitslipAuto(i,false);
-      elinks.setBitslip(i,
-          conf->Get("ELINK_"+std::to_string(i)+"_BITSLIP", elinks.getBitslip(i)));
-      elinks.setDelay(i,
-          conf->Get("ELINK_"+std::to_string(i)+"_DELAY", 128));
-    }
-  }
-   ***************************************************************************/
-
-  /****************************************************************************
-   * DAQ.SETUP menu in pftool commands
-   *    FPGA
-   *    DMA
-   *    STANDARD 
-   *    L1APARAMS
-   *    MULTISAMPLE
-  daq.setIds(fpga_id_);
-
-  fpga_id_;  = conf->Get("FPGA_ID", 0);
-  uint8_t samples_per_event = conf->Get("SAMPLES_PER_EVENT", 5);
-  dma_enabled_ = conf->Get("DO_DMA_RO",true);
-  if (dma_enabled_) {
-    rwbi()->daq_dma_enable(dma_enabled_);
-    rwbi()->daq_dma_setup((uint8_t)fpga_id_, (uint8_t)samples_per_event);
-  }
-
-  for (int i{0}; i < elinks.nlinks(); i++) {
-    bool active{conf->Get("LINK_"+std::to_string(i)+"_ACTIVE",false)};
-    elinks.markActive(i,active);
-    if (elinks.isActive(i)) {
-      daq.setupLink(i,false,false,15,40);
-      int delay{conf->Get("LINK_"+std::to_string(i)+"_L1A_DELAY", 15)};
-      int capture{conf->Get("LINK_"+std::to_string(i)+"_L1A_LENGTH", 40)};
-      uint32_t reg = ((delay&0xff)<<8)|((capture&0xff)<<16);
-      pft_->wb->wb_write(pflib::tgt_DAQ_Inbuffer,(i << 7)|1, reg);
-    } else {
-      // fully zero suppress this link
-      daq.setupLink(i,true,true,15,40);
-    }
-  }
-   ***************************************************************************/
-
-  /****************************************************************************
-   * ROC menu in pftool
-   *    HARDRESET
-   *    RESYNCLOAD
-   *    LOAD_PARAM
-  pft_->hcal.hardResetROCs(); // global reset
-  pft_->hcal.resyncLoadROC(); // loops over ROCs if no i_roc provided
-  for (int i{0}; i < 4; i++) {
-    if (elinks.isActive(2*i) or elinks.isActive(2*i+1)) {
-      // either or both of the links on this ROC are active
-      pft_->loadROCParameters(i,
-          conf->Get("ROC_"+std::to_string(i)+"_CONF_FILE_PATH",""),
-          conf->Get("ROC_"+std::to_string(i)+"_PREPEND_DEFAULTS",true));
-    }
-  }
-   ***************************************************************************/
-
+/**
+ * Start of run, softer reset to start cleanly
+ *  - take over connection to polarfire
+ *  - check which readout is enabled
+ *  - setup pipeline for data readout
+ *  - setup event tag
+ *  - configure and connect output file
+ *  - prepare new run
+ */
+void PolarfireProducer::DoStartRun()  try {
+  pft_ = std::make_unique<pflib::PolarfireTarget>(
+      new pflib::rogue::RogueWishboneInterface(host_,port_));
+  EUDAQ_INFO("TCP client listening on " + host_ + ":" + std::to_string(port_));
   /* check chip if it is dma
    */
   uint8_t samples_per_event, fpga_id;
@@ -276,16 +203,6 @@ void PolarfireProducer::DoConfigure() try {
     EUDAQ_DEBUG("non-DMA writer connected to us");
     this->addSlave(nondma_writer_->getChannel(0));
   }
-} catch (const pflib::Exception& e) {
-  EUDAQ_THROW("PFLIB ["+e.name()+"] : "+e.message());
-}
-
-/**
- * Start of run, softer reset to start cleanly
- *  - Jeremy's branch
- *  - flags for "external" or various "local" modes
- */
-void PolarfireProducer::DoStartRun()  try {
   // set event tag for firmware
   std::time_t tt = time(NULL);
   std::tm gmtm = *std::gmtime(&tt); //GMT (UTC)
@@ -330,6 +247,10 @@ void PolarfireProducer::DoStartRun()  try {
 
 /**
  * Clean close
+ * - set member variable so that other thread closes
+ * - wait twice the length of a single PF busy period to allow
+ *   other thread loop to close up
+ * - delete all our connetion crap
  */
 void PolarfireProducer::DoStopRun(){
   exiting_run_ = true;
@@ -338,6 +259,9 @@ void PolarfireProducer::DoStopRun(){
     pft_->backend->fc_enables(false,true,false);
   if (dma_enabled_) rwbi()->daq_dma_close();
   else nondma_writer_->close();
+  pft_.reset();
+  dma_sender_.reset();
+  if (nondma_writer_->isOpen()) nondma_writer_->close();
 }
 /**
  * i.e. recover from failure, this is the only available
@@ -346,19 +270,14 @@ void PolarfireProducer::DoStopRun(){
  * Go back to "newly created" essentially
  */
 void PolarfireProducer::DoReset(){
-  exiting_run_ = true;
-  // LOCK_UN lock file?
-  pft_.reset(nullptr);
-  if (nondma_writer_->isOpen()) nondma_writer_->close();
+  if (not exiting_run_) DoStopRun();
 }
 /**
- * Not sure what this does...
+ * Called when closing entire run control program
  */
 void PolarfireProducer::DoTerminate(){
-  exiting_run_ = true;
-  // close lock file?
+  DoReset();
 }
-
 /**
  * Include some "mode" about if sending our own L1A ("local" mode)
  * or some "external" mode where L1A is generated elsewhere
