@@ -124,11 +124,7 @@ PolarfireProducer::PolarfireProducer(const std::string & name, const std::string
 /**
  * Initialization procedures
  *
- * We open the connection to the wishbone interface and pass
- * this interface connection to our PolarfireTarget object which holds 
- * more of the "high-level" functions. We also open the connection
- * to the backend. With Rogue, the wishbone interface and
- * the backend are the same.
+ * We get the host and port to which we will connect for data collection.
  */
 void PolarfireProducer::DoInitialise() {
   auto ini = GetInitConfiguration();
@@ -142,8 +138,8 @@ void PolarfireProducer::DoInitialise() {
  *
  * Besides the trigger type for the run and the configuratino
  * of the output raw files, all of the configuration of the
- * chip must be done _prior_ to launching this producer within
- * pftool.
+ * chip must be done within pftool during the "uninitialized"
+ * run control state.
  */
 void PolarfireProducer::DoConfigure() {
   auto conf = GetConfiguration();
@@ -175,8 +171,12 @@ void PolarfireProducer::DoConfigure() {
 
 /**
  * Start of run, softer reset to start cleanly
- *  - Jeremy's branch
- *  - flags for "external" or various "local" modes
+ *  - take over connection to polarfire
+ *  - check which readout is enabled
+ *  - setup pipeline for data readout
+ *  - setup event tag
+ *  - configure and connect output file
+ *  - prepare new run
  */
 void PolarfireProducer::DoStartRun()  try {
   pft_ = std::make_unique<pflib::PolarfireTarget>(
@@ -247,6 +247,10 @@ void PolarfireProducer::DoStartRun()  try {
 
 /**
  * Clean close
+ * - set member variable so that other thread closes
+ * - wait twice the length of a single PF busy period to allow
+ *   other thread loop to close up
+ * - delete all our connetion crap
  */
 void PolarfireProducer::DoStopRun(){
   exiting_run_ = true;
@@ -255,6 +259,9 @@ void PolarfireProducer::DoStopRun(){
     pft_->backend->fc_enables(false,true,false);
   if (dma_enabled_) rwbi()->daq_dma_close();
   else nondma_writer_->close();
+  pft_.reset();
+  dma_sender_.reset();
+  if (nondma_writer_->isOpen()) nondma_writer_->close();
 }
 /**
  * i.e. recover from failure, this is the only available
@@ -264,19 +271,13 @@ void PolarfireProducer::DoStopRun(){
  */
 void PolarfireProducer::DoReset(){
   if (not exiting_run_) DoStopRun();
-  // LOCK_UN lock file?
-  pft_.reset();
-  dma_sender_.reset();
-  if (nondma_writer_->isOpen()) nondma_writer_->close();
 }
 /**
- * Not sure what this does...
+ * Called when closing entire run control program
  */
 void PolarfireProducer::DoTerminate(){
-  exiting_run_ = true;
-  // close lock file?
+  DoReset();
 }
-
 /**
  * Include some "mode" about if sending our own L1A ("local" mode)
  * or some "external" mode where L1A is generated elsewhere
