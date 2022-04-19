@@ -17,7 +17,7 @@ void QIE::add_data(std::vector<uint8_t> data){
       reserve = ((data[1]>>4)&7);
       
       // stitch together TDC words
-      uint16_t TDCs = (data[10]<<8)&data[11];
+      uint16_t TDCs = (data[10]<<8)|data[11];
       //printf("TrigScintRawDecode.cxx L20 TDCs %i\n",TDCs);
     
       // extract ADC and TDC values
@@ -53,11 +53,11 @@ TSevent::TSevent(std::vector<uint16_t> fiber1,
   if(debug) printf("TrigScintRawDecode.cxx L52 fiber1.size() = %li\tfiber2.size() = %li\n",fiber1.size(),fiber2.size());
     // extract time since the start of spill from
     // the event
-    time|=uint64_t(fiber2[1]);
-    time|=uint64_t(fiber1[1])<<16;
-    time|=uint64_t(fiber2[0])<<32;
-    time|=uint64_t(fiber1[0])<<48;
-    if ( debug ) std::cout << "time: " << std::hex << time << std::endl;
+    //time|=uint32_t(fiber2[1]);
+    //time|=uint32_t(fiber1[1]<<16);
+    time|=uint32_t(fiber2[0]);
+    time|=uint32_t(fiber2[1]<<16);
+    if ( debug )    std::cout << "time: " << std::hex << time << std::endl;
     
     // strip frames until the first bc
     // skipping first two words
