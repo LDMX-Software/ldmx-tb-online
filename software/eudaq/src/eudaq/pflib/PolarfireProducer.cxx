@@ -295,12 +295,6 @@ void PolarfireProducer::RunLoop() try {
   // don't do anything if in external trigger mode
   if (dma_enabled_ and the_l1a_mode_ == L1A_MODE::EXTERNAL) {
     EUDAQ_INFO("DMA Readout and External trigger means nothing for RunLoop to do.");
-    while (not exiting_run_) {
-      int spill,occ,occ_max,vetoed,event;
-      pft_->backend->fc_read_counters(spill,occ,occ_max,event,vetoed);
-      EUDAQ_INFO("Read "+std::to_string(event)+" events according to FC");
-      sleep(1);
-    }
     return;
   }
   EUDAQ_INFO("Run loop beginning");
