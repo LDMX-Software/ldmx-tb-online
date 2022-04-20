@@ -38,4 +38,8 @@ __pycache__
 .ipynb_checkpoints
 
 *.root
+*.raw
+*.dat
 config*.txt
+*~
+\#*\#
