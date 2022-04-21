@@ -24,15 +24,13 @@ try:
     inputFiles.append(inputFile)
 except: raise NameError('At least one pedestal file needs to be specified.')
 
-try:
 # I can't make this into a simple loop because root, for some completely cursed reason, 
 # kills any histograms created after inputFileName if inputFileName is replaced with the second file
+try:
     inputFileName2=sys.argv[2]
     inputFileName2NoExtension=sys.argv[2][inputFileName2.find('adc'):inputFileName2.find('.root')]
     inputFile2=r.TFile(inputFileName2, "read")
     inputFiles.append(inputFile2)
-
-
 except: print('Only 1 pedestal file was specified, which is fine.')
 
 
@@ -43,48 +41,21 @@ for dataFile in inputFiles:
     for t in allData : #for timestamp in allData
         if t.raw_id not in hists:
             hists[t.raw_id] = r.TH1F(str(t.raw_id),'',1024,0,1024)
-            try: #if the eids are NOT kept during decoding, fills in incorrect values until someone asks me to fix it
-                polarfire= t.layer
-                hrocindex= t.strip
-                channel= t.end
+            try: #if the eids are NOT kept during decoding, fills in correct values
+                [fpga,link,channel] = realChannel_to_FpgaLinkChannel_fast[SiPM_to_realChannel([t.layer-1,t.strip,t.end])]
+                polarfire= fpga
+                hrocindex= int(link/2)
+                channel= 36*(link%2) + channel 
+
+
             except: #if the eids are kept during decoding, fills in correct values
                 polarfire= t.fpga
                 hrocindex= int(t.link/2)
                 channel= 36*(t.link%2) + t.channel
 
+
             IDpositions[t.raw_id] = str(polarfire)+':'+str(hrocindex)+':'+str(channel)            
         hists[t.raw_id].Fill(t.adc)
-# print(hists)
-# print('____________________________________________________________________________________________')
-# print(hists)
-# for i in range(2,3):
-
-
-#     allData=inputFile.Get('ntuplizehgcroc').Get("hgcroc") #
-#     for t in allData : #for timestamp in allData
-#         if t.raw_id not in hists:
-#             hists[t.raw_id] = r.TH1F(str(t.raw_id),'',1024,0,1024)
-#             polarfire= t.fpga
-#             hrocindex= int(t.link/2)
-#             channel= 36*(t.link%2) + t.channel
-#             IDpositions[t.raw_id] = str(polarfire)+':'+str(hrocindex)+':'+str(channel)
-#         hists[t.raw_id].Fill(t.adc)
-# print(hists)
-
-# try:
-#     inputFileName2=sys.argv[2]
-#     inputFileName2NoExtension=sys.argv[2][inputFileName2.find('adc'):inputFileName2.find('.root')]
-#     inputFile2=r.TFile(inputFileName2, "read")
-#     allData=inputFile2.Get('ntuplizehgcroc').Get("hgcroc") #
-#     for t in allData : #for timestamp in allData
-#         if t.raw_id not in hists:
-#             hists[t.raw_id] = r.TH1F(str(t.raw_id),'',1024,0,1204)
-#             polarfire= t.fpga
-#             hrocindex= int(t.link/2)
-#             channel= 36*t.link%2 + t.channel
-#             IDpositions[t.raw_id] = str(polarfire)+':'+str(hrocindex)+':'+str(channel)
-#         hists[t.raw_id].Fill(t.adc)
-# except: print("Second pedestal root file unspecified, missing, or invalid. Moving on.")
 
 outputFileName = outputPath+'pedestals_'+inputFileNameNoExtension
 

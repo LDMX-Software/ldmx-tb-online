@@ -20,7 +20,7 @@ def FpgaLinkChannel_to_realChannel(FpgaLinkChannel): #link is the chip halves, c
     return realChannel
 
 #converts the 'real' channel into a 3 vector that describes the SiPM really well
-def realChannel_to_SipM(c):#[layer,bar,side]  
+def realChannel_to_SiPM(c):#[layer,bar,side]  
     side=int(c/4)%2
     if c in range(0,9*16): layer=int(c/16)
     elif c in range(9*16,9*16+10*24): layer=int( (c-9*16)/24 )+9
@@ -42,9 +42,27 @@ def realChannel_to_SipM(c):#[layer,bar,side]
 
 
 
-realChannel_to_SipM_fast={}
+realChannel_to_SiPM_fast={}
 for c in range(0,384):
-    realChannel_to_SipM_fast[c] = realChannel_to_SipM(c)
-# print(realChannel_to_SipM_fast)                
+    realChannel_to_SiPM_fast[c] = realChannel_to_SiPM(c)
+
+def SiPM_to_realChannel(SiPM):
+    for realChannel in realChannel_to_SiPM_fast:
+        if realChannel_to_SiPM_fast[realChannel]==SiPM:
+            return realChannel
+
+
+
+realChannel_to_FpgaLinkChannel_fast={}
+for Fpga in range(0,1+1):
+    for Link in range(0,5+1):
+        for Channel in range(0,71+1):
+            realChannel_to_FpgaLinkChannel_fast[FpgaLinkChannel_to_realChannel([Fpga,Link,Channel])] = [Fpga,Link,Channel]
+
+# print(realChannel_to_FpgaLinkChannel_fast)
+
+
+
+# print(realChannel_to_SiPM_fast)                
 # for c in range(0,384):
-#             print(c,realChannel_to_SipM(c))
+#             print(c,realChannel_to_SiPM(c))
