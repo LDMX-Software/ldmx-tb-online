@@ -53,13 +53,13 @@ except: pass
 csvfile = open(outputFileName+'.csv', 'w', newline='')
 csvwriter = csv.writer(csvfile, delimiter=',')
 
-csvwriter.writerow(['DetID', 'ElLoc', 'ADC_PEDESTAL'])
+csvwriter.writerow(['DetID', 'ElLoc', 'ADC_PEDESTAL','ADC_GAIN','TOT_PEDESTAL','TOT_GAIN'])
 pedestalPlot = r.TH1F('','Pedestals',384,0,0)
 
 for i in hists: 
     μ = hists[i].GetMean()
     pedestalPlot.Fill(int(i),μ)
-    csvwriter.writerow([i, IDpositions[i], μ])
+    csvwriter.writerow([i, IDpositions[i], μ,1.2,1.0,2.5])
 
 # file = r.TFile(outputFileName+'.root', "RECREATE")
 # pedestalPlot.SetDirectory(file)

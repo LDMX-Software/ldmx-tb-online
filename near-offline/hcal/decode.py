@@ -26,7 +26,7 @@ p.logFrequency = 1
 import LDMX.Hcal.hgcrocFormat as hcal_format
 import LDMX.Hcal.digi as hcal_digi
 import LDMX.Hcal.HcalGeometry
-import LDMX.Hcal.hcal_hardcoded_conditions
+import LDMX.Hcal.hcal_testbeam_conditions
 from LDMX.DQM import dqm
 from LDMX.Packing import rawio
 
