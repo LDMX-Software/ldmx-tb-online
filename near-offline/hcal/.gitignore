@@ -1,7 +1,8 @@
 __pycache__
 plots
-*.csv
+Pedestals
 *.root
 Commands*
 *.raw
 *.pdf
+a.csv

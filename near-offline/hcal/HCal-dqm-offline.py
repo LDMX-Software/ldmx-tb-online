@@ -173,8 +173,9 @@ maxSample=-1
 
 for t in allData : #for timestamp in allData
     if t.event in eventsOfInterest:
-        realChannel = FpgaLinkChannel_to_realChannel([t.fpga,t.link,t.channel])
-        # print(([t.fpga,t.link,t.channel]))
+        try: realChannel = FpgaLinkChannel_to_realChannel([t.fpga,t.link,t.channel]) #if eids are kept
+        except: realChannel = SiPM_to_realChannel([t.layer-1,t.strip,t.end]) #if eids are discarded
+        print([t.layer-1,t.strip,t.end],realChannel)
         if realChannel != None: 
    
             hists["ADC-of-channel"].Fill(realChannel,t.adc)
@@ -206,11 +207,7 @@ for t in allData : #for timestamp in allData
                     if maxADC>pedestals[realChannel]+20 : #temporary arbitrary adc threshold for the event displays
                         # hists["eventDisplay"+str(t.event)].Fill(LayerBarSide[0],LayerBarSide[1]+visual_offset,ADC_to_E(maxADC))
                         hists["eventDisplay"+str(t.event)].Fill(LayerBarSide[0],LayerBarSide[1]+visual_offset,maxADC)
-                        # if t.event==13:
-                        #     print('For channel:',[t.fpga,t.link,t.channel])
-                        #     print('Which is in:',LayerBarSide[0],LayerBarSide[1]+visual_offset)
-                        #     print('It records as',maxADC)
-                        #     print('With a pedestal of',pedestals[realChannel],)
+
 
                 if maxADC>thresholds[realChannel]:   
                     hists["event-of-PE"].Fill(ADC_to_PE(maxADC))
