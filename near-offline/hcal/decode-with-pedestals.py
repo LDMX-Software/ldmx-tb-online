@@ -12,6 +12,7 @@ grp.add_argument('--keep_eids',action='store_true',
 grp.add_argument('--recon',help='Attempt to reconstruct.',action='store_true')
 parser.add_argument('--max_events',default=100,type=int)
 parser.add_argument('--pedestals',default=None,type=str)
+# parser.add_argument('-o','--output_folder',default=None,type=str)
 
 arg = parser.parse_args()
 
@@ -25,7 +26,7 @@ p.logFrequency = 1
 import LDMX.Hcal.hgcrocFormat as hcal_format
 import LDMX.Hcal.digi as hcal_digi
 import LDMX.Hcal.HcalGeometry
-import LDMX.Hcal.hcal_hardcoded_conditions
+import LDMX.Hcal.hcal_testbeam_conditions
 from LDMX.DQM import dqm
 from LDMX.Packing import rawio
 
@@ -38,7 +39,7 @@ if not dir_name :
 p.outputFiles = [f'{dir_name}/unpacked_{base_name}.root']
 
 # where the ntuplizing tree will go
-p.histogramFile = f'adc_{base_name}.root'
+p.histogramFile = f'Decoded/adc_{base_name}.root'
 
 if arg.keep_eids :
     tbl = None
