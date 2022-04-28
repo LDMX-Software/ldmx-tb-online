@@ -11,7 +11,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit # Import Curve Fits
 
-#Usage: ldmx python3 SampleEventDisplay.py <ntupleized file>.root <pedestal file>.csv
+#Usage: ldmx python3 SimpleEventDisplay.py <ntupleized file>.root.csv
 
 gSystem.Load("libFramework.so")
 
@@ -19,24 +19,7 @@ inputFile=TFile(sys.argv[1], "read") #input file from arguments
 #outputFileName = 'hist_mip_'+sys.argv[1] #ouptut file name
 tree = inputFile.Get('ntuplizehgcroc').Get("hgcroc")
 c = TCanvas("c","c",800,600)
-outfile = "test"
-
-"""pedfile = sys.argv[2]
-
-f = ROOT.TFile(outputFileName,'recreate') #create root output file
-
-ped = {}
-did = {}
-eloc = {}
-with open(pedfile, 'r', newline = "") as datafile:
-    reader = csv.DictReader(datafile)
-    for row in reader:
-        did = int(row['DetID'])
-        eloc[did] = row['ElLoc']
-        #did[eloc] = int(row['DetID'])
-        pedestal = float(row['ADC_PEDESTAL'])
-        ped[did] = pedestal
-        #e_loc[did] = eloc"""
+outfile = "SampleEvents"
 
 horizontal = {}
 vertical = {}
@@ -74,9 +57,7 @@ for d in tree: #Loop over events in tree
     strip = d.strip
     end = d.end
     adc = d.adc
-    #adc_ped = adc - ped[did]
     adc_ped = adc
-    #adc_ped = adc
     if(adc_ped > maxadc):
         maxsample = sample
         maxadc = adc_ped
@@ -98,11 +79,4 @@ for i in horizontal:
     vertical[i].GetXaxis().SetTitle("Plane")
     c.Print(outfile+".pdf")
 
-
-
 c.Print(outfile+".pdf]")
-
-c.Clear()
-
-#f.Write()
-#f.Close()
