@@ -5,11 +5,6 @@ from ROOT import gROOT, gStyle, gSystem, gPad
 import csv
 from array import array
 import numpy as np
-import matplotlib
-from matplotlib.backends.backend_pdf import PdfPages
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit # Import Curve Fits
 import os
 
 #Usage: ldmx python3 HcalLEDAna.py <ntuplezed file fpga 0>.root <ntuplezed filefpga 1>.root <pedestal file>.csv
@@ -20,7 +15,7 @@ def GetHistoMedian(histo):
     prob = np.array([0.5])
     median = np.array([0.])
     q = histo.GetQuantiles(1, median, prob)
-    if(median[0] > 1000): median[0] = 0.
+    if(median[0] > 3000): median[0] = 0.
     print(median[0])
     return median[0]
 
@@ -37,7 +32,7 @@ for i in range(1, len(sys.argv)-1):
 f = ROOT.TFile(outputFileName,'recreate') #create root output file
 c = TCanvas("c","c",800,600)
 
-bright = 1625
+bright = 1650
 
 both_pfs = False
 if(len(sys.argv) == 4):
@@ -73,44 +68,35 @@ prevID = 0
 maxadc = -9999
 maxsample = -9999
 sumadc = -9999
-
 medians = {}
+
 for infile in infiles:
-    n = 0
-    tree = infile.Get('ntuplizehgcroc').Get("hgcroc")
-    for d in tree: #Loop over events in tree
-        if(n > 72*3*8*100): break
-        n = n + 1
-        raw_id = d.raw_id
-        link = d.link
-        fpga = d.fpga
-        channel = d.channel
-        chan = (link%2) * 36 + channel #Get correct chan for odd numbered links
-        roc = int(link / 2) #ROC ID in tuple starts at 1, needs to start at 1
-        roc_index = (roc)%3
-        elloc = "{0}:{1}:{2}".format(fpga, roc_index, chan)
-        adc = d.adc
-        if raw_id not in maxadc_histo : #Create map key if not already there
-            maxadc_histo[raw_id] = ROOT.TH1F(f'maxadc_eid_{raw_id}', f'Max ADC EID {raw_id}', 1024, 0, 1024)
-            maxsample_histo[raw_id] = ROOT.TH1F(f'maxsample_eid_{raw_id}', f'Max Sample EID {raw_id}', 8, 0, 8)
-        if(raw_id != prevID):
-            if(maxadc > 10):
-                maxadc_histo[raw_id].Fill(maxadc) #Fill ADC count
-                maxsample_histo[raw_id].Fill(maxsample)
-            maxadc = -9999
+    print(infile)
+    tree = infile.Get("LDMX_Events")
+    for e in tree : #Loop over events in tree
+        for d in e.ChipSettingsTestDigis_unpack : #Loop over channels
+            if d.id() not in maxadc_histo : #Create map key if not already there
+               #maxadc_histo[d.id()] = ROOT.TH1F(f'maxadc_eid_{d.id()}', f'Max ADC EID {d.id()}',1024,0,1024)
+               maxadc_histo[d.id()] = ROOT.TH1F(f'maxadc_eid_{d.id()}', f'Max ADC EID {d.id()}',3000,0,3000)
+               maxsample_histo[d.id()] = ROOT.TH1F(f'maxsample_eid_{d.id()}', f'Max Sample EID {d.id()}',8,0,8)
+            maxadc = -9999.
             maxsample = -9999
             sumadc = 0
-            sample = 0
-        if(raw_id in ped):
-            adc_ped = adc - ped[raw_id]
-        else:
-            #print("Key {0} and Eloc {1} not found. Setting pedestal to 0".format(raw_id, elloc))
-            adc_ped = adc
-        if(adc_ped > maxadc):
-            maxsample = sample
-            maxadc = adc_ped
-        prevID = raw_id
-        sample = sample + 1
+            for i in range(d.size()) : #Loop over sample number
+               if(d.id() in ped):
+                   adc_ped = d.at(i).adc_t() - ped[d.id()]
+               else:
+                   print("Key {0} and Eloc {1} not found. Setting pedestal to 0".format(raw_id, elloc))
+                   adc_ped = adc
+               if(adc_ped > maxadc):
+                   maxadc = adc_ped
+                   maxsample = i
+               sumadc = sumadc + adc_ped
+            #if(maxsample != 0 and maxsample != 1 and maxadc > 10):
+            #maxadc_histo[d.id()].Fill(maxadc) #Fill ADC count
+            if(sumadc > 20):
+                maxadc_histo[d.id()].Fill(sumadc) #Fill ADC count
+            maxsample_histo[d.id()].Fill(maxsample)
 
 median_histo = ROOT.TH1F(f'medians', f'medians', 72*6, 0, 72*6)
 csvfile = open(outputLedCsvName, 'w', newline='')
