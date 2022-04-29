@@ -39,6 +39,9 @@ Once
 the depdendencies have been installed, `eudaq` can be built as follows
 ```bash
 git clone https://github.com/eudaq/eudaq.git eudaq 
+```
+In order to allow us to forward data onto the monitoring without writing extraneous files, we need to make change the member variables in eudaq::DataCollector to be protected rather than private. Notes in [issue 75](https://github.com/LDMX-Software/ldmx-tb-online/issues/75)
+```bash
 mkdir build
 cd build
 cmake -DEUDAQ_BUILD_ONLINE_ROOT_MONITOR=ON ..
@@ -127,7 +130,85 @@ export PATH=$DAQ_INSTALL_PREFIX/bin:$PATH
 
 Once the commands above are executed, apps (e.g. emulator) can be run. 
 
-# Running the emulator
+# Running with EUDAQ
+
+The following guide describes the procedure and elements needed to take
+data using `EUDAQ`.  There are currently three possible ways to exercise
+the full DAQ chain: 1) using emulated data 2) replaying raw data 
+3) receiving raw data from a detector subsystem.  For initial testing, 
+the use of 1 and 2 are recommended. 
+
+ ⚠️ In the examples below, each `EUDAQ` element needs to be run in a seperate
+ terminal window.  This is denoted by the `Terminal #` specified prior to the command. 
+
+# Replaying Raw Data
+
+For testing and analysis purposes, producers that can read and stream 
+raw data to a data collector have been developed for both the HCal and Trigger
+Scintillator. The example that follows will be used to demonstrate the 
+replaying and monitoring of trigger scintillator data.  
+
+To begin, the run control can be started as follows
+
+Terminal 1 - Run Control
+```bash
+euRun -a tcp://4000
+```
+
+The producer used to the read the file and create the events, can be started as follows 
+
+Terminal 2 - Producer
+```
+euCliProducer -n TrigScintFileReaderProducer -t ts_file -r tcp://localhost:4000
+```
+
+The data collector used to received the streamed events and pass them to the monitoring app 
+
+Terminal 3 - Data Collector 
+```
+euCliCollector -n TestBeamDataCollector -t test_beam -r tcp://localhost:4000
+```
+
+Finally, the monitor used to parse the events and read the data can be started as follows
+
+Terminal 4 - Monitor
+```
+euCliMonitor  -n TrigScintTestBeamMonitor -t trig_scint_mon -r tcp://localhost:4000
+```
+
+Once the producer, data collector and run control has been started, you can start going through 
+the state transitions.  For replaying purposes, the .ini will be typically empty
+
+```
+[Producer.ts_file]
+
+```
+
+The configure stage is what is used to connect the producers to the data 
+collectors and monitoring. An example config file will look as follows
+```
+[Producer.ts_file]
+EUDAQ_DC=test_beam
+
+[DataCollector.test_beam]
+EUDAQ_MN=trig_scint_mon
+
+EUDAQ_DATACOL_SEND_MONITOR_FRACTION=10
+```
+
+The variable `EUDAQ_DC` is used to tell the producer the name of the data 
+collector it should connect and send events to. Similarly, the variable
+`EUDAQ_MN` is used to tell the data collector to which monitoring app
+to connect to. Finally, the variable `EUDAQ_DATACOL_SEND_MONITOR_FRACTION`
+allows setting the fraction of events that are streamed to the monitor.
+
+Once the run is started, events will continue to stream until the end of 
+file is reached.  At that point, events will stop streaming and the user 
+will need to stop the run to restart. 
+
+### Legacy
+
+The things below are no longer used. 
 
 There are two parts to the emulator: the server and client. The
 server will make use of "Generators" to build frames and ship
@@ -136,8 +217,7 @@ recieve the frames via TCP/IP and will pass it along to a receiver
 for further processing. Further documentation of how generators
 and receivers interact via TCP/IP in rogue can be found 
 [here](https://slaclab.github.io/rogue/interfaces/stream/usingTcp.html).
-
-## Example - Trigger Scintillator Emulator 
+ 
 
 To run the Trigger Scintillator emulator, first execute the following
 command on the server side
@@ -166,81 +246,3 @@ address should be specified as `127.0.0.1`.
 Once the client is started, you should begin to see the RX and TX counters
 start to increase. 
 
-## Emulation using eudaq
-
-In addition to emulation using the stand alone app, eudaq can also be 
-used.  Doing so will require starting the run control, producer, data collector, 
-monitoring and and rogue server in seperate terminals.  This can be
-done by executing the following commands (Note the terminal ID)
-
-Terminal 1 - Run Control
-```
-euRun -n DarkRunControl -a tcp://4000
-```
-
-Terminal 2 - Producer
-```
-euCliProducer -n RogueTcpClientProducer -t hcal -r tcp://localhost:4000
-```
-
-Terminal 3 - Data Collector 
-```
-euCliCollector -n TestBeamDataCollector -t test_beam -r tcp://localhost:4000
-```
-
-Terminal 4 - Monitor
-```
-euCliMonitor -n SimpleMonitor -t mon -r tcp://localhost:4000
-```
-
-Terminal 5 - Rogue Server (HCal)
-```
-ldmx_rogue_server --hcal --emulate
-```
-
-Note, that both the `hcal` and `emulate` flags need to set on the server side.  Emulation 
-of the trigger scintillator can be done by replacing `hcal` with `trig`.   It's also 
-possible to emulate a producer for the trigger scintillator by instatiating 
-an additional producer as follows
-
-Terminal 6 - Trig Scint Producer
-```
-euCliProducer -n RogueTcpClientProducer -t trig -r tcp://localhost:4000
-```
-
-Terminal 7 - Rogue Server (Trigger Scint)
-
-```
-ldmx_rogue_server --trig --emulate --port 9000
-```
-
-Once the producers and run control has been started, you can start going through 
-the state transitions.  An example of what is contained within an init file is as follows
-
-```
-[Producer.hcal]
-TCP_ADDR = 127.0.0.1
-TCP_PORT = 8000
-
-[Producer.trig]
-TCP_ADDR = 127.0.0.1
-TCP_PORT = 9000
-```
-
-The `TCP_PORT` parameter should be set to whatever value was passed to the
-rogue server. The default is 8000. 
-
-The configure stage is what is used to connect the producers to the data 
-collectors and monitoring. An example config file will look as follows
-```
-[Producer.hcal]
-EUDAQ_DC=test_beam
-
-[DataCollector.test_beam]
-EUDAQ_MN=mon
-```
-
-The variable `EUDAQ_DC` is used to tell the producer the name of the data 
-collector it should connect and send events to. Similarly, the variable
-`EUDAQ_MN` is used to tell the data collector to which monitoring app
-to connect to. 

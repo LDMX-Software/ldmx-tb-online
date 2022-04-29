@@ -67,7 +67,7 @@ def savehisto(histos,labels,outfile,canvas,XaxisTitle="",YaxisTitle="",plotTitle
 	del histos
 
 def savehisto2D(histos,labels,outfile,canvas,XaxisTitle="",YaxisTitle="",plotTitle="",stats=1,logZ=0):
-	for i in range(histos):
+	for i in range(len(histos)):
 		histos[i].SetTitle(plotTitle+" "+labels[i])
 		histos[i].GetXaxis().SetTitle(XaxisTitle)
 		histos[i].GetYaxis().SetTitle(YaxisTitle)

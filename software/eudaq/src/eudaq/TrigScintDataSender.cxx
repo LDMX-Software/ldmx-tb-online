@@ -35,7 +35,8 @@ void TrigScintDataSender::sendEvent(
     rogue::interfaces::stream::fromFrame(it, 8, &word);
 
     // reorder the bytes when reading 8 bytes in a row
-    word = swapLong(word);
+    // Apparently this is wrong. 
+    //word = swapLong(word);
     
     //check the word being collected
     //std::cout<<"read word:"<<std::setw(16)<<std::setfill('0')<<std::hex<<word<<std::dec<<std::endl;
@@ -56,7 +57,8 @@ void TrigScintDataSender::sendEvent(
 
       //Remove the first corrupted event
       //at least 400 bytes. A typical event is 816 bytes.
-      if (buffer.size() > 50) 
+      if (buffer.size() > 50)
+	//std::cout<<"Sending event"<<std::endl;
 	producer_->SendEvent(std::move(event));
       buffer.clear();
     }

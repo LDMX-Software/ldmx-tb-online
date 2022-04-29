@@ -1,0 +1,8 @@
+__pycache__
+plots
+Pedestals
+*.root
+Commands*
+*.raw
+*.pdf
+a.csv

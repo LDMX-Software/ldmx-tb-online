@@ -41,8 +41,11 @@ add_library(eudaq_core SHARED
   src/eudaq/RogueTcpClientProducer.cxx
   src/eudaq/TcpCommandGenerator.cxx
   src/eudaq/TestBeamDataCollector.cxx
+  src/eudaq/TrigScintRawDecode.cxx
+  src/eudaq/SimQIE.cxx
   src/eudaq/TrigScintDataSender.cxx
   src/eudaq/TrigScintTestBeamProducer.cxx
+  src/eudaq/SimQIE.cxx
   )
 target_include_directories(eudaq_core PUBLIC include)
 target_link_libraries(eudaq_core PUBLIC EUDAQ::EUDAQ Rogue::Rogue rogue)
@@ -56,8 +59,8 @@ endif()
 if (EXISTS ${WRTiming_DIR}/include/WRClient.h)
   add_library(eudaq_wr SHARED src/eudaq/wr/WRClientProducer.cxx)
   target_include_directories(eudaq_wr PUBLIC ${WRTiming_DIR}/include)
-  target_link_libraries(eudaq_wr PUBLIC EUDAQ::EUDAQ)
   target_link_directories(eudaq_wr PUBLIC ${WRTiming_DIR}/build/)
+  target_link_libraries(eudaq_wr PUBLIC Timestamp EUDAQ::EUDAQ)	
   symlink_to_eudaq(wr)
   install(TARGETS eudaq_wr DESTINATION lib)
 else()
@@ -84,7 +87,7 @@ else()
   message(WARNING "Unable to find FiberTrackerClient.h or Dip.h - DipClientProducer will not be built.")
 endif()
 
-find_package(pflib 2.0.4 QUIET)
+find_package(pflib 2.5 QUIET)
 if (pflib_FOUND)
   add_library(eudaq_pflib SHARED
     src/eudaq/pflib/PolarfireProducer.cxx)
@@ -92,7 +95,7 @@ if (pflib_FOUND)
   symlink_to_eudaq(pflib)
   install(TARGETS eudaq_pflib DESTINATION lib)
 else()
-  message(WARNING "pflib version >= 2 not found - PolarfireProducer will not be available.")
+  message(WARNING "pflib version >= 2.5 not found - PolarfireProducer will not be available.")
 endif()
 
 option(BUILD_MONITORING "Build online monitoring based off ROOT and EUDAQ" ON)

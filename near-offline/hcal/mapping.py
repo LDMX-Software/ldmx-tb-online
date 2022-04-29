@@ -9,55 +9,60 @@ r.gSystem.Load("libFramework.so")
 
 # converts the link-channel provided by the HGCROC into a 'real' channel: goes from 1 to 384, representing a SiPM each
 def FpgaLinkChannel_to_realChannel(FpgaLinkChannel): #link is the chip halves, channel is just the channel
-    channel = FpgaLinkChannel[2]-1
+    channel = FpgaLinkChannel[2]
     if 0 <= channel and channel <= 7:  realChannel = channel
     elif 9 <= channel and channel <= 16:  realChannel = channel-1
-    elif 19 <= channel and channel <= 26:  realChannel = channel-3
-    elif 28 <= channel and channel <= 35:  realChannel = channel-4
+    elif 18 <= channel and channel <= 25:  realChannel = channel-2
+    elif 27 <= channel and channel <= 34:  realChannel = channel-3
     else: return None
     realChannel+=FpgaLinkChannel[1]*32
-    realChannel+=(FpgaLinkChannel[0]-2)*32*6
+    realChannel+=(FpgaLinkChannel[0])*32*6
     return realChannel
 
 #converts the 'real' channel into a 3 vector that describes the SiPM really well
-def realChannel_to_SipM(c):#[layer,bar,side]  
-    if c == None: return None  
-    for i in range(1,2):
-        if 0 <= c and c <= 3: return [i,c,0]
-        if 4 <= c and c <= 7: return [i,c-4,1]
-        if 8 <= c and c <= 11: return [i,c-4,0]
-        if 12 <= c and c <= 15: return [i,c-8,1]
-        c-=16
-    # for i in range(2,3): #this one CMB row is quite flipped
-    #     if 0 <= c and c <= 3: return [i,4-(c),0]
-    #     if 4 <= c and c <= 7: return [i,4-(c-4),1]
-    #     if 8 <= c and c <= 11: return [i,4-(c-4),0]
-    #     if 12 <= c and c <= 15: return [i,4-(c-8),1]
-    #     c-=16                
-    for i in range(2,3):
-        if 0 <= c and c <= 3: return [i,c,0]
-        if 4 <= c and c <= 7: return [i,c-4,1]
-        if 8 <= c and c <= 11: return [i,c-4,0]
-        if 12 <= c and c <= 15: return [i,c-8,1]
-        c-=16
-    for i in range(3,10):
-        if 0 <= c and c <= 3: return [i,c,0]
-        if 4 <= c and c <= 7: return [i,c-4,1]
-        if 8 <= c and c <= 11: return [i,c-4,0]
-        if 12 <= c and c <= 15: return [i,c-8,1]
-        c-=16
-    for i in range(10,20): 
-        if 0 <= c and c <= 3: return [i,c,0]
-        if 4 <= c and c <= 7: return [i,c-4,1]
-        if 8 <= c and c <= 11: return [i,c-4,0]
-        if 12 <= c and c <= 15: return [i,c-8,1]
-        if 16 <= c and c <= 19: return [i,c-8,0]
-        if 20 <= c and c <= 23: return [i,c-12,1]
-        c-=24   
-    return 'too many layers'    
+def realChannel_to_SiPM(c):#[layer,bar,side]  
+    side=int(c/4)%2
+    if c in range(0,9*16): layer=int(c/16)
+    elif c in range(9*16,9*16+10*24): layer=int( (c-9*16)/24 )+9
+    else: print (c)
 
-realChannel_to_SipM_fast={}
-for c in range(0,385):
-    realChannel_to_SipM_fast[c] = realChannel_to_SipM(c)
-# print(realChannel_to_SipM_fast)                
+    if layer in range(0,9): index =  c-layer*16-side*4
+    if layer in range(9,19): index =  (c-9*16)-(layer-9)*24-side*4
 
+    quadbar = int(index/8)
+    quadbar_bar=index-quadbar*8
+
+    if layer in (0,1,2,4,6,8,10,12,14,16,18): #if it's in a vertical layer or the flipped horizontal one
+        bar = 3-quadbar_bar+quadbar*4
+    if layer in (3,5,7,9,11,13,15,17): 
+        bar = quadbar_bar+quadbar*4
+
+
+    return [layer,bar,side]
+
+
+
+realChannel_to_SiPM_fast={}
+for c in range(0,384):
+    realChannel_to_SiPM_fast[c] = realChannel_to_SiPM(c)
+
+def SiPM_to_realChannel(SiPM):
+    for realChannel in realChannel_to_SiPM_fast:
+        if realChannel_to_SiPM_fast[realChannel]==SiPM:
+            return realChannel
+
+
+
+realChannel_to_FpgaLinkChannel_fast={}
+for Fpga in range(0,1+1):
+    for Link in range(0,5+1):
+        for Channel in range(0,71+1):
+            realChannel_to_FpgaLinkChannel_fast[FpgaLinkChannel_to_realChannel([Fpga,Link,Channel])] = [Fpga,Link,Channel]
+
+# print(realChannel_to_FpgaLinkChannel_fast)
+
+
+
+# print(realChannel_to_SiPM_fast)                
+# for c in range(0,384):
+#             print(c,realChannel_to_SiPM(c))
