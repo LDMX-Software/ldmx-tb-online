@@ -1,4 +1,4 @@
-#usage: ldmx python3 HCal-dqm-offline.py adc_<run-number>.root
+#usage: ldmx python3 HCal-dqm-offline.py adc_<run-number>.root -p <pedestal-file>.csv
 #dqm = data quality monitoring
 
 from mapping import *
