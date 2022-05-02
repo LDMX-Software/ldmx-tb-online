@@ -5,3 +5,4 @@ This repo contains all code used for the test beam that took place at CERN.  The
 ## Table of Contents
 - software : actual, factual online software
 - near-offline : ldmx-sw config and plotting scripts to run on the monitoring computer
+- reformat : decode and align the various subsystems into a singular event
