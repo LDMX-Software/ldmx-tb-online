@@ -1,4 +1,4 @@
-#usage: ldmx python3 HCal-dqm-offline.py adc_<run-number>.root
+#usage: ldmx python3 HCal-dqm-offline.py adc_<run-number>.root -p <pedestal-file>.csv
 #dqm = data quality monitoring
 
 from mapping import *
@@ -146,6 +146,12 @@ hists["max_sample-of-channel"] =  r.TH2F("max_sample-of-channel", "max_sample-of
 hists["max_sample-of-channel"].SetYTitle('Timestamp')
 hists["max_sample-of-channel"].SetXTitle('Channel') 
 
+hists["ADC-of-TOA"] =  r.TH2F("ADC-of-TOA", "ADC-of-TOA", 
+        len(TOARange), TOARange[0]-0.5, TOARange[-1]-0.5,
+        len(ADCRange), ADCRange[0]-0.5, ADCRange[-1]-0.5,)
+hists["ADC-of-TOA"].SetYTitle('ADC (of timestamps)')
+hists["ADC-of-TOA"].SetXTitle('TOA (of timestamps)')   
+
 hists["map"] =  r.TH2F("map", "Map of average ADCs", 
         len(layerRange), layerRange[0]-0.5, layerRange[-1]+0.5,
         len(barMapRange), barMapRange[0]-0.5, barMapRange[-1]+0.5,)
@@ -157,6 +163,12 @@ hists["thresholdMap"] =  r.TH2F("thresholdMap", "Map of threshold exceeding hits
         len(barMapRange), barMapRange[0]-0.5, barMapRange[-1]+0.5,)
 hists["thresholdMap"].SetYTitle('Bar')
 hists["thresholdMap"].SetXTitle('Layer') 
+
+hists["ADC"] =  r.TH1F("ADC", "ADC counts for TOT=0", 
+        100, 600, ADCRange[-1]-0.5,)
+hists["ADC"].SetYTitle('Counts')
+hists["ADC"].SetXTitle('ADC')  
+
 
 
 for i in range(eventsOfInterest[0],eventsOfInterest[0]+12):
@@ -172,16 +184,19 @@ maxSample=-1
 
 
 for t in allData : #for timestamp in allData
-    if t.event in eventsOfInterest:
+    if t.ldmxsw_event in eventsOfInterest:
         try: realChannel = FpgaLinkChannel_to_realChannel([t.fpga,t.link,t.channel]) #if eids are kept
         except: realChannel = SiPM_to_realChannel([t.layer-1,t.strip,t.end]) #if eids are discarded
-        print([t.layer-1,t.strip,t.end],realChannel)
+        # print([t.layer-1,t.strip,t.end],realChannel)
         if realChannel != None: 
    
             hists["ADC-of-channel"].Fill(realChannel,t.adc)
             hists["TOT-of-channel"].Fill(realChannel,t.tot)
             hists["TOA-of-channel"].Fill(realChannel,t.toa)
             hists["ADC-of-sample"].Fill(t.i_sample,t.adc)
+            hists["ADC-of-TOA"].Fill(t.toa,t.adc)
+            if t.tot == 0: hists["ADC"].Fill(t.adc)
+            #79 of 135000
 
 
             #fills the map
@@ -202,11 +217,11 @@ for t in allData : #for timestamp in allData
                 hists["event-of-max_sample"].Fill(maxSample)
                 hists["max_sample-of-channel"].Fill(realChannel,maxSample)
 
-                if "eventDisplay"+str(t.event) in hists:
+                if "eventDisplay"+str(t.ldmxsw_event) in hists:
                     
                     if maxADC>pedestals[realChannel]+20 : #temporary arbitrary adc threshold for the event displays
-                        # hists["eventDisplay"+str(t.event)].Fill(LayerBarSide[0],LayerBarSide[1]+visual_offset,ADC_to_E(maxADC))
-                        hists["eventDisplay"+str(t.event)].Fill(LayerBarSide[0],LayerBarSide[1]+visual_offset,maxADC)
+                        # hists["eventDisplay"+str(t.ldmxsw_event)].Fill(LayerBarSide[0],LayerBarSide[1]+visual_offset,ADC_to_E(maxADC))
+                        hists["eventDisplay"+str(t.ldmxsw_event)].Fill(LayerBarSide[0],LayerBarSide[1]+visual_offset,maxADC)
 
 
                 if maxADC>thresholds[realChannel]:   
@@ -241,15 +256,20 @@ hists["TOA-of-channel"].Draw('COLZ')
 c.cd(4)
 hists["ADC-of-sample"].Draw('COLZ')
 c.cd(5)
-hists["event-of-max_sample"].Draw('HIST')
-if includeThresholdPlots == True:
-    c.cd(6)
-    hists["event-of-PE"].Draw('HIST')
-    c.cd(7)
-    hists["PE-of-channel"].Draw('COLZ')
-c.cd(8)
+hists["ADC-of-TOA"].Draw('COLZ')
+c.cd(6)
 hists["max_sample-of-channel"].Draw('COLZ')
 
+c.cd(7)
+hists["event-of-max_sample"].Draw('HIST')
+if includeThresholdPlots == True:
+    c.cd(8)
+    hists["event-of-PE"].Draw('HIST')
+    c.cd(9)
+    hists["PE-of-channel"].Draw('COLZ')
+
+# c.cd(1)
+# hists["ADC"].Draw('HIST')
 
 
 for i in range(1,10):c.GetPad(i).SetLeftMargin(0.12)
