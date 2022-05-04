@@ -2,10 +2,12 @@
 
 from Reformat import reformat
 
-class TestFile(reformat.RawDataFile) :
-    def __init__(self, n) :
-        super().__init__('Reformat','reformat::test::TestFile')
-        self.num = n
+def TestFile(n) :
+    return reformat.RawDataFile(
+            module = 'Reformat',
+            class_name = 'reformat::test::TestFile',
+            num = n
+            )
 
 import argparse, sys
 

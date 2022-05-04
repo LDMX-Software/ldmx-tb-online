@@ -28,40 +28,53 @@ are attached report that they have no more events to add.
 
 ## RawDataFile
 
-Each `RawDataFile` that is attached to the `Converter` is given the event bus
-to add objects to via the pure virtual function
+Each `RawDataFile` that is attached to the `Converter` pops events from itself
+and provides it to the alignment system via the pure virtual function
 ```cpp
-bool next(framework::Event& event)
+std::optional<EventPacket> next()
 ```
 
 This function has two purposes:
 
-1. Add objects for a single event to the event bus.
-2. Return `true` if there are no more events to be added and `false` otherwise.
+1. Defines an event and its data from the raw data file
+2. Returns the `std::null_opt` if the raw data file is over
 
 The implementation of (1) varies wildly depending on the type of raw data file you are using.
-An example implementation is in the HexaBoard module. This implementation inserts headers
-and computes checksums that are expected to be done by front-end boards but is not done by
-the test-stand setup that outputs the raw data file.
 
-The most important comment about (2) is that the input raw data file is _removed from the processing list_ upon the first return of `true`.
-i.e. Returning `true` is saying "I'm all done".
-Note: This last call to `next` which returns `true` can (and should) still add the last event to the event bus.
+The most important comment about (2) is that the input raw data file is 
+_removed from the processing list_ upon the first return of `std::null_opt`.
+i.e. Returning `std::null_opt` is saying "I'm all done".
+
+Since the empty braces provided to the constructor of `std::optional` defines the null option,
+a common design pattern is
+```cpp
+std::optional<EventPacket> next() {
+  if (my_file_is_over) return {};
+
+  EventPacket ep;
+  /**
+   * insert actual unpacking of event here
+   */
+  return ep
+}
+```
 
 Declaration of a new RawDataFile is done through a C++ macro:
 ```cpp
 // at the bottom of the ClassName.cxx file
-DECLARE_RAW_DATA_FILE(full::name::space, ClassName)
+DECLARE_RAW_DATA_FILE(full::name::space::ClassName)
 ```
 
-And configuration of a RawDataFile is done through a derived Python class:
+And configuration of a RawDataFile is done through a Python function:
 ```python
 from Reformat import reformat
 
-class MyDataFile(reformat.RawDataFile) :
-    def __init__(self) :
-        super().__init__('ModuleName','full::name::space::ClassName')
-        # put other input parameters and their defaults here
+def MyDataFile(args) :
+    return reformat.RawDataFile(
+              module = 'ModuleName',
+              class_name = 'full::name::space::ClassName',
+              # put other input parameters here
+              )
 ```
 
 The module organization is identical to the modules used in ldmx-sw

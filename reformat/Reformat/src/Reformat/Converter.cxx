@@ -2,6 +2,7 @@
 #include "Reformat/Converter.h"
 
 #include <ctime>
+#include <queue>
 
 #include "Framework/EventFile.h"
 #include "Framework/Event.h"
@@ -41,13 +42,15 @@ void Converter::configure(const framework::config::Parameters& cfg) {
 
 void Converter::convert() {
   framework::Event output_event(pass_);
-  framework::EventFile output_file({}, output_filename_, nullptr, true, true,
-                                   false);
+  framework::EventFile output_file({}, output_filename_, 
+      nullptr, true, true, false);
   output_file.setupEvent(&output_event);
 
   ldmx::RunHeader run_header(run_);
   run_header.setRunStart(std::time(nullptr));
   output_file.writeRunHeader(run_header);
+
+  std::map<std::string,std::queue<EventPacket>> event_queue;
 
   int i_event{start_event_};
   while (not input_files_.empty()) {
@@ -61,16 +64,41 @@ void Converter::convert() {
     // they are done
     auto f_it = input_files_.begin();
     while (f_it != input_files_.end()) {
-      if ((*f_it)->next(output_event)) {
+      auto ep = (*f_it)->next();
+      if (ep) {
+        event_queue[(*f_it)->name()].push(ep.value());
+        ++f_it;
+      } else {
         // file says no more events
         f_it = input_files_.erase(f_it);
-      } else {
-        ++f_it;
+      }
+
+      // get earliest timestamp
+      uint32_t earliest_ts{0xffffffff};
+      for (const auto& [name, q] : event_queue) {
+        if (q.size() == 0) continue;
+        if (q.front().timestamp < earliest_ts) earliest_ts = q.front().timestamp;
+      }
+
+      // pop events that are within X of earliest ts
+      std::map<std::string,EventPacket> aligned_event;
+      for (auto& [name,q] : event_queue) {
+        if (q.size() == 0) continue;
+        if (q.front().timestamp - earliest_ts < 100 /*max diff to allow alignment*/) {
+          aligned_event[name] = q.front();
+          q.pop();
+        }
+      }
+
+      if (true /*keep_all_*/ or aligned_event.size() == event_queue.size()) {
+        for (auto& [name,ep] : aligned_event) {
+          output_event.add(name, ep.data);
+        }
+        // go to next event in output file.
+        output_file.nextEvent(true);
       }
     }
 
-    // go to next event in output file.
-    output_file.nextEvent(true);
   }
 
   run_header.setRunEnd(std::time(nullptr));

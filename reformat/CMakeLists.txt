@@ -44,4 +44,4 @@ include(CTest)
 add_subdirectory(Reformat)
 
 # TestBeam intermediate bandaids
-add_subdirectory(TestBeam)
+#add_subdirectory(TestBeam)

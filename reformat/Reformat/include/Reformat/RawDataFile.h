@@ -10,6 +10,16 @@
 namespace reformat {
 
 /**
+ * Each raw data file produced event packets
+ */
+struct EventPacket {
+  /// the timestamp for this event **from this raw data file**
+  uint32_t timestamp;
+  /// the buffer of raw data
+  std::vector<uint8_t> data;
+};
+
+/**
  * @class RawDataFile
  *
  * A single file of raw data.
@@ -25,14 +35,20 @@ class RawDataFile {
   virtual ~RawDataFile() = default;
 
   /**
+   * The name that should be used for this event object
+   */
+  virtual std::string name() = 0;
+
+  /**
    * Save the next event from this data file into the passed bus.
    *
    * @note The return value of next signals when this
-   * raw data file is all done.
+   * raw data file is all done. Return the empty braces `{}`
+   * to signal that the file is all done.
    *
    * @return true if we are done, false otherwise
    */
-  virtual bool next(framework::Event& event) = 0;
+  virtual std::optional<EventPacket> next() = 0;
 };  // RawDataFile
 
 /**

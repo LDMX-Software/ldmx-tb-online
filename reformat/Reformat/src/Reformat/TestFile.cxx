@@ -3,13 +3,13 @@
 
 #include <string>
 
-namespace reformat {
-namespace test {
+namespace reformat::test {
 
 /**
  * A dummy test file to check loading.
  */
 class TestFile : public RawDataFile {
+  int i_event_{0};
  public:
   /// test id to differentiate different test files
   static int id_;
@@ -17,14 +17,18 @@ class TestFile : public RawDataFile {
     num_ = ps.getParameter<int>("num");
     name_ = "TestBuffer"+std::to_string(id_++);
   }
-  bool next(framework::Event& event) {
-    if (event.getEventNumber() <= num_) {
-      std::vector<uint64_t> test_buffer(event.getEventNumber(),22);
-      event.add(name_,test_buffer);
-      return true;
-    } else {
-      return false;
-    }
+  virtual std::string name() final override {
+    return name_;
+  } 
+  virtual std::optional<EventPacket> next() final override {
+    i_event_++;
+    // leave early if "file" is done
+    if (i_event_ > num_) return {};
+
+    EventPacket ep;
+    ep.timestamp = i_event_*10;
+    ep.data = std::vector<uint8_t>(i_event_,22);
+    return ep;
   }
  private:
   /// number of events to generate
@@ -36,7 +40,6 @@ class TestFile : public RawDataFile {
 // first id of test files
 int TestFile::id_ = 1;
 
-}
 }
 
 DECLARE_RAW_DATA_FILE(reformat::test::TestFile)
