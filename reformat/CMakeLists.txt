@@ -43,11 +43,5 @@ include(CTest)
 # helper classes for interfacing between EventFiles and Raw data channels
 add_subdirectory(Reformat)
 
-# specific hexactrl-sw translator
-add_subdirectory(HexaBoard)
-
-# UMN TestStand
-add_subdirectory(UMNTestStand)
-
 # TestBeam intermediate bandaids
 add_subdirectory(TestBeam)

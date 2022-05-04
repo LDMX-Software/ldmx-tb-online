@@ -39,4 +39,4 @@ int TestFile::id_ = 1;
 }
 }
 
-DECLARE_RAW_DATA_FILE(reformat::test,TestFile)
+DECLARE_RAW_DATA_FILE(reformat::test::TestFile)

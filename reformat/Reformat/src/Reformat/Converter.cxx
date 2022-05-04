@@ -21,7 +21,7 @@ void Converter::configure(const framework::config::Parameters& cfg) {
   auto libs{
       cfg.getParameter<std::vector<std::string>>("libraries", {})};
   std::for_each(libs.begin(), libs.end(), [](auto &lib) {
-    RawDataFileFactory::getInstance().loadLibrary(lib);
+    RawDataFileFactory::get().loadLibrary(lib);
   });
 
   auto input_files{
@@ -35,7 +35,7 @@ void Converter::configure(const framework::config::Parameters& cfg) {
   }
   for (auto f : input_files) {
     auto class_name{f.getParameter<std::string>("class_name")};
-    input_files_.emplace_back(RawDataFileFactory::getInstance().create(class_name, f));
+    input_files_.emplace_back(RawDataFileFactory::get().create(class_name, f));
   }
 }
 

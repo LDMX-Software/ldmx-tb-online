@@ -1,10 +1,12 @@
-#include "TestBeam/HGCROCv2RawDataFile.h"
 
 #include <iomanip>
 #include <bitset>
 #include <optional>
+#include <vector>
 
 #include "Reformat/Utility/Mask.h"
+#include "Reformat/Utility/Reader.h"
+#include "Reformat/RawDataFile.h"
 
 namespace reformat {
 namespace testbeam {
@@ -157,4 +159,4 @@ bool HGCROCv2RawDataFile::next(framework::Event& event) {
 } 
 }  // namespace reformat
 
-DECLARE_RAW_DATA_FILE(reformat::testbeam, HGCROCv2RawDataFile)
+DECLARE_RAW_DATA_FILE(reformat::testbeam::HGCROCv2RawDataFile)

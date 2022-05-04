@@ -28,7 +28,7 @@ class Converter {
 
  private:
   /// set of input data files
-  std::vector<RawDataFilePtr> input_files_;
+  std::vector<std::unique_ptr<RawDataFile>> input_files_;
   /// pass name to use for output event tree
   std::string pass_;
   /// output file name to write data to

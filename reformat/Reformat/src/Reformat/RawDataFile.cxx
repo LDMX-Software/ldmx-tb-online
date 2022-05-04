@@ -7,11 +7,7 @@
 
 namespace reformat {
 
-void RawDataFile::declare(const std::string &classname, RawDataFileBuilder* builder) {
-  RawDataFileFactory::getInstance().registerType(classname, builder);
-}
-
-RawDataFileFactory& RawDataFileFactory::getInstance() {
+RawDataFileFactory& RawDataFileFactory::get() {
   static RawDataFileFactory instance;
   return instance;
 }
@@ -30,16 +26,8 @@ void RawDataFileFactory::loadLibrary(const std::string& libname) {
   libraries_loaded_.insert(libname);
 }
 
-void RawDataFileFactory::registerType(const std::string& class_name, RawDataFileBuilder* builder) {
-  if (registered_types_.find(class_name) != registered_types_.end()) {
-    EXCEPTION_RAISE("RepeatType",
-        class_name + " type of raw data file already registered.");
-  }
-
-  registered_types_[class_name] = builder;
-}
-
-RawDataFilePtr RawDataFileFactory::create(const std::string& class_name, const framework::config::Parameters& params) const {
+std::unique_ptr<RawDataFile> RawDataFileFactory::create(
+    const std::string& class_name, const framework::config::Parameters& params) const {
   auto registration{registered_types_.find(class_name)};
   if (registration == registered_types_.end()) {
     EXCEPTION_RAISE("BuildFail",

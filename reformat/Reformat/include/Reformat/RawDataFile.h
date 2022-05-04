@@ -2,21 +2,12 @@
 #define REFORMAT_RAWDATAFILE_H_
 
 #include <memory>  //for unique pointer
+#include <functional>
 
 #include "Framework/Configure/Parameters.h"
 #include "Framework/Event.h"
 
 namespace reformat {
-
-/// forward declaration for the builder and ptr typedefs
-class RawDataFile;
-
-/// typedef for a pointer to a raw data file
-typedef std::unique_ptr<RawDataFile> RawDataFilePtr;
-
-/// typedef for the creation of a raw data file
-typedef RawDataFilePtr RawDataFileBuilder(
-    const framework::config::Parameters& ps);
 
 /**
  * @class RawDataFile
@@ -42,12 +33,6 @@ class RawDataFile {
    * @return true if we are done, false otherwise
    */
   virtual bool next(framework::Event& event) = 0;
-
-  /**
-   * Declare a new raw data file type
-   */
-  static void declare(const std::string& classname,
-                      RawDataFileBuilder* builder);
 };  // RawDataFile
 
 /**
@@ -57,7 +42,7 @@ class RawDataFile {
 class RawDataFileFactory {
  public:
   // get the factory instance
-  static RawDataFileFactory& getInstance();
+  static RawDataFileFactory& get();
 
   /**
    * Load a library.
@@ -68,13 +53,17 @@ class RawDataFileFactory {
   /**
    * Register a type for the factory to be able to build
    */
-  void registerType(const std::string& class_name, RawDataFileBuilder* builder);
+  template<typename DerivedType>
+  uint64_t declare(const std::string& name) {
+    registered_types_[name] = &maker<DerivedType>;
+    return reinterpret_cast<uint64_t>(&registered_types_);
+  }
 
   /**
    * Create a data file
    */
-  RawDataFilePtr create(const std::string& class_name,
-                        const framework::config::Parameters& parameters) const;
+  std::unique_ptr<RawDataFile> create(const std::string& class_name, 
+      const framework::config::Parameters& parameters) const;
 
   /// Delete the copy constructor
   RawDataFileFactory(const RawDataFileFactory&) = delete;
@@ -86,9 +75,16 @@ class RawDataFileFactory {
   /// private constructor
   RawDataFileFactory() = default;
 
+  template<typename DerivedType>
+  static std::unique_ptr<RawDataFile> maker(const framework::config::Parameters& p) {
+    return std::make_unique<DerivedType>(p);
+  }
+
  private:
   /// The classes that can be built (and their builders)
-  std::map<std::string, RawDataFileBuilder*> registered_types_;
+  std::map<std::string, 
+    std::function<std::unique_ptr<RawDataFile>(
+        const framework::config::Parameters&)>> registered_types_;
   /// libraries that have been loaded
   std::set<std::string> libraries_loaded_;
 
@@ -97,21 +93,14 @@ class RawDataFileFactory {
 }  // namespace reformat
 
 /**
- * @def DECLARE_RAW_DATA_FILE(NS, CLASS)
- * @param NS The full namespace specification for the RawDataFile
- * @param CLASS The name of the class to register
+ * @def DECLARE_RAW_DATA_FILE(CLASS)
+ * @param CLASS The full name of the class to register
  * @brief Macro which allows the ReformatBase library to construct a file given
  * its name during configuration.
  */
-#define DECLARE_RAW_DATA_FILE(NS, CLASS)                                      \
-  reformat::RawDataFilePtr CLASS##_reformat_make(                             \
-      const framework::config::Parameters& ps) {                              \
-    return std::make_unique<NS::CLASS>(ps);                                   \
-  }                                                                           \
-  __attribute__((constructor(1000))) static void CLASS##_reformat_declare() { \
-    reformat::RawDataFile::declare(                                           \
-        std::string(#NS) + "::" + std::string(#CLASS),                        \
-        &CLASS##_reformat_make);                                              \
+#define DECLARE_RAW_DATA_FILE(CLASS)                                     \
+  namespace {                                                            \
+    auto v = reformat::RawDataFileFactory::get().declare<CLASS>(#CLASS); \
   }
 
 #endif  // REFORMAT_RAWDATAFILE_H_
