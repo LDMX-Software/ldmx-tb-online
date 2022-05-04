@@ -37,6 +37,10 @@ class Converter {
   int run_;
   /// starting event number
   int start_event_;
+  /// maximum difference between two timestamps to allow alignment
+  int max_diff_;
+  /// keep all events even ones where not all raw data files participate
+  bool keep_all_;
 
 };  // Converter
 

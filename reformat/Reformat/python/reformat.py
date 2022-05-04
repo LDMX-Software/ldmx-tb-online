@@ -32,6 +32,8 @@ class Converter :
         self.start_event = 0
         self.output_filename = output_file
         self.pass_name = 'raw'
+        self.keep_all = True
+        self.max_diff = 10
 
     def addLibrary(lib) :
         if Converter.lastConverter is None :
