@@ -2,9 +2,10 @@
 
 from Reformat import reformat
 
-class HGCROCv2RawDataFile(reformat.RawDataFile) :
-    """Configuration for HGCROC v2 raw data file"""
-    def __init__(self, filepath) :
-        super().__init__('TestBeam','reformat::testbeam::HGCROCv2RawDataFile')
-        self.input_file = filepath
-        self.name = 'HgcrocRawData'
+def HGCROCv2RawDataFile(filepath) :
+    return reformat.RawDataFile(
+            module = 'TestBeam',
+            class_name = 'reformat::testbeam::HGCROCv2RawDataFile',
+            input_file = filepath,
+            name = 'HgcrocRawData'
+            )

@@ -100,10 +100,13 @@ class RawDataFile :
         Name of module to load
     class_name : str
         Full class name (including namespace) of data file
+    kwargs : dict
+        Extra file parameters
     """
 
-    def __init__(self, module, class_name) :
+    def __init__(self, module, class_name, **kwargs) :
         Converter.addModule(module)
+        self.__dict__ = kwargs
         self.class_name = class_name
 
     def __repr__(self) :
