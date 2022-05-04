@@ -2,11 +2,12 @@
 
 from Reformat import reformat
 
-def TestFile(n) :
+def TestFile(n, s = -1) :
     return reformat.RawDataFile(
             module = 'Reformat',
             class_name = 'reformat::test::TestFile',
-            num = n
+            num = n,
+            skip = s
             )
 
 import argparse, sys
@@ -25,7 +26,7 @@ if arg.input_cfg == 'single' :
 elif arg.input_cfg == 'multi' :
     c.input_files = [TestFile(5), TestFile(5)]
 elif arg.input_cfg == 'misalign' :
-    c.input_files = [TestFile(3), TestFile(5)]
+    c.input_files = [TestFile(3), TestFile(5,s=2)]
 
 if arg.pause :
     c.pause()

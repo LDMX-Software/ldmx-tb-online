@@ -10,11 +10,13 @@ namespace reformat::test {
  */
 class TestFile : public RawDataFile {
   int i_event_{0};
+  int skip_{-1};
  public:
   /// test id to differentiate different test files
   static int id_;
   TestFile(const framework::config::Parameters& ps) : RawDataFile(ps) {
     num_ = ps.getParameter<int>("num");
+    skip_ = ps.getParameter<int>("skip");
     name_ = "TestBuffer"+std::to_string(id_++);
   }
   virtual std::string name() final override {
@@ -22,6 +24,8 @@ class TestFile : public RawDataFile {
   } 
   virtual std::optional<EventPacket> next() final override {
     i_event_++;
+    // pretend that we dropped an event
+    if (i_event_ == skip_) i_event_++;
     // leave early if "file" is done
     if (i_event_ > num_) return {};
 
