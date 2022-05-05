@@ -2,10 +2,14 @@
 
 from Reformat import reformat
 
-def TestFile(n, s = -1) :
+i = 0
+def TestFile(n, s = 100) :
+    global i 
+    i += 1
     return reformat.RawDataFile(
             module = 'Reformat',
             class_name = 'reformat::test::TestFile',
+            name = f'{i}TestFile{n}Skip{s}',
             num = n,
             skip = s
             )
@@ -20,6 +24,7 @@ parser.add_argument('--pause',action='store_true')
 arg = parser.parse_args()
 
 c = reformat.Converter('test_output.root')
+c.term_level = 0
 
 if arg.input_cfg == 'single' :
     c.input_files = [TestFile(5)]

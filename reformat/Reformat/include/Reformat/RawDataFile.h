@@ -6,6 +6,7 @@
 
 #include "Framework/Configure/Parameters.h"
 #include "Framework/Event.h"
+#include "Framework/Logger.h"
 
 namespace reformat {
 
@@ -28,8 +29,11 @@ class RawDataFile {
  public:
   /**
    * Constructor of a raw data file with a filename
+   *
+   * Channel name for logger taken from 'name' parameter
+   * in Parameters.
    */
-  RawDataFile(const framework::config::Parameters&) {}
+  RawDataFile(const framework::config::Parameters& p);
 
   /// virtual and default destructor
   virtual ~RawDataFile() = default;
@@ -37,7 +41,7 @@ class RawDataFile {
   /**
    * The name that should be used for this event object
    */
-  virtual std::string name() = 0;
+  virtual const std::string& name() const;
 
   /**
    * Save the next event from this data file into the passed bus.
@@ -49,6 +53,14 @@ class RawDataFile {
    * @return true if we are done, false otherwise
    */
   virtual std::optional<EventPacket> next() = 0;
+ 
+ protected:
+  /// the logger for this raw data file
+  mutable framework::logging::logger theLog_;
+
+ private:
+  /// the name given to this raw data file
+  std::string name_;
 };  // RawDataFile
 
 /**
@@ -104,6 +116,8 @@ class RawDataFileFactory {
   /// libraries that have been loaded
   std::set<std::string> libraries_loaded_;
 
+  /// Enable logging for raw data file factory
+  mutable framework::logging::logger theLog_{framework::logging::makeLogger("RawDataFileFactory")};
 };  // RawDataFileFactory
 
 }  // namespace reformat
@@ -118,5 +132,10 @@ class RawDataFileFactory {
   namespace {                                                            \
     auto v = reformat::RawDataFileFactory::get().declare<CLASS>(#CLASS); \
   }
+
+/**
+ * Log a message at the input logging level
+ */
+#define reformat_log(lvl) ldmx_log(lvl)
 
 #endif  // REFORMAT_RAWDATAFILE_H_

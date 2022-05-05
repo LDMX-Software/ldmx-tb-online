@@ -14,8 +14,8 @@ class Converter {
  public:
   /// un-interesting default constructor
   Converter() = default;
-  /// un-interested default destructor
-  ~Converter() = default;
+  /// close up logging that was opened in configure
+  ~Converter();
 
   /**
    * Configure our converter based off the configuration parameters
@@ -39,9 +39,13 @@ class Converter {
   int start_event_;
   /// maximum difference between two timestamps to allow alignment
   int max_diff_;
+  /// event limit to exit early
+  int event_limit_;
   /// keep all events even ones where not all raw data files participate
   bool keep_all_;
 
+  /// log through the 'converter' channel
+  mutable framework::logging::logger theLog_{framework::logging::makeLogger("Converter")};
 };  // Converter
 
 }  // namespace reformat

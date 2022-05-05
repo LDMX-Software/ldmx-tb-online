@@ -34,6 +34,10 @@ class Converter :
         self.pass_name = 'raw'
         self.keep_all = True
         self.max_diff = 10
+        self.event_limit = -1
+        self.term_level = 4
+        self.file_level = 4
+        self.log_file = ''
 
     def addLibrary(lib) :
         if Converter.lastConverter is None :
@@ -102,14 +106,17 @@ class RawDataFile :
         Name of module to load
     class_name : str
         Full class name (including namespace) of data file
+    name : str
+        Human-friendly name for logging
     kwargs : dict
         Extra file parameters
     """
 
-    def __init__(self, module, class_name, **kwargs) :
+    def __init__(self, module, class_name, name, **kwargs) :
         Converter.addModule(module)
         self.__dict__ = kwargs
         self.class_name = class_name
+        self.name = name
 
     def __repr__(self) :
         return f'{self.__class__.__name__}({self.class_name})'

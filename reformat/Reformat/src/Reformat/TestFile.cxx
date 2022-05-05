@@ -2,6 +2,7 @@
 #include "Reformat/RawDataFile.h"
 
 #include <string>
+#include <random>
 
 namespace reformat::test {
 
@@ -11,17 +12,16 @@ namespace reformat::test {
 class TestFile : public RawDataFile {
   int i_event_{0};
   int skip_{-1};
+  static std::mt19937 rng;
+  std::uniform_int_distribution<long int> time_jitter;
  public:
   /// test id to differentiate different test files
   static int id_;
-  TestFile(const framework::config::Parameters& ps) : RawDataFile(ps) {
+  TestFile(const framework::config::Parameters& ps) 
+    : RawDataFile(ps), time_jitter{-5,5} {
     num_ = ps.getParameter<int>("num");
     skip_ = ps.getParameter<int>("skip");
-    name_ = "TestBuffer"+std::to_string(id_++);
   }
-  virtual std::string name() final override {
-    return name_;
-  } 
   virtual std::optional<EventPacket> next() final override {
     i_event_++;
     // pretend that we dropped an event
@@ -30,19 +30,18 @@ class TestFile : public RawDataFile {
     if (i_event_ > num_) return {};
 
     EventPacket ep;
-    ep.timestamp = i_event_*10;
+    ep.timestamp = i_event_*10 + time_jitter(rng);
     ep.data = std::vector<uint8_t>(i_event_,22);
     return ep;
   }
  private:
   /// number of events to generate
   int num_;
-  /// buffer name to output
-  std::string name_;
 };  // TestFile
 
 // first id of test files
 int TestFile::id_ = 1;
+std::mt19937 TestFile::rng;
 
 }
 

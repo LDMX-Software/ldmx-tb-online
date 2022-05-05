@@ -46,8 +46,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  std::cout << "---- REFORMAT: Loading configuration --------" << std::endl;
-
+  framework::logging::logger theLog_{framework::logging::makeLogger("reformat")};
   reformat::Converter c;
   try {
     framework::ConfigurePython::root_module = "reformat";
@@ -56,18 +55,15 @@ int main(int argc, char* argv[]) {
 
     framework::ConfigurePython cfg(argv[ptrpy], argv + ptrpy + 1,
                                    argc - ptrpy - 1);
+    // logging opened here
     c.configure(cfg.get());
   } catch (framework::exception::Exception& e) {
-    std::cerr << "Configuration Error [" << e.name() << "] : " << e.message()
-              << std::endl;
-    std::cerr << "  at " << e.module() << ":" << e.line() << " in "
-              << e.function() << std::endl;
-    std::cerr << "Stack trace: " << std::endl << e.stackTrace();
+    reformat_log(fatal)
+      << "Config Error [" << e.name() << "] : " << e.message()
+      << "\n at " << e.module() << ":" << e.line() << " in " << e.function()
+      << "\nStack trace: \n" << e.stackTrace();
     return 1;
   }
-
-  std::cout << "---- REFORMAT: Configuration load complete  --------"
-            << std::endl;
 
   // If Ctrl-c is used, immediately exit the application.
   struct sigaction act;
@@ -77,23 +73,20 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  std::cout << "---- REFORMAT: Starting conversion --------" << std::endl;
-
   try {
     c.convert();
   } catch (framework::exception::Exception& e) {
-    std::cerr << "[" << e.name() << "] : " << e.message() << "\n"
-                    << "  at " << e.module() << ":" << e.line() << " in "
-                    << e.function() << "\nStack trace: " << std::endl
-                    << e.stackTrace();
+    reformat_log(fatal)
+      << "Run Error [" << e.name() << "] : " << e.message()
+      << "\n  at " << e.module() << ":" << e.line() << " in " << e.function()
+      << "\nStack trace: \n" << e.stackTrace();
     return 127;  // return non-zero error-status
   } catch (std::exception& e) {
-    std::cerr << "ERR: " << e.what() << std::endl;
+    reformat_log(fatal) << "Unrecognized Error: " << e.what();
     return 127;
   }
 
-  std::cout << "---- REFORMAT: Conversion complete  --------" << std::endl;
-
+  // logging closed when Converter is destructed
   return 0;
 }
 

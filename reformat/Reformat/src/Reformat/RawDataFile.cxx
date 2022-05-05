@@ -7,6 +7,16 @@
 
 namespace reformat {
 
+RawDataFile::RawDataFile(const framework::config::Parameters& p)
+  : theLog_{framework::logging::makeLogger(p.getParameter<std::string>("name"))},
+    name_{p.getParameter<std::string>("name")} {
+      reformat_log(info) << "RawDataFile " << name_ << " created.";
+    }
+
+const std::string& RawDataFile::name() const {
+  return name_;
+}
+
 RawDataFileFactory& RawDataFileFactory::get() {
   static RawDataFileFactory instance;
   return instance;
@@ -22,7 +32,7 @@ void RawDataFileFactory::loadLibrary(const std::string& libname) {
     EXCEPTION_RAISE("LibraryLoadFailure",
                     "Error loading library '" + libname + "':" + dlerror());
   }
-
+  reformat_log(debug) << "Loaded " << libname;
   libraries_loaded_.insert(libname);
 }
 
@@ -34,7 +44,7 @@ std::unique_ptr<RawDataFile> RawDataFileFactory::create(
         "Cannot create raw data type " + class_name + ".\n"
         "Did you register the new type?");
   }
-
+  reformat_log(debug) << "Creating an instance of " << class_name;
   return registration->second(params);
 }
 
