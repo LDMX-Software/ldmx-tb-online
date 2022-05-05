@@ -14,7 +14,7 @@ parser.add_argument('--output',default='reformatted.root')
 arg = parser.parse_args()
 
 c = reformat.Converter(arg.output)
-c.term_level = 0
+c.term_level = 1
 c.event_limit = 10
 c.keep_all = False
 

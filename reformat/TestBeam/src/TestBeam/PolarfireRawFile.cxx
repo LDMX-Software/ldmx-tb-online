@@ -14,6 +14,8 @@ class PolarfireRawFile : public reformat::RawDataFile {
  public:
   PolarfireRawFile(const framework::config::Parameters& p);
   virtual std::optional<reformat::EventPacket> next() final override;
+  long int spill_{-1};
+  long int i_spill_{0};
  private:
   /// the file reader
   reformat::utility::Reader file_reader_;
@@ -40,7 +42,7 @@ std::optional<reformat::EventPacket> PolarfireRawFile::next() {
     } else {
       reformat_log(debug) << "Extra header (inserted by rogue): " << reformat::utility::hex(w);
     }
-  } while (w != 0xbeef2021 and w != 0xbeef2022);
+  } while (file_reader_ and w != 0xbeef2021 and w != 0xbeef2022);
 
   reformat::EventPacket ep;
   ep.append(w);
@@ -137,7 +139,15 @@ std::optional<reformat::EventPacket> PolarfireRawFile::next() {
   /**
    * Convert our event header information into global timestamp
    */
-  ep.setTimestamp(ticks);
+  if (spill != spill_) {
+    spill_ = spill;
+    i_spill_++;
+  }
+  reformat::EventPacket::TimestampType ts{i_spill_};
+  ts <<= 32;
+  ts += ticks;
+  reformat_log(debug) << " Timestamp(i_spill = " << i_spill_ << ", ticks = " << ticks << ") = " << ts;
+  ep.setTimestamp(ts);
 
   std::vector<uint32_t> words;
   // i_event words from eventlen already been read above

@@ -116,7 +116,7 @@ void Converter::convert() {
     } // loop over input files
 
     // get earliest timestamp from all files
-    uint32_t earliest_ts{0xffffffff};
+    EventPacket::TimestampType earliest_ts{EventPacket::TimestampMax};
     for (const auto& [name, q] : event_queue) {
       if (q.size() == 0) continue;
       if (q.front().timestamp() < earliest_ts) earliest_ts = q.front().timestamp();
@@ -137,8 +137,9 @@ void Converter::convert() {
     // if we are keeping all events or if all files contributed an event packet
     // put the popped event packets into the event bus and save this event
     if (aligned_event.size() > 0 and keep_all_ or aligned_event.size() == event_queue.size()) {
-      reformat_log(debug) << "keeping event " << i_event << " with " 
-        << aligned_event.size() << "/" << event_queue.size() << " files";
+      reformat_log(info) << "keeping event " << i_event << " with " 
+        << aligned_event.size() << "/" << event_queue.size() << " files at "
+        << earliest_ts;
       // initialize event header for input files
       ldmx::EventHeader& eh = output_event.getEventHeader();
       eh.setRun(run_);

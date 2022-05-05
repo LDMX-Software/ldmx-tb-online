@@ -8,15 +8,13 @@ namespace reformat {
  * Each raw data file produced event packets
  */
 class EventPacket {
-  /// the timestamp for this event **from this raw data file**
-  uint32_t timestamp_;
-  /// the buffer of raw data
-  std::vector<uint8_t> data_;
  public:
-  const uint32_t& timestamp() const {
+  using TimestampType = uint64_t;
+  static const TimestampType TimestampMax = 0xffffffffffffffff;
+  const TimestampType& timestamp() const {
     return timestamp_;
   }
-  void setTimestamp(const uint32_t& ts) {
+  void setTimestamp(const TimestampType& ts) {
     timestamp_ = ts;
   }
   std::vector<uint8_t>& data() {
@@ -37,6 +35,11 @@ class EventPacket {
   void append(const std::vector<WordType>& vec) {
     append(vec.data(), vec.size());
   }
+ private:
+  /// the timestamp for this event **from this raw data file**
+  TimestampType timestamp_;
+  /// the buffer of raw data
+  std::vector<uint8_t> data_;
 }; // EventPacket
 } // namespace reformat
 
