@@ -105,8 +105,8 @@ void Converter::convert() {
       auto ep = (*f_it)->next();
       if (ep) {
         event_queue[(*f_it)->name()].push(ep.value());
-        reformat_log(debug) << (*f_it)->name() << " popped " << ep.value().data.size() 
-          << " bytes from timestamp " << ep.value().timestamp;
+        reformat_log(debug) << (*f_it)->name() << " popped " << ep.value().data().size() 
+          << " bytes from timestamp " << ep.value().timestamp();
         ++f_it;
       } else {
         // file says no more events
@@ -119,7 +119,7 @@ void Converter::convert() {
     uint32_t earliest_ts{0xffffffff};
     for (const auto& [name, q] : event_queue) {
       if (q.size() == 0) continue;
-      if (q.front().timestamp < earliest_ts) earliest_ts = q.front().timestamp;
+      if (q.front().timestamp() < earliest_ts) earliest_ts = q.front().timestamp();
     }
     reformat_log(debug) << "Earliest timestamp " << earliest_ts;
 
@@ -127,8 +127,8 @@ void Converter::convert() {
     std::map<std::string,EventPacket> aligned_event;
     for (auto& [name,q] : event_queue) {
       if (q.size() == 0) continue;
-      if (q.front().timestamp - earliest_ts < max_diff_) {
-        reformat_log(debug) << name << " aligned at " << q.front().timestamp << " queue size " << q.size();
+      if (q.front().timestamp() - earliest_ts < max_diff_) {
+        reformat_log(debug) << name << " aligned at " << q.front().timestamp() << " queue size " << q.size();
         aligned_event[name] = q.front();
         q.pop();
       }
@@ -146,7 +146,7 @@ void Converter::convert() {
       eh.setTimestamp(TTimeStamp()); // related to earliest_ts ???
       //eh.setRealData(real_data_); // probably smart...
       for (auto& [name,ep] : aligned_event) {
-        output_event.add(name, ep.data);
+        output_event.add(name, ep.data());
       }
       // go to next event in output file.
       output_file.nextEvent(true);

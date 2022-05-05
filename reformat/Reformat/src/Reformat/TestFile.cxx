@@ -30,8 +30,8 @@ class TestFile : public RawDataFile {
     if (i_event_ > num_) return {};
 
     EventPacket ep;
-    ep.timestamp = i_event_*10 + time_jitter(rng);
-    ep.data = std::vector<uint8_t>(i_event_,22);
+    ep.setTimestamp(i_event_*10 + time_jitter(rng));
+    ep.append(std::vector<uint8_t>(i_event_,22));
     return ep;
   }
  private:

@@ -2,10 +2,10 @@
 
 from Reformat import reformat
 
-def HGCROCv2RawDataFile(filepath) :
+def PolarfireRawFile(filepath,name) :
     return reformat.RawDataFile(
             module = 'TestBeam',
-            class_name = 'reformat::testbeam::HGCROCv2RawDataFile',
+            class_name = 'testbeam::PolarfireRawFile',
+            name = name,
             input_file = filepath,
-            name = 'HgcrocRawData'
             )

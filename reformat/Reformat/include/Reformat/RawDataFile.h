@@ -8,17 +8,9 @@
 #include "Framework/Event.h"
 #include "Framework/Logger.h"
 
-namespace reformat {
+#include "Reformat/EventPacket.h"
 
-/**
- * Each raw data file produced event packets
- */
-struct EventPacket {
-  /// the timestamp for this event **from this raw data file**
-  uint32_t timestamp;
-  /// the buffer of raw data
-  std::vector<uint8_t> data;
-};
+namespace reformat {
 
 /**
  * @class RawDataFile

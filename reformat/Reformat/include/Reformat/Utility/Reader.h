@@ -6,8 +6,7 @@
 #include <string>
 #include <type_traits>
 
-namespace reformat {
-namespace utility {
+namespace reformat::utility {
 
 /**
  * @class Reader
@@ -218,7 +217,6 @@ class Reader {
   std::ifstream file_;
 };  // Reader
 
-}  // namespace utility
-}  // reformat
+}  // namespace reformat::utility
 
 #endif  
