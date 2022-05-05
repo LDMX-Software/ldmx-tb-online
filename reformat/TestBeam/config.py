@@ -15,7 +15,7 @@ arg = parser.parse_args()
 
 c = reformat.Converter(arg.output)
 c.term_level = 1
-c.event_limit = 10
+#c.event_limit = 100
 c.keep_all = False
 
 from Reformat import testbeam

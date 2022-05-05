@@ -145,7 +145,7 @@ void Converter::convert() {
       eh.setRun(run_);
       eh.setEventNumber(i_event++);
       eh.setTimestamp(TTimeStamp()); // related to earliest_ts ???
-      //eh.setRealData(real_data_); // probably smart...
+      eh.setRealData(true); // probably smart...
       for (auto& [name,ep] : aligned_event) {
         output_event.add(name, ep.data());
       }
