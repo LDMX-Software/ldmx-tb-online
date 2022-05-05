@@ -32,6 +32,7 @@ void Converter::configure(const framework::config::Parameters& cfg) {
   max_diff_ = cfg.getParameter<int>("max_diff");
   keep_all_ = cfg.getParameter<bool>("keep_all");
   event_limit_ = cfg.getParameter<int>("event_limit");
+  detector_name_ = cfg.getParameter<std::string>("detector_name");
 
   reformat_log(info) << "Converter parameters: {\n\t"
     << "pass : " << pass_ << ",\n\t"
@@ -40,6 +41,7 @@ void Converter::configure(const framework::config::Parameters& cfg) {
     << "start_event : " << start_event_ << ",\n\t"
     << "max_diff : " << max_diff_ << ",\n\t"
     << "event_limit : " << event_limit_ << ",\n\t"
+    << "detector_name : " << detector_name_ << ",\n\t"
     << "keep_all : " << keep_all_ << "\n}";
 
   // Framework already has a library loading mechanism, no need to repeat ourselves
@@ -83,6 +85,7 @@ void Converter::convert() {
 
   ldmx::RunHeader run_header(run_);
   run_header.setRunStart(std::time(nullptr));
+  run_header.setDetectorName(detector_name_);
   output_file.writeRunHeader(run_header);
 
   reformat_log(debug) << "Initialized Event, EventFile, and RunHeader";

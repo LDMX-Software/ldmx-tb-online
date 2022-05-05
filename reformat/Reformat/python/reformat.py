@@ -31,6 +31,7 @@ class Converter :
         self.run = 1
         self.start_event = 0
         self.output_filename = output_file
+        self.detector_name = 'ldmx-hcal-prototype-v1.0'
         self.pass_name = 'raw'
         self.keep_all = True
         self.max_diff = 10

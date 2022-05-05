@@ -33,6 +33,8 @@ class Converter {
   std::string pass_;
   /// output file name to write data to
   std::string output_filename_;
+  /// name of detector for run header
+  std::string detector_name_;
   /// run number to use for output event tree
   int run_;
   /// starting event number
