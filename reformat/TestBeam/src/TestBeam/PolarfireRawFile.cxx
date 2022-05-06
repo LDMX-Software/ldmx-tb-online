@@ -14,26 +14,21 @@ class PolarfireRawFile : public reformat::RawDataFile {
  public:
   PolarfireRawFile(const framework::config::Parameters& p);
   virtual std::optional<reformat::EventPacket> next() final override;
+ private:
   long int spill_{-1};
   long int i_spill_{0};
- private:
-  /// the file reader
-  reformat::utility::Reader file_reader_;
 };
 
 PolarfireRawFile::PolarfireRawFile(const framework::config::Parameters& ps)
-  : RawDataFile(ps) {
-  file_reader_.open(ps.getParameter<std::string>("input_file"));
-}
+  : RawDataFile(ps) {}
 
 std::optional<reformat::EventPacket> PolarfireRawFile::next() {
-  if (!file_reader_ or file_reader_.eof()) return {};
-
   /// words for reading and decoding
   static uint32_t w;
 
   // special header words not counted in event length
-  do {
+  w=0;
+  while (file_reader_ and w != 0xbeef2021 and w != 0xbeef2022) {
     file_reader_ >> w;
     if (w == 0xbeef2021) {
       reformat_log(debug) << "Signal words imply version 1";
@@ -42,7 +37,8 @@ std::optional<reformat::EventPacket> PolarfireRawFile::next() {
     } else {
       reformat_log(debug) << "Extra header (inserted by rogue): " << reformat::utility::hex(w);
     }
-  } while (file_reader_ and w != 0xbeef2021 and w != 0xbeef2022);
+  }
+  if (!file_reader_ or file_reader_.eof()) return {};
 
   reformat::EventPacket ep;
   ep.append(w);
