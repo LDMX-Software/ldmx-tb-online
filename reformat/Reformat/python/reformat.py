@@ -40,6 +40,28 @@ class Converter :
         self.file_level = 4
         self.log_file = ''
 
+    def cli_parser(default_output = 'reformatted.root') :
+        import argparse
+        import sys
+
+        c = Converter(default_output)
+        parser = argparse.ArgumentParser(f'ldmx reformat {sys.argv[0]}')
+
+        class SetConverterVar(argparse.Action) :
+            def __init__(self, option_strings, dest, nargs=None, **kwargs) :
+                if nargs is not None :
+                    raise ValueError('nargs not allowed for SetConverterVar')
+                super().__init__(option_strings, dest, **kwargs)
+            def __call__(self, parser, namespace, values, option_string=None) :
+                setattr(Converter.lastConverter, self.dest, values)
+
+        for k, v in c.__dict__.items() :
+            if k in ['libraries','input_files'] :
+                continue
+            parser.add_argument(f'--{k}',action=SetConverterVar,type=v.__class__,default=v)
+
+        return c, parser
+
     def addLibrary(lib) :
         if Converter.lastConverter is None :
             raise Exception('Must define a Converter object before adding another library.')
@@ -63,6 +85,10 @@ class Converter :
         msg += f'  Run: {self.run}\n'
         msg += f'  Pass Name: {self.pass_name}\n'
         msg += f'  Start Event: {self.start_event}\n'
+        msg += f'  Detector Name: {self.detector_name}\n'
+        msg += f'  Keep All: {repr(self.keep_all)}\n'
+        msg += f'  Max Diff: {self.max_diff}\n'
+        msg += f'  Event Limit: {self.event_limit}\n'
         msg += 'Input Files:\n'
         for f in self.input_files :
             msg += f'  {f}\n'
