@@ -24,28 +24,29 @@ class Converter :
 
     lastConverter = None
 
-    def __init__(self, output_file) :
+    def __init__(self, **kwargs) :
         Converter.lastConverter = self
         self.libraries = []
         self.input_files = []
-        self.run = 1
-        self.start_event = 0
-        self.output_filename = output_file
-        self.detector_name = 'ldmx-hcal-prototype-v1.0'
-        self.pass_name = 'raw'
-        self.keep_all = True
-        self.max_diff = 10
-        self.event_limit = -1
-        self.term_level = 4
-        self.file_level = 4
-        self.log_file = ''
+        self.run = kwargs.get('run',1)
+        self.start_event = kwargs.get('start_event',0)
+        self.output_filename = kwargs.get('output_filename','reformatted.root')
+        self.detector_name = kwargs.get('detector_name','ldmx-hcal-prototype-v1.0')
+        self.pass_name = kwargs.get('pass_name','raw')
+        self.keep_all = kwargs.get('keep_all',True)
+        self.max_diff = kwargs.get('max_diff',10)
+        self.event_limit = kwargs.get('event_limit',-1)
+        self.term_level = kwargs.get('term_level',4)
+        self.file_level = kwargs.get('file_level',4)
+        self.log_file = kwargs.get('log_file','')
 
-    def cli_parser(default_output = 'reformatted.root') :
+    def cli_parser(**kwargs) :
         import argparse
         import sys
 
-        c = Converter(default_output)
-        parser = argparse.ArgumentParser(f'ldmx reformat {sys.argv[0]}')
+        c = Converter(**kwargs)
+        parser = argparse.ArgumentParser(f'ldmx reformat {sys.argv[0]}',
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
         class SetConverterVar(argparse.Action) :
             def __init__(self, option_strings, dest, nargs=None, **kwargs) :

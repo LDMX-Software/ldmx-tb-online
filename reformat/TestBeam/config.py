@@ -2,7 +2,10 @@
 
 from Reformat import reformat
 
-c, parser = reformat.Converter.cli_parser()
+c, parser = reformat.Converter.cli_parser(
+        term_level = 1,
+        output_filename = 'reformatted.root'
+        )
 
 parser.add_argument('--pf1')
 parser.add_argument('--pf0')
