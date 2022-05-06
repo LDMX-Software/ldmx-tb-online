@@ -11,6 +11,8 @@ RawDataFile::RawDataFile(const framework::config::Parameters& p)
   : theLog_{framework::logging::makeLogger(p.getParameter<std::string>("name"))},
     name_{p.getParameter<std::string>("name")} {
       reformat_log(info) << "RawDataFile " << name_ << " created.";
+      std::string fn{p.getParameter<std::string>("input_file","")};
+      if (not fn.empty()) file_reader_.open(fn);
     }
 
 const std::string& RawDataFile::name() const {

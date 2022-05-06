@@ -9,6 +9,7 @@
 #include "Framework/Logger.h"
 
 #include "Reformat/EventPacket.h"
+#include "Reformat/Utility/Reader.h"
 
 namespace reformat {
 
@@ -49,6 +50,9 @@ class RawDataFile {
  protected:
   /// the logger for this raw data file
   mutable framework::logging::logger theLog_;
+
+  /// the binary file reader
+  reformat::utility::Reader file_reader_;
 
  private:
   /// the name given to this raw data file

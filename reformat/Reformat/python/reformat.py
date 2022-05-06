@@ -108,16 +108,19 @@ class RawDataFile :
     class_name : str
         Full class name (including namespace) of data file
     name : str
-        Human-friendly name for logging
+        Human-friendly name for logging and event bus attachment
+    input_name : str
+        File to read from (optional)
     kwargs : dict
         Extra file parameters
     """
 
-    def __init__(self, module, class_name, name, **kwargs) :
+    def __init__(self, module, class_name, name, input_name = '', **kwargs) :
         Converter.addModule(module)
         self.__dict__ = kwargs
         self.class_name = class_name
         self.name = name
+        self.input_name = input_name
 
     def __repr__(self) :
         return f'{self.__class__.__name__}({self.class_name})'
