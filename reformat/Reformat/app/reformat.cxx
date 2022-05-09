@@ -46,8 +46,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  framework::logging::logger theLog_{framework::logging::makeLogger("reformat")};
-  reformat::Converter c;
+  framework::config::Parameters configuration;
   try {
     framework::ConfigurePython::root_module = "reformat";
     framework::ConfigurePython::root_class  = "Converter";
@@ -55,8 +54,17 @@ int main(int argc, char* argv[]) {
 
     framework::ConfigurePython cfg(argv[ptrpy], argv + ptrpy + 1,
                                    argc - ptrpy - 1);
+    configuration = cfg.get();
+  } catch (const framework::exception::Exception& e) {
+    std::cerr << "[" << e.name() << "] : " << e.message() << std::endl;
+    return 1;
+  }
+
+  framework::logging::logger theLog_{framework::logging::makeLogger("reformat")};
+  reformat::Converter c;
+  try {
     // logging opened here
-    c.configure(cfg.get());
+    c.configure(configuration);
   } catch (framework::exception::Exception& e) {
     reformat_log(fatal)
       << "Config Error [" << e.name() << "] : " << e.message()
