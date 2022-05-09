@@ -18,6 +18,9 @@ class TrigScintEventGroupedRawFile : public reformat::RawDataFile {
 TrigScintEventGroupedRawFile::TrigScintEventGroupedRawFile(const framework::config::Parameters& p)
   : reformat::RawDataFile(p) {
     bytes_per_event_ = p.getParameter<int>("bytes_per_event");
+    reformat_log(info) << "TrigScintEventGroupedRawFile cfg : {\n\t"
+      << "bytes_per_event = " << bytes_per_event_
+      << "\n}";
   }
 
 std::optional<reformat::EventPacket> TrigScintEventGroupedRawFile::next() {
@@ -31,7 +34,7 @@ std::optional<reformat::EventPacket> TrigScintEventGroupedRawFile::next() {
   ep.append(buff);
 
   // first 8 bytes are the two deprecated timestamps (UTC seconds and UTC clock ticks)
-  static const std::size_t TIMESINCESPILL_POS = 0;
+  static const std::size_t TIMESINCESPILL_POS = 8;
   // next 4 bytes are the time since spill
   static const std::size_t TIMESINCESPILL_LEN_BYTES = 4;
   uint32_t timeSpill=0;
@@ -41,6 +44,8 @@ std::optional<reformat::EventPacket> TrigScintEventGroupedRawFile::next() {
   }
   reformat_log(debug) << "time since spill " << timeSpill;
   ep.setTimestamp(timeSpill);
+
+  return ep;
 }
 
 }

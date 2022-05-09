@@ -79,7 +79,8 @@ void Converter::configure(const framework::config::Parameters& cfg) {
 void Converter::convert() {
   reformat_log(info) << "Beginning conversion";
   framework::Event output_event(pass_);
-  framework::EventFile output_file({}, output_filename_, 
+  framework::EventFile output_file(
+      {}, output_filename_, 
       nullptr, true, true, false);
   output_file.setupEvent(&output_event);
 

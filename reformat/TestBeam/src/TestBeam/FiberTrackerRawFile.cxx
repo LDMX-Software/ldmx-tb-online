@@ -127,6 +127,7 @@ std::optional<reformat::EventPacket> FiberTrackerRawFile::next() {
   if (i_spill_event_ >= spill_events_.size()) {
     if (file_reader_) {
       next_spill();
+      i_spill_event_ = 0;
     } else {
       return {};
     }
@@ -178,7 +179,6 @@ void FiberTrackerRawFile::next_spill() {
   int eventSelectionAcq = FiberTrackerField(file_reader_,++i_field).to_int();
   reformat_log(debug) << i_field << " eventSelectionAcq = " << eventSelectionAcq;
   FiberTrackerField events_data_field(file_reader_,++i_field);
-  i_spill_event_ = -1;
   spill_events_.clear();
   spill_events_.reserve( events_data_field.value().size()/10 );
   for (std::size_t i_word{0}; i_word < events_data_field.value().size(); i_word += 10) {

@@ -10,13 +10,24 @@ namespace testbeam {
  * Each event has exactly seven (7) 32-bit words in it.
  * No extra signal headers or variable length, just 7 32-bit words.
  *
- * 1. Run number - run number according to white rabbit
- * 2. WR Counter - event counter local to White Rabbit
- * 3. Channel ???
- * 4. Seq ID ???
- * 5. Seconds ???
- * 6. Coarse ???
- * 7. Frac ???
+ * 0. Run number - run number according to white rabbit
+ * 1. WR Counter - event counter local to White Rabbit
+ * 2. Channel - channel/port being read from (table below)
+ * 3. Seq ID - counter within a channel
+ * 4. Seconds - whole IAT timestamp in seconds
+ * 5. Coarse - coarse timestamp in 8 ns steps
+ * 6. Frac - fractional timestamp in 8/4096 ns stemps
+ *
+ * ### channel descriptions
+ *
+ * Channel | Description
+ * --------|------------
+ * 1       | Start of spill
+ * 2       | Scintillator plates (aka "telescope trigger")
+ * 3       | High pressure cherenkov
+ * 4       | Low pressure cherenkov
+ * 5       | End of busy from ATCA
+ *
  */
 class WhiteRabbitRawFile : public reformat::RawDataFile {
  public:
