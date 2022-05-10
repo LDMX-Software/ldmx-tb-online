@@ -28,7 +28,7 @@ TrigScintEventGroupedRawFile::TrigScintEventGroupedRawFile(const framework::conf
 std::optional<reformat::EventPacket> TrigScintEventGroupedRawFile::next() {
   std::vector<uint8_t> buff;
   if (not file_reader_.read(buff, bytes_per_event_)) {
-    reformat_log(debug) << "done with events";
+    reformat_log(debug) << "done with events on spill " << i_spill_;
     return {};
   }
 
