@@ -30,6 +30,8 @@ namespace testbeam {
  *
  */
 class WhiteRabbitRawFile : public reformat::RawDataFile {
+  int i_spill{-1};
+  unsigned long int last_spill_time_;
  public:
   WhiteRabbitRawFile(const framework::config::Parameters& ps);
   virtual std::optional<reformat::EventPacket> next() final override;
@@ -39,16 +41,22 @@ WhiteRabbitRawFile::WhiteRabbitRawFile(const framework::config::Parameters& ps)
   : RawDataFile(ps) {}
 
 std::optional<reformat::EventPacket> WhiteRabbitRawFile::next() {
-  if (!file_reader_ or file_reader_.eof()) return {};
-
   std::vector<uint32_t> event_data;
-  if (!file_reader_.read(event_data, 7)) {
-    reformat_log(error) << "File ended in the middle of reading an event.";
-    return {};
-  }
+  do {
+    if (!file_reader_.read(event_data, 7)) {
+      reformat_log(debug) << "no more events, ended with spill " << i_spill;
+      return {};
+    }
+  } while (event_data.at(2) != 1 and event_data.at(2) != 2);
 
   reformat::EventPacket ep;
   ep.append(event_data);
+
+  if (event_data.at(2) == 1 and (event_data.at(4) - last_spill_time_ > 5 or i_spill < 0)) {
+    i_spill++;
+    last_spill_time_ = event_data.at(4)*1e9 + event_data.at(5)*8;
+    reformat_log(debug) << "new spill " << i_spill;
+  }
 
   // calculate WR timestamp
   reformat::EventPacket::TimestampType ts{event_data.at(4)};

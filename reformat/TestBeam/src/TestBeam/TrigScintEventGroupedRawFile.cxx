@@ -10,6 +10,8 @@ namespace testbeam {
  */
 class TrigScintEventGroupedRawFile : public reformat::RawDataFile {
   int bytes_per_event_;
+  int i_spill_{-1};
+  uint32_t last_event_time{0xffffffff};
  public:
   TrigScintEventGroupedRawFile(const framework::config::Parameters& p);
   virtual std::optional<reformat::EventPacket> next() final override;
@@ -40,10 +42,19 @@ std::optional<reformat::EventPacket> TrigScintEventGroupedRawFile::next() {
   uint32_t timeSpill=0;
   for (int iW = 0; iW < TIMESINCESPILL_LEN_BYTES; iW++) {
     int pos = TIMESINCESPILL_POS + iW;
-    timeSpill |= (buff.at(pos) << iW*8); //shift by a byte at a time
+    timeSpill |= (buff.at(pos) << (TIMESINCESPILL_LEN_BYTES-iW)*8); //shift by a byte at a time
   }
   reformat_log(debug) << "time since spill " << timeSpill;
-  ep.setTimestamp(timeSpill);
+
+  if (timeSpill < last_event_time) {
+    i_spill_++;
+    reformat_log(debug) << "new spill " << i_spill_;
+  }
+  last_event_time = timeSpill;
+
+  uint64_t ts{(i_spill_ << 32)+timeSpill};
+
+  ep.setTimestamp(ts);
 
   return ep;
 }

@@ -10,6 +10,7 @@ c, parser = reformat.Converter.cli_parser(
 parser.add_argument('--pf1')
 parser.add_argument('--pf0')
 parser.add_argument('--ts')
+parser.add_argument('--wr')
 parser.add_argument('--ft41')
 parser.add_argument('--ft42')
 parser.add_argument('--ft50')
@@ -27,6 +28,9 @@ if arg.pf1 is not None :
 
 if arg.ts is not None :
     c.input_files.append(testbeam.TrigScintEventGroupedRawFile(arg.ts))
+
+if arg.wr is not None :
+    c.input_files.append(testbeam.WhiteRabbitRawFile(arg.wr))
 
 if arg.ft41 is not None :
     c.input_files.append(testbeam.FiberTrackerRawFile(arg.ft41,'FT41Raw'))
