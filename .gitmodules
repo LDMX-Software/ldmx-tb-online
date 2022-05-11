@@ -1,0 +1,6 @@
+[submodule "reformat/Framework"]
+	path = reformat/Framework
+	url = git@github.com:LDMX-Software/Framework.git
+[submodule "reformat/cmake"]
+	path = reformat/cmake
+	url = git@github.com:LDMX-Software/cmake.git
