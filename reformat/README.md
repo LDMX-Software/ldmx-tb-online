@@ -36,5 +36,5 @@ Common cmake macros used in LDMX-Software.
 This is the module that is the main interface between different serialization schemes (Rogue, Boost.Serialization,...)
 and the Framework EventFile.
 
-### HexaBoard
-A band-aid solution for converting the Boost.Serialization output of hexactrl-sw.
+### TestBeam
+The raw data files unpacking data recorded during April 2022 testbeam.
