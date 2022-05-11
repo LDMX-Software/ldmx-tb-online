@@ -139,7 +139,8 @@ std::optional<reformat::EventPacket> PolarfireRawFile::next() {
     spill_ = spill;
     i_spill_++;
   }
-  reformat::EventPacket::TimestampType ts{i_spill_};
+  reformat::EventPacket::TimestampType ts;
+  ts = i_spill_;
   ts <<= 32;
   ts += ticks;
   reformat_log(debug) << " Timestamp(i_spill = " << i_spill_ << ", ticks = " << ticks << ") = " << ts;

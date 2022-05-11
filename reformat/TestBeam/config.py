@@ -4,6 +4,7 @@ from Reformat import reformat
 
 c, parser = reformat.Converter.cli_parser(
         term_level = 1,
+        keep_all = False,
         output_filename = 'reformatted.root'
         )
 

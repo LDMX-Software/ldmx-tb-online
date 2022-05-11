@@ -105,7 +105,7 @@ void Converter::convert() {
     auto f_it = input_files_.begin();
     while (f_it != input_files_.end()) {
       // pop the next event packet from this input file
-      //  if it is defined, then put the data into that file's queue:w
+      //  if it is defined, then put the data into that file's queue
       auto ep = (*f_it)->next();
       if (ep) {
         event_queue[(*f_it)->name()].push(ep.value());
@@ -155,7 +155,7 @@ void Converter::convert() {
       }
       // go to next event in output file.
       output_file.nextEvent(true);
-    } else if (not keep_all_) {
+    } else if (aligned_event.size() > 0 and not keep_all_) {
       reformat_log(debug) << "skipping partial event";
     }
 
