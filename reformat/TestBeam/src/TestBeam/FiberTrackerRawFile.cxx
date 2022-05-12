@@ -18,7 +18,7 @@ class FiberTrackerField {
     uint32_t len;
     r >> len >> field_header_;
     r.read(field_value_,len-1);
-    if (i_field != field_header_) {
+    if (r and i_field != field_header_) {
       EXCEPTION_RAISE("BadForm", "Field "+std::to_string(i_field)
           +" has a mismatched header "+std::to_string(field_header_));
     }
@@ -114,6 +114,7 @@ class FiberTrackerRawFile : public reformat::RawDataFile {
   virtual std::optional<reformat::EventPacket> next() final override;
  private:
   void next_spill();
+  static const uint64_t shift_to_wr_time_ns_ = 2100000 - 3;
  private:
   int i_spill_event_;
   std::vector<FiberTrackerEvent> spill_events_;
@@ -125,7 +126,7 @@ FiberTrackerRawFile::FiberTrackerRawFile(const framework::config::Parameters& ps
 std::optional<reformat::EventPacket> FiberTrackerRawFile::next() {
   i_spill_event_++;
   if (i_spill_event_ >= spill_events_.size()) {
-    if (file_reader_) {
+    if (file_reader_ and not file_reader_.eof()) {
       next_spill();
       i_spill_event_ = 0;
     } else {
@@ -142,9 +143,11 @@ std::optional<reformat::EventPacket> FiberTrackerRawFile::next() {
   ep.append(ft_event.channel_hits);
 
   // calculate FiberTracker TimeStamp
-  reformat::EventPacket::TimestampType ts{ft_event.trigger_timestamp_msb};
-  ts <<= 32;
-  ts |= ft_event.trigger_timestamp_lsb;
+  reformat::EventPacket::TimestampType ts{
+    ft_event.trigger_timestamp_msb*1e9  // s -> ns
+    + ft_event.trigger_timestamp_lsb*8  // 8ns ticks -> ns
+    + shift_to_wr_time_ns_              // shift to account for wire distance
+  };
   ep.setTimestamp(ts);
   
   return ep;
