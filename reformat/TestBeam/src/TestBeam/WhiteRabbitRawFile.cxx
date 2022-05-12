@@ -3,6 +3,32 @@
 
 namespace testbeam {
 
+class WhiteRabbitEventPacket {
+  std::vector<uint32_t> data_;
+ public:
+  reformat::utility::Reader& read(reformat::utility::Reader& r) {
+    return r.read(data_, 7);
+  }
+  const std::vector<uint32_t>& data() const {
+    return data_;
+  }
+  uint64_t timestamp() const {
+    return (
+        data_.at(4)*1e9 // s -> ns
+        + data_.at(5)*8 // 8ns period -> ns
+        + data_.at(6)/512 // 4096 ticks per 8ns period -> ns
+        );
+  }
+  bool is_start_of_spill() const {
+    if (data_.size() < 3) return false;
+    return data_.at(2) == 1;
+  }
+  bool is_trigger() const {
+    if (data_.size() < 3) return false;
+    return data_.at(2) == 2;
+  }
+};
+
 /**
  * White Rabbit raw data file
  *
@@ -41,26 +67,24 @@ WhiteRabbitRawFile::WhiteRabbitRawFile(const framework::config::Parameters& ps)
   : RawDataFile(ps) {}
 
 std::optional<reformat::EventPacket> WhiteRabbitRawFile::next() {
-  std::vector<uint32_t> event_data;
+  WhiteRabbitEventPacket event;
   do {
-    if (!file_reader_.read(event_data, 7)) {
+    if (not (file_reader_ >> event)) {
       reformat_log(debug) << "no more events, ended with spill " << i_spill;
       return {};
     }
-  } while (event_data.at(2) != 1 and event_data.at(2) != 2);
+  } while (not event.is_start_of_spill() and not event.is_trigger());
 
   reformat::EventPacket ep;
-  ep.append(event_data);
+  ep.append(event.data());
 
-  if (event_data.at(2) == 1 and (event_data.at(4) - last_spill_time_ > 5 or i_spill < 0)) {
+  if (event.is_start_of_spill()) { //and (event.timestamp() - last_spill_time_ > 5e9 or i_spill < 0)) {
     i_spill++;
-    last_spill_time_ = event_data.at(4)*1e9 + event_data.at(5)*8;
+    last_spill_time_ = event.timestamp();
     reformat_log(debug) << "new spill " << i_spill;
   }
 
-  // calculate WR timestamp
-  reformat::EventPacket::TimestampType ts{event_data.at(4)};
-  ep.setTimestamp(ts);
+  ep.setTimestamp(event.timestamp());
   
   return ep;
 }
