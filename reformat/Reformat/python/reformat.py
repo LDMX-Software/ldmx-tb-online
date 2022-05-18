@@ -44,8 +44,23 @@ class Converter :
         import argparse
         import sys
 
+        cli_parser_help = {
+                'run' : 'Run number to set in the output EventFile',
+                'start_event' : 'First event number to start on in the output EventFile',
+                'output_filename' : 'Output ROOT EventFile',
+                'detector_name' : 'Name of detector the raw data was collected from',
+                'pass_name' : 'Name of pass to use in output EventFile',
+                'keep_all' : 'Keep all events even if they are not aligned with other RawDataFiles',
+                'max_diff' : 'Maximum difference between two timestamps to consider aligned (in whatever units the RawDataFiles use)',
+                'event_limit' : 'Maximum number of events to put into output EventFile',
+                'term_level' : 'Logging level to print to terminal (lower == more messages)',
+                'file_level' : 'Logging level to print to file (lower == more messages)',
+                'log_file' : 'Logging file (empty string -> no file produced)'
+                }
+
         c = Converter(**kwargs)
         parser = argparse.ArgumentParser(f'ldmx reformat {sys.argv[0]}',
+                description = kwargs.get('description',None),
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
         class SetConverterVar(argparse.Action) :
@@ -59,7 +74,12 @@ class Converter :
         for k, v in c.__dict__.items() :
             if k in ['libraries','input_files'] :
                 continue
-            parser.add_argument(f'--{k}',action=SetConverterVar,type=v.__class__,default=v)
+            parser.add_argument(
+                    f'--{k}',
+                    action=SetConverterVar,
+                    type=v.__class__,
+                    help=cli_parser_help.get(k,''),
+                    default=v)
 
         return c, parser
 
