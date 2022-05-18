@@ -33,7 +33,7 @@ class Converter :
         self.output_filename = kwargs.get('output_filename','reformatted.root')
         self.detector_name = kwargs.get('detector_name','ldmx-hcal-prototype-v1.0')
         self.pass_name = kwargs.get('pass_name','raw')
-        self.keep_all = kwargs.get('keep_all',True)
+        self.keep_all = kwargs.get('keep_all',False)
         self.max_diff = kwargs.get('max_diff',10)
         self.event_limit = kwargs.get('event_limit',-1)
         self.term_level = kwargs.get('term_level',4)
