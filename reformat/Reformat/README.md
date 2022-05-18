@@ -1,4 +1,4 @@
-# usage
+# Reformat
 ```
 reformat {configuration_script.py} [arguments]
 ```
@@ -26,6 +26,24 @@ where the input files are not EventFiles but we still want them to define the nu
 For this reason, the `Converter` continues to create new events until **all** RawDataFiles that
 are attached report that they have no more events to add.
 
+## Alignment Procedure
+Each RawDataFile provides the raw data for an event alongside a timestamp for the event.
+The alignment procedure only considers the timestamp which is simply a 64-bit unsigned integer.
+There is currently no definition of the units for this timestamp, so each RawDataFile needs
+to make sure it is using the same units as any others where alignment is attempted.
+
+Initialize empty queues for reach RawDataFile.
+
+While there are still RawDataFiles providing events, we undergo the following procedure.
+1. Pop the next event from each RawDataFile into their queue. If a RawDataFile provides the "end of file" event packet,
+   remove it from the list of files that are being aligned.
+2. Find the earliest timestamp at the front of each RawDataFile's queue - call this the reference time stamp.
+3. Remove all event packets from the front of each queue that are withing `max_diff` of the referent time stamp.
+  - This is guaranteed to remove at least one event packet (the one that has the earliest time stamp).
+  - Since the units are undefined, the `max_diff` parameter will change depending on which RawDataFiles you are trying to align.
+4. If all files provide an event packet (or if the user asked for all events to be kept with `keep_all`),
+   then put the raw data from those event packets into the output EventFile and move on to the next output event.
+
 ## RawDataFile
 
 Each `RawDataFile` that is attached to the `Converter` pops events from itself
@@ -49,13 +67,16 @@ Since the empty braces provided to the constructor of `std::optional` defines th
 a common design pattern is
 ```cpp
 std::optional<EventPacket> next() {
+  // empty constructor for std::optional defines it as "not given"
   if (my_file_is_over) return {};
 
   EventPacket ep;
   /**
    * insert actual unpacking of event here
    */
-  return ep
+  ep.append(my_data); // my_data is any int-type or vector of int-types
+  ep.setTimestamp(my_timestamp); // my_time
+  return ep;
 }
 ```
 
@@ -84,11 +105,9 @@ The module organization is identical to the modules used in ldmx-sw
 The default installation prefix is this directory,
 but this installation prefix is not included as a path to load libraries/headers/python modules
 from in the default ldmx-sw development container.
-
-There are two solutions to this:
-1. Use the [daq-env image](./../context/README.md) which includes this installation prefix
-    as a path for loading if the `daq` repo is placed within `LDMX_BASE` (i.e. similar to ldmx-sw).
-2. Change the installation prefix to the `ldmx-sw` one at configuration time.
+You can solve this by installing this package into the same location as ldmx-sw.
 ```bash
 ldmx cmake -DCMAKE_INSTALL_PREFIX=$LDMX_BASE/ldmx-sw/install ..
 ```
+**Note**: This causes issues if your ldmx-sw install uses a different Framework than this program.
+This program uses Framework v1.0.2 which is used by only the most recent versions of ldmx-sw.
