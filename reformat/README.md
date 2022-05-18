@@ -9,6 +9,12 @@ Instead, this set of modules is meant to be a starting point for future online e
 The requirements of the software (currently) in this directory is ROOT, C++17, and Boost - 
 all three of which are in the canonical "dev" containers that ldmx-sw is built with.
 
+When updating ldmx-tb-online to use `reformat` for the first time, make sure that the cmake and Framework
+submodules are initialized.
+```
+git submodule update --init
+```
+
 Building this software is similar to ldmx-sw.
 ```bash
 cd reformat
