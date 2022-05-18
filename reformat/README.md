@@ -22,7 +22,7 @@ ldmx make install
 This code-base is designed very similarly to the core Framework.
 The `reformat` program is configured using a python script at run-time,
 and the different input files can be dynamically loaded.
-On-going notes and documentation can be seen in the [usage](usage.md) document.
+On-going notes and documentation can be seen in the [Reformat README](Reformat/README.md) document.
 
 ## Table of Contents
 
