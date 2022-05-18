@@ -102,12 +102,7 @@ The module organization is identical to the modules used in ldmx-sw
 (we actually use the same `cmake` macros for configuring the libraries).
 
 ## Building Comments
-The default installation prefix is this directory,
-but this installation prefix is not included as a path to load libraries/headers/python modules
-from in the default ldmx-sw development container.
-You can solve this by installing this package into the same location as ldmx-sw.
-```bash
-ldmx cmake -DCMAKE_INSTALL_PREFIX=$LDMX_BASE/ldmx-sw/install ..
-```
+The default installation prefix is the ldmx-sw install prefix so that this program and its
+libraries can be "seen" from within the container.
 **Note**: This causes issues if your ldmx-sw install uses a different Framework than this program.
 This program uses Framework v1.0.2 which is used by only the most recent versions of ldmx-sw.

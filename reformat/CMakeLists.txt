@@ -17,9 +17,9 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/)
 include(BuildMacros RESULT_VARIABLE build_macros_found)
 
 # If an install location hasn't been set via CMAKE_INSTALL_PREFIX, set it to 
-# a reasonable default ($PWD/install).  
+# a reasonable default ($LDMX_BASE/ldmx-sw/install).  
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/install CACHE PATH "" FORCE)
+  set(CMAKE_INSTALL_PREFIX $ENV{LDMX_BASE}/ldmx-sw/install CACHE PATH "" FORCE)
   message(STATUS "Install directory set to ${CMAKE_INSTALL_PREFIX}")
 endif()
 
