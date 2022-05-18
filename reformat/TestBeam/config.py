@@ -6,6 +6,8 @@ c, parser = reformat.Converter.cli_parser(
         description="""
         Currently, alignment can be done between the two Polarfire FPGAs of the HCal.
         Alignment across other subsystems (e.g. TS and WR) is still in development.
+
+        WARNING: This program does not check that input raw files are from the same run.
         """,
         term_level = 1,
         keep_all = False,
