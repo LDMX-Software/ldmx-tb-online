@@ -32,9 +32,11 @@ class Reader {
    * We open the file as an input, binary file.
    *
    * @param[in] file_name full path to the file we are going to open
+   * @return true if file opened
    */
-  void open(const std::string& file_name) {
+  bool open(const std::string& file_name) {
     file_.open(file_name, std::ios::in | std::ios::binary);
+    return file_.is_open();
   }
 
   /**
