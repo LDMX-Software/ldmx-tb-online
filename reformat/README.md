@@ -24,6 +24,8 @@ ldmx cmake ..
 ldmx make install
 ```
 
+Browse the [list of issues labeled as 'question'](https://github.com/LDMX-Software/ldmx-tb-online/issues?q=label%3Aquestion) for answers to FAQs.
+
 ## Usage
 This code-base is designed very similarly to the core Framework.
 The `reformat` program is configured using a python script at run-time,
