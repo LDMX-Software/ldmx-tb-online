@@ -12,7 +12,13 @@ RawDataFile::RawDataFile(const framework::config::Parameters& p)
     name_{p.getParameter<std::string>("name")} {
       reformat_log(info) << "RawDataFile " << name_ << " created.";
       std::string fn{p.getParameter<std::string>("input_file","")};
-      if (not fn.empty()) file_reader_.open(fn);
+      if (not fn.empty()) {
+        file_reader_.open(fn);
+        if (not file_reader_) {
+          EXCEPTION_RAISE("NoFile","Binary file '"+fn
+              +"' could not be opened.");
+        }
+      }
     }
 
 const std::string& RawDataFile::name() const {
