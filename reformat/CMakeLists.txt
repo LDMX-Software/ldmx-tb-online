@@ -35,7 +35,23 @@ endif()
 clear_cache_variables()
 
 # The framework has all the backend code to write EventFiles
-add_subdirectory(Framework)
+#   if it is already installed, simply wrap interfaces with it
+#   otherwise build it ourselves
+if (EXISTS $ENV{LDMX_BASE}/ldmx-sw/install/include/Framework/Version.h)
+  find_package(ROOT 6.16 CONFIG REQUIRED)
+  find_package(Python3 COMPONENTS Interpreter Development)
+  find_package(Boost REQUIRED COMPONENTS log)
+  add_library(Framework INTERFACE)
+  target_link_libraries(Framework INTERFACE 
+    $ENV{LDMX_BASE}/ldmx-sw/install/lib/libFramework.so
+    Python3::Python 
+    Boost::log
+    ROOT::Core)
+  target_include_directories(Framework INTERFACE $ENV{LDMX_BASE}/ldmx-sw/install/include)
+  add_library(Framework::Framework ALIAS Framework)
+else()
+  add_subdirectory(Framework)
+endif()
 
 # testing package
 include(CTest)
