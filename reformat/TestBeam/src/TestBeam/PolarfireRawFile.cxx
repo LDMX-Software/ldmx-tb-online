@@ -32,30 +32,40 @@ class PolarfireRawFile : public reformat::RawDataFile {
   long int spill_{-1};
   long int i_spill_{0};
   int spills_to_skip_{0};
+  bool skip_high_tick_events_{true};
 };
 
 PolarfireRawFile::PolarfireRawFile(const framework::config::Parameters& ps)
   : RawDataFile(ps) {
   spills_to_skip_ = ps.getParameter("spills_to_skip",spills_to_skip_);
+  skip_high_tick_events_ = ps.getParameter("skip_high_tick_events",skip_high_tick_events_);
 }
 
 std::optional<reformat::EventPacket> PolarfireRawFile::next() {
-  static bool keep_current_spill{spills_to_skip_<=0};
-  do {
+  static const unsigned int max_intraspill_ticks{1 << 18}; // 2^18
+  static bool keep_current_spill{spills_to_skip_<=0}; // static so construction only done once
+  bool skipped_high_ticks_event{true}; // start true to force while loop to start
+  while (not keep_current_spill or skipped_high_ticks_event) {
+    skipped_high_ticks_event = false; // new loop, haven't skipped yet
     // pop does the actual unpacking and decoding of the event header
     auto [success, spill, ticks, ep] = pop();
     reformat_log(debug) << "popped event at spill " << spill << " with ticks " << ticks;
+    if (ticks > max_intraspill_ticks) {
+      reformat_log(debug) << "skipping high-ticks event";
+      skipped_high_ticks_event = true;
+      continue;
+    }
     // guard to return empty event packet upon end of file
     if (not success) return {};
     // check if new spill
     if (spill != spill_) {
       spill_ = spill;
       if (spills_to_skip_ > 0) {
-        reformat_log(debug) << "Skipping spill " << spill;
+        reformat_log(debug) << "skipping spill " << spill;
         --spills_to_skip_;
         keep_current_spill = false;
       } else {
-        reformat_log(debug) << "Keeping spill " << spill;
+        reformat_log(debug) << "keeping spill " << spill;
         keep_current_spill = true;
         ++i_spill_;
       }
@@ -67,12 +77,12 @@ std::optional<reformat::EventPacket> PolarfireRawFile::next() {
       ts = i_spill_;
       ts <<= 32;
       ts += ticks;
-      reformat_log(debug) << "Timestamp(i_spill = " << i_spill_ 
+      reformat_log(debug) << "timestamp(i_spill = " << i_spill_ 
         << ", ticks = " << ticks << ") = " << ts;
       ep.setTimestamp(ts);
       return ep;
     }
-  } while (not keep_current_spill);
+  }
   ldmx_log(error) << "escaped parsing loop when we were supposed to keep the current spill";
   return {};
 }
