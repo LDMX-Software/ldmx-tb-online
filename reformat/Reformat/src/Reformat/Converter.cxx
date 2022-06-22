@@ -33,6 +33,7 @@ void Converter::configure(const framework::config::Parameters& cfg) {
   keep_all_ = cfg.getParameter<bool>("keep_all");
   event_limit_ = cfg.getParameter<int>("event_limit");
   detector_name_ = cfg.getParameter<std::string>("detector_name");
+  print_frequency_ = cfg.getParameter<int>("print_frequency");
 
   reformat_log(info) << "Converter parameters: {\n\t"
     << "pass : " << pass_ << ",\n\t"
@@ -141,9 +142,11 @@ void Converter::convert() {
     // if we are keeping all events or if all files contributed an event packet
     // put the popped event packets into the event bus and save this event
     if (aligned_event.size() > 0 and keep_all_ or aligned_event.size() == event_queue.size()) {
-      reformat_log(info) << "keeping event " << i_event << " with " 
-        << aligned_event.size() << "/" << event_queue.size() << " files at "
-        << earliest_ts;
+      if (print_frequency_ > 0 and i_event % print_frequency_ == 0) {
+        reformat_log(info) << "keeping event " << i_event << " with " 
+          << aligned_event.size() << "/" << event_queue.size() << " files at "
+          << earliest_ts;
+      }
       // initialize event header for input files
       ldmx::EventHeader& eh = output_event.getEventHeader();
       eh.setRun(run_);

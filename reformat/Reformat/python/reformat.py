@@ -39,8 +39,9 @@ class Converter :
         self.term_level = kwargs.get('term_level',4)
         self.file_level = kwargs.get('file_level',4)
         self.log_file = kwargs.get('log_file','')
+        self.print_frequency = kwargs.get('print_frequency',1)
 
-    def cli_parser(**kwargs) :
+    def cli_parser(drop = [], **kwargs) :
         import argparse
         import sys
 
@@ -55,7 +56,8 @@ class Converter :
                 'event_limit' : 'Maximum number of events to put into output EventFile',
                 'term_level' : 'Logging level to print to terminal (lower == more messages)',
                 'file_level' : 'Logging level to print to file (lower == more messages)',
-                'log_file' : 'Logging file (empty string -> no file produced)'
+                'log_file' : 'Logging file (empty string -> no file produced)',
+                'print_frequency' : 'Print a message to INFO (level == 1) every N events'
                 }
 
         c = Converter(**kwargs)
@@ -71,8 +73,9 @@ class Converter :
             def __call__(self, parser, namespace, values, option_string=None) :
                 setattr(Converter.lastConverter, self.dest, values)
 
+        drop.extend(['libraries','input_files'])
         for k, v in c.__dict__.items() :
-            if k in ['libraries','input_files'] :
+            if k in drop :
                 continue
             parser.add_argument(
                     f'--{k}',

@@ -45,6 +45,8 @@ class Converter {
   int event_limit_;
   /// keep all events even ones where not all raw data files participate
   bool keep_all_;
+  /// frequency with which to print event status
+  int print_frequency_;
 
   /// log through the 'converter' channel
   mutable framework::logging::logger theLog_{framework::logging::makeLogger("Converter")};
