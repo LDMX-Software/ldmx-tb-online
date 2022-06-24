@@ -32,31 +32,32 @@ class PolarfireRawFile : public reformat::RawDataFile {
   long int spill_{-1};
   long int i_spill_{0};
   int spills_to_skip_{0};
-  bool skip_high_tick_events_{true};
+  int min_intra_spill_tick_{0};
+  int max_intra_spill_tick_{1<<32};
 };
 
 PolarfireRawFile::PolarfireRawFile(const framework::config::Parameters& ps)
   : RawDataFile(ps) {
   spills_to_skip_ = ps.getParameter("spills_to_skip",spills_to_skip_);
-  skip_high_tick_events_ = ps.getParameter("skip_high_tick_events",skip_high_tick_events_);
+  min_intra_spill_tick_ = ps.getParameter("min_intra_spill_tick",min_intra_spill_tick_);
+  max_intra_spill_tick_ = ps.getParameter("max_intra_spill_tick",max_intra_spill_tick_);
 }
 
 std::optional<reformat::EventPacket> PolarfireRawFile::next() {
-  static const unsigned int max_intraspill_ticks{1 << 18}; // 2^18
   static bool keep_current_spill{spills_to_skip_<=0}; // static so construction only done once
-  bool skipped_high_ticks_event{true}; // start true to force while loop to start
-  while (not keep_current_spill or skipped_high_ticks_event) {
-    skipped_high_ticks_event = false; // new loop, haven't skipped yet
+  bool skipped_inter_spill_event{true}; // start true to force while loop to start
+  while (not keep_current_spill or skipped_inter_spill_event) {
+    skipped_inter_spill_event = false; // new loop, haven't skipped yet
     // pop does the actual unpacking and decoding of the event header
     auto [success, spill, ticks, ep] = pop();
-    reformat_log(debug) << "popped event at spill " << spill << " with ticks " << ticks;
-    if (ticks > max_intraspill_ticks) {
-      reformat_log(debug) << "skipping high-ticks event";
-      skipped_high_ticks_event = true;
-      continue;
-    }
     // guard to return empty event packet upon end of file
     if (not success) return {};
+    reformat_log(debug) << "popped event at spill " << spill << " with ticks " << ticks;
+    if (ticks > max_intra_spill_tick_ or ticks < min_intra_spill_tick_) {
+      reformat_log(debug) << "skipping inter-spill event";
+      skipped_inter_spill_event = true;
+      continue;
+    }
     // check if new spill
     if (spill != spill_) {
       spill_ = spill;

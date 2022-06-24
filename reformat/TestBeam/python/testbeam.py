@@ -2,12 +2,18 @@
 
 from Reformat import reformat
 
-def PolarfireRawFile(filepath,name) :
+def PolarfireRawFile(filepath,name, 
+                     spills_to_skip = 0, 
+                     intra_spill_tick_range = (-1,1<<32)
+                     ) :
     return reformat.RawDataFile(
             module = 'TestBeam',
             class_name = 'testbeam::PolarfireRawFile',
             name = name,
             input_file = filepath,
+            spills_to_skip = spills_to_skip,
+            min_intra_spill_tick = intra_spill_tick_range[0],
+            max_intra_spill_tick = intra_spill_tick_range[1]
             )
 
 def WhiteRabbitRawFile(filepath) :
