@@ -31,6 +31,7 @@ namespace testbeam {
  */
 class WhiteRabbitRawFile : public reformat::RawDataFile {
   int i_spill{-1};
+  int events_in_spill = 0;
   unsigned long int last_spill_time_;
  public:
   WhiteRabbitRawFile(const framework::config::Parameters& ps);
@@ -42,24 +43,29 @@ WhiteRabbitRawFile::WhiteRabbitRawFile(const framework::config::Parameters& ps)
 
 std::optional<reformat::EventPacket> WhiteRabbitRawFile::next() {
   std::vector<uint32_t> event_data;
-  do {
-    if (!file_reader_.read(event_data, 7)) {
-      reformat_log(debug) << "no more events, ended with spill " << i_spill;
-      return {};
-    }
-  } while (event_data.at(2) != 1 and event_data.at(2) != 2);
 
+  if (!file_reader_.read(event_data, 7)) {
+    reformat_log(debug) << "no more events, ended with spill " << i_spill;
+    return {};
+  }
+  
   reformat::EventPacket ep;
-  ep.append(event_data);
+  //TODO ep.append(event_data) did not work, but wondering if this can be done more elegantly
+  for(int i = 0; i < 7; i++){
+    ep.append(event_data.at(i));
+  }
 
   if (event_data.at(2) == 1 and (event_data.at(4) - last_spill_time_ > 5 or i_spill < 0)) {
     i_spill++;
     last_spill_time_ = event_data.at(4)*1e9 + event_data.at(5)*8;
-    reformat_log(debug) << "new spill " << i_spill;
+    reformat_log(debug) << "new spill " << i_spill << " with " << events_in_spill << "events\n";
+    events_in_spill = 0;
   }
 
   // calculate WR timestamp
   reformat::EventPacket::TimestampType ts{event_data.at(4)};
+  ts = ts << 32;
+  ts |= event_data.at(5);
   ep.setTimestamp(ts);
   
   return ep;
