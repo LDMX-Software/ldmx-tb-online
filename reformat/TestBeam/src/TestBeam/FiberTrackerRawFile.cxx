@@ -85,8 +85,6 @@ struct FiberTrackerEvent {
            event_timestamp_msb;
   std::vector<uint32_t> channel_hits;
 
-  FiberTrackerEvent() = default;
-
   FiberTrackerEvent(const std::vector<uint32_t>& spill_data, std::size_t i_word) {
     trigger_timestamp_lsb = spill_data.at(i_word);
     trigger_timestamp_msb = spill_data.at(i_word+1);
@@ -96,6 +94,17 @@ struct FiberTrackerEvent {
     channel_hits.reserve(6);
     for (std::size_t i{i_word+4}; i < i_word+10 and i < spill_data.size(); i++)
       channel_hits.push_back(spill_data.at(i));
+  }
+
+  FiberTrackerEvent() {
+    trigger_timestamp_lsb = 0xffffffff;
+    trigger_timestamp_msb = 0xffffffff;
+    event_timestamp_lsb   = 0xffffffff;
+    event_timestamp_msb   = 0xffffffff;
+    channel_hits.clear();
+    channel_hits.reserve(6);
+    for (int i=0; i < 6; i++)
+      channel_hits.push_back(0xffffffff);
   }
 };
 
@@ -115,6 +124,7 @@ class FiberTrackerRawFile : public reformat::RawDataFile {
  private:
   void next_spill();
  private:
+  bool suddenStop = false;
   int i_spill_event_;
   std::vector<FiberTrackerEvent> spill_events_;
 };  // FiberTrackerRawFile
@@ -125,7 +135,11 @@ FiberTrackerRawFile::FiberTrackerRawFile(const framework::config::Parameters& ps
 std::optional<reformat::EventPacket> FiberTrackerRawFile::next() {
   i_spill_event_++;
   if (i_spill_event_ >= spill_events_.size()) {
-    if (file_reader_) {
+    
+
+    //TODO Temporary hack to recover from faulty end of file
+    if (file_reader_ && !suddenStop) {
+      reformat_log(fatal) << "Reading new spill\n";
       next_spill();
       i_spill_event_ = 0;
     } else {
@@ -152,8 +166,14 @@ std::optional<reformat::EventPacket> FiberTrackerRawFile::next() {
 
 void FiberTrackerRawFile::next_spill() {
   int i_field{0};
-  int acqMode = FiberTrackerField(file_reader_,++i_field).to_int();
-  reformat_log(debug) << i_field << " acqMode = " << acqMode;
+  try{
+    int acqMode = FiberTrackerField(file_reader_,++i_field).to_int();
+    reformat_log(debug) << i_field << " acqMode = " << acqMode;
+  }
+  catch(framework::exception::Exception e){
+    suddenStop = true;
+    return;
+  }
   long int acqStamp = FiberTrackerField(file_reader_,++i_field).to_long();
   reformat_log(debug) << i_field << " acqStamp = " << acqStamp;
   int acqType = FiberTrackerField(file_reader_,++i_field).to_int();
@@ -180,10 +200,14 @@ void FiberTrackerRawFile::next_spill() {
   reformat_log(debug) << i_field << " eventSelectionAcq = " << eventSelectionAcq;
   FiberTrackerField events_data_field(file_reader_,++i_field);
   spill_events_.clear();
-  spill_events_.reserve( events_data_field.value().size()/10 );
+  //spill_events_.reserve( (events_data_field.value().size())/10);
+  reformat_log(debug) << i_field << " spill_data_field.value().size(): " << events_data_field.value().size() << ")";
   for (std::size_t i_word{0}; i_word < events_data_field.value().size(); i_word += 10) {
     spill_events_.emplace_back(events_data_field.value(), i_word);
   }
+  //Add spill delimeter to mark the end of a spill, which is exactly the default constructor of the FiberTrackerEvent
+  spill_events_.emplace_back();
+
   reformat_log(debug) << i_field << " spill_events_ (size = " << spill_events_.size() << ")";
   // should be double technically
   FiberTrackerField meanSNew_field(file_reader_,++i_field);
