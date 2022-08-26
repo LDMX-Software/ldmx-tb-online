@@ -21,7 +21,7 @@ def extract_params(fp) :
 parser.add_argument('raw_files', help='Raw files to reformat (and align if >1)',nargs='+')
 parser.add_argument('--pf1-spill-offset',type=int,default=0,
     help='Number of spills to skip at start of PF1 data')
-parser.add_argument('--intra-spill-range',type=int,default=[-1,1<<32],nargs=2,
+parser.add_argument('--intra-spill-range',type=int,default=[-1,1<<31-1],nargs=2,
     help='Range of ticks to keep for alignment (i.e. to be consider intra-spill)')
 parser.add_argument('--pause', help='Print configuration and wait for user confirmation',
     action='store_true')

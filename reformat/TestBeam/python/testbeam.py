@@ -4,7 +4,7 @@ from Reformat import reformat
 
 def PolarfireRawFile(filepath,name, 
                      spills_to_skip = 0, 
-                     intra_spill_tick_range = (-1,1<<32)
+                     intra_spill_tick_range = (-1,1<<31)
                      ) :
     return reformat.RawDataFile(
             module = 'TestBeam',

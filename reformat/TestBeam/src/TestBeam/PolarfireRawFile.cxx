@@ -32,15 +32,32 @@ class PolarfireRawFile : public reformat::RawDataFile {
   long int spill_{-1};
   long int i_spill_{0};
   int spills_to_skip_{0};
-  int min_intra_spill_tick_{0};
-  int max_intra_spill_tick_{1<<32};
+  unsigned int min_intra_spill_tick_{0};
+  unsigned int max_intra_spill_tick_{(1<<31-1)};
 };
 
 PolarfireRawFile::PolarfireRawFile(const framework::config::Parameters& ps)
   : RawDataFile(ps) {
   spills_to_skip_ = ps.getParameter("spills_to_skip",spills_to_skip_);
-  min_intra_spill_tick_ = ps.getParameter("min_intra_spill_tick",min_intra_spill_tick_);
-  max_intra_spill_tick_ = ps.getParameter("max_intra_spill_tick",max_intra_spill_tick_);
+  int min_tick = ps.getParameter<int>("min_intra_spill_tick",0);
+  int max_tick = ps.getParameter<int>("max_intra_spill_tick",-1);
+  if (max_tick < 0) {
+    max_intra_spill_tick_ = std::numeric_limits<unsigned int>::max();
+  } else {
+    max_intra_spill_tick_ = max_tick;
+  }
+  if (min_tick < 0) {
+    min_intra_spill_tick_ = 0;
+  } else {
+    min_intra_spill_tick_ = min_tick;
+  }
+  /* helpful for debugging passing parameters
+  std::cout << "PolarfireRawFile {\n"
+    "  spills_to_skip : " << spills_to_skip_ << "\n" 
+    "  min_intra_spill_tick : " << min_intra_spill_tick_ << "\n" 
+    "  max_intra_spill_tick : " << max_intra_spill_tick_ << "\n" 
+    "}" << std::endl;
+  */
 }
 
 std::optional<reformat::EventPacket> PolarfireRawFile::next() {
