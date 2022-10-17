@@ -29,7 +29,7 @@ class Converter :
         self.libraries = []
         self.input_files = []
         self.run = kwargs.get('run',1)
-        self.start_event = kwargs.get('start_event',0)
+        self.start_event = kwargs.get('start_event',1)
         self.output_filename = kwargs.get('output_filename','reformatted.root')
         self.detector_name = kwargs.get('detector_name','ldmx-hcal-prototype-v2.0')
         self.pass_name = kwargs.get('pass_name','raw')
