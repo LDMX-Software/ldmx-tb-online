@@ -58,6 +58,8 @@ struct TimeSample {
  */
 class TrigScintTwoFibersRawFile : public reformat::RawDataFile {
   int i_ts_event_{0};
+  int i_spill_{-1};
+  uint32_t last_event_time{0xffffffff};
   std::vector<TimeSample> extract_timesamples(const std::vector<uint32_t>& stream);
  public:
   TrigScintTwoFibersRawFile(const framework::config::Parameters& p);
@@ -151,6 +153,15 @@ std::optional<reformat::EventPacket> TrigScintTwoFibersRawFile::next() {
   reformat::EventPacket::TimestampType ts;
   std::memcpy(bytes, &ts, 8);
   reformat_log(debug) << "time since spill " << ts << " " << reformat::utility::hex(ts);
+
+  if (ts < last_event_time && ts != 0) {
+    i_spill_++;
+    reformat_log(debug) << "new spill " << i_spill_;
+  }
+  last_event_time = ts;
+
+  ts = (((uint64_t)i_spill_) << 32)+ts;
+
   ep.setTimestamp(ts);
 
   /**

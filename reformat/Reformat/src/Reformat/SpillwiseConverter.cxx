@@ -4,6 +4,7 @@
 #include <ctime>
 #include <queue>
 #include <algorithm>
+#include <iomanip>
 
 #include "Framework/EventFile.h"
 #include "Framework/Event.h"
@@ -87,6 +88,36 @@ void SpillwiseConverter::configure(const framework::config::Parameters& cfg) {
   reformat_log(info) << "Configuration complete.";
 }
 
+std::vector<int> pairTStoFT( utility::TimestampCloud& spillts, std::vector<std::vector<EventPacket>> FTSpills, double dt, int& spillnumber, utility::TimestampCloud& finalcloud, bool isCherenkov = false){
+    std::vector<int> finalftpairs;   
+
+    for(int j = 0; j < FTSpills.size(); j++){
+      std::vector<int> pairsft;
+      std::string filename = "FTRaw";
+      utility::TimestampCloud spill(FTSpills.at(j), filename);
+
+      spill.translate(-dt);
+      //spill.translate(2096900); //time difference between WR and downstream FT, currently hard coded here, but there should be some automatic alignment routine made
+      if(isCherenkov){
+        //spill.translate(4948224); //time difference between WR trigger and cherenkovs,  currently hard coded here, but there should be some automatic alignment routine made
+        spill.translate(0); //time difference between WR trigger and cherenkovs,  currently hard coded here, but there should be some automatic alignment routine made
+      }
+      else{
+        spill.translate(2097060); //time difference between WR and downstream FT, currently hard coded here, but there should be some automatic alignment routine made
+      }
+      pairsft = spillts.nnpair(spill);
+
+
+      if(1.0-std::count(pairsft.begin(), pairsft.end(), -1)/(double)pairsft.size() > 0.1) {
+        finalftpairs = pairsft;
+        finalcloud = spill;
+
+        spillnumber = j;
+      }
+  }
+  return finalftpairs;
+}
+
 void SpillwiseConverter::convert() {
   
   reformat_log(fatal) << "Beginning conversion";
@@ -139,8 +170,11 @@ void SpillwiseConverter::convert() {
   
   std::vector<std::vector<EventPacket>> FT50Spills;
   std::vector<std::vector<EventPacket>> FT51Spills;
-  std::vector<std::vector<EventPacket>> WRSpills;
+  std::vector<std::vector<EventPacket>> WRSpills; // 2
+  std::vector<std::vector<EventPacket>> LowPressureSpills; // 4
+  std::vector<std::vector<EventPacket>> HighPressureSpills; // 3
   std::vector<std::vector<EventPacket>> TSSpills;
+  std::vector<std::vector<EventPacket>> HCalSpills;
 
   //Splitting events into groups of spills works slightly differently for each subsystem
   for( auto iter = event_queue.begin(); iter != event_queue.end(); ++iter){
@@ -186,8 +220,10 @@ void SpillwiseConverter::convert() {
      
     
     if(iter->first=="WhiteRabbitRaw"){
-      reformat_log(debug) << "Splitting FT51Raw" << "\n";
+      reformat_log(debug) << "Splitting WRRaw" << "\n";
       std::vector<EventPacket> spill;
+      std::vector<EventPacket> spillhighp;
+      std::vector<EventPacket> spilllowp;
       while( !iter->second.empty()){
         auto e = iter->second.front();
         iter->second.pop();
@@ -197,14 +233,24 @@ void SpillwiseConverter::convert() {
         //reformat_log(fatal) << "Event channel: " << (*datap).at(2) << "\n";
         if( (*datap).at(2) == 1){
             WRSpills.push_back(spill);
+            HighPressureSpills.push_back(spillhighp);
+            LowPressureSpills.push_back(spilllowp);
             reformat_log(fatal) << "Added new spill, total: " << WRSpills.size()+1 << " with events: " << spill.size() <<"\n";
             spill.clear();          
+            spillhighp.clear();
+            spilllowp.clear();
             //reformat_log(fatal) << data.at(2) << "\n";
         }
-        //TODO Only consider triggers ( == 2 ) right now, not cherenkov "events" (== 3 or == 4)
         if( (*datap).at(2) == 2){
           spill.push_back(e);
         }
+        if( (*datap).at(2) == 3){
+          spillhighp.push_back(e);
+        }
+        if( (*datap).at(2) == 4){
+          spilllowp.push_back(e);
+        }
+        
       }
     }
     
@@ -233,13 +279,15 @@ void SpillwiseConverter::convert() {
   
   reformat_log(info) << "Finished splitting into spills\n";
 
+ 
+  //Sketch of finding WR to FT delay 
   /*
   double maxEff = 0;
   int bestDelay = 0;
   for(int delay = 2096000; delay <= 2099000; delay += 10){
     reformat_log(fatal) << delay;
     std::string filenamewr = "WRRaw";
-    utility::TimestampCloud spillwr(WRSpills.at(18), filenamewr);
+    utility::TimestampCloud spillwr(WRSpills.at(1), filenamewr);
     std::string filenameft50 = "FT50Raw";
     utility::TimestampCloud spillft50(FT50Spills.at(1), filenameft50);
     spillft50.translate(delay);
@@ -249,12 +297,13 @@ void SpillwiseConverter::convert() {
 
     double eff = 1.0-std::count(pairsft50.begin(), pairsft50.end(), -1)/(double)pairsft50.size();
     if(eff > maxEff){
+      reformat_log(fatal) << "eff " << eff << "\n";
       maxEff = eff;
       bestDelay = delay;
     }
 
   }
-  reformat_log(fatal) << maxEff << "\n" << bestDelay; 
+  reformat_log(fatal) << "eff bestDelay  " << maxEff << " : " << bestDelay; 
   */
 
   // deltaT between scintillator telescope triggers in WR and downstream fiber trackers = -2096660 ns
@@ -262,33 +311,89 @@ void SpillwiseConverter::convert() {
   //TODO Sketch of TS to WR Alignment 
   reformat_log(info) << "Pairing TS and WR\n";
  
-    
-  for(int TSSpillNumber = 0; TSSpillNumber < TSSpills.size(); TSSpillNumber++){
-    reformat_log(fatal) << "TSSpillNumber " << TSSpillNumber << "\n";
-    bool found = false;
-    bool foundFT50 = false;
-    for(int i = 1; i < WRSpills.size(); i++){
-      if(!found){
-        //reformat_log(fatal) << "Spill " << i << "\n";
-       
-        for(int k = 0; k < 15; k++){
+  //Skip zeroeth spill in the white rabbit, since it seems to be always empty
+  int WRSpillOffset = 1;
+
+  /*
+   * Calibrate dT between trigger and cherenkovs
+   */
+
+  uint64_t lowPressuredT = 0;
+  uint64_t highPressuredT = 0;
+
+  reformat_log(fatal) << LowPressureSpills.size() << std::endl;
+
+  /*
+  std::string filenamewr = "WRRaw";
+  utility::TimestampCloud spillwr(WRSpills.at(10), filenamewr);
+  
+  std::string filenamelowpressure = "LowPressureRaw";
+  utility::TimestampCloud spilllowpressure(LowPressureSpills.at(10), filenamelowpressure);
+ 
+  reformat_log(fatal) << "Created spill" << std::endl;
+
+  //for(int i = 0; i < 20; i++){
+  //  reformat_log(fatal) << "dT " << spillwr.points.at(i) << " " << spilllowpressure.points.at(i) << std::endl;
+  //}
+  */
+
+  double bestLowPressureEff = 0.0;
+
+  for(int k = 0; k < 30; k++){
+    for(int skipTSEvents = 0; skipTSEvents < 10; skipTSEvents++){
+      std::vector<int> pairs;
+      std::string filenamewr = "WRRaw";
+      utility::TimestampCloud spillwr(WRSpills.at(10), filenamewr);
+      std::string filenamelowpressure = "LowPressureRaw";
+      utility::TimestampCloud spilllowpressure(LowPressureSpills.at(10), filenamelowpressure);
+      if(spillwr.points.size() > 10){ //No need to attempt alignment on very small spills
+        double dt = 0;
+
+        spilllowpressure.translate(-spilllowpressure.points.at(0));
+        spilllowpressure.translate(-spilllowpressure.points.at(skipTSEvents));
+        //One clock tick is ~8 ns
+        //spillts.scale(8.000046470962321);
+        //dt += spillwr.points.at(0);
+        spillwr.translate(-spillwr.points.at(0));
+        dt += spillwr.points.at(k);
+        spillwr.translate(-spillwr.points.at(k));
+
+        pairs = spilllowpressure.nnpair(spillwr);
+
+        double eff = 1.0-std::count(pairs.begin(), pairs.end(), -1)/(double)pairs.size();
+
+        if(eff > bestLowPressureEff){
+          lowPressuredT = dt;
+          bestLowPressureEff = eff;
+        }
+      }
+    }
+  }
+
+  reformat_log(fatal) << "lowPressuredT: " << lowPressuredT << std::endl;
+  reformat_log(fatal) << "bestLowPressureEff: " << bestLowPressureEff << std::endl;
+
+  /*
+   * Find the WR spill corresponding to the zeroeth TS spill, for the TS frequency calibration
+   */
+
+  int firstWRSpill = -1;
+  bool foundSpillCorrespondance = false;
+
+  for(int i = WRSpillOffset; i < WRSpills.size(); i++){
+    if(!foundSpillCorrespondance){
+      for(int k = 0; k < 30; k++){
+        for(int skipTSEvents = 0; skipTSEvents < 10; skipTSEvents++){
           std::vector<int> pairs;
           std::string filenamewr = "WRRaw";
           utility::TimestampCloud spillwr(WRSpills.at(i), filenamewr);
           std::string filenamets = "TSGrouped";
-          utility::TimestampCloud spillts(TSSpills.at(TSSpillNumber), filenamets);
-
-          //reformat_log(fatal) << "WR Length: " << spillwr.points.size() << "\n";
-          //reformat_log(fatal) << "TS Length: " << spillts.points.size() << "\n";
-
-          //for(int j = 0; j < spillwr.points.size(); j++){
-          //  reformat_log(fatal) << spillwr.points.at(j) << "\n";
-          //}
-
-          if(spillwr.points.size() > 50){
+          utility::TimestampCloud spillts(TSSpills.at(0), filenamets);
+          if(spillwr.points.size() > 10){ //No need to attempt alignment on very small spills
             double dt = 0;
 
             spillts.translate(-spillts.points.at(0));
+            spillts.translate(-spillts.points.at(skipTSEvents));
             //One clock tick is ~8 ns
             spillts.scale(8.000046470962321);
             dt += spillwr.points.at(0);
@@ -297,54 +402,387 @@ void SpillwiseConverter::convert() {
             spillwr.translate(-spillwr.points.at(k));
 
             pairs = spillts.nnpair(spillwr);
-            //reformat_log(fatal) << "    " << pairs.size() << " : " << std::count(pairs.begin(), pairs.end(), -1) << "\n";
-            //reformat_log(fatal) << 1.0-std::count(pairs.begin(), pairs.end(), -1)/(double)pairs.size() << "\n";
-            if(1.0-std::count(pairs.begin(), pairs.end(), -1)/(double)pairs.size() > 0.1) {
-              found = true; 
-              reformat_log(fatal) << "Spill " << i << "\n";
-              reformat_log(fatal) << 1.0-std::count(pairs.begin(), pairs.end(), -1)/(double)pairs.size() << "\n";
-              for(int j = 0; j < FT50Spills.size(); j++){
-                std::vector<int> pairsft50;
-                std::string filename50 = "FT50Raw";
-                utility::TimestampCloud spill50(FT50Spills.at(j), filename50);
 
-                spill50.translate(-dt);
-                //spill50.translate(2097700);
-                spill50.translate(2096660);
-                pairsft50 = spillts.nnpair(spill50);
+            double eff = 1.0-std::count(pairs.begin(), pairs.end(), -1)/(double)pairs.size();
 
-                //reformat_log(fatal) << "FT50 efficiency " << 1.0-std::count(pairsft50.begin(), pairsft50.end(), -1)/(double)pairsft50.size() << "\n";
-                if(1.0-std::count(pairsft50.begin(), pairsft50.end(), -1)/(double)pairsft50.size() > 0.1) {
-                  foundFT50 = true; 
-                  reformat_log(fatal) << "TS Spill Number: " << TSSpillNumber<<", TS to FT50 efficiency: " << 1.0-std::count(pairsft50.begin(), pairsft50.end(), -1)/(double)pairsft50.size() << "\n";
+            if(eff > 0.2){
+              firstWRSpill = i;
+              foundSpillCorrespondance = true;
 
-
-                  
-                  //Build events!
-                  for(int event_i = 0; event_i < spillts.points.size(); event_i++){
-                    ldmx::EventHeader& eh = output_event.getEventHeader();
-                    eh.setRun(run_);
-                    eh.setEventNumber(i_event++);
-                    eh.setTimestamp(TTimeStamp()); // related to earliest_ts ???
-                    eh.setRealData(true); // probably smart...
-                                          
-                    output_event.add("TSAligned", TSSpills.at(TSSpillNumber).at(event_i).data());
-
-                    output_file.nextEvent(true);
-                  }
-                  reformat_log(fatal) << "Added " << spillts.points.size() << " events\n";
-                }
-              }
-            };
+            }
           }
         }
       }
     }
+  }
+
+  if(firstWRSpill != -1){
+    WRSpillOffset = firstWRSpill;  
+  }
+
+  /*
+   * TS Frequency Calibration
+   */
+
+  double TSFrequency = -1;
+  double record = 0;
+
+  for(int i = 0; i < 30; i++){
+
+    for(int k = 0; k < 30; k++){
+      for(int skipTSEvents = 0; skipTSEvents < 10; skipTSEvents++){
+        std::vector<int> pairs;
+        std::string filenamewr = "WRRaw";
+        utility::TimestampCloud spillwr(WRSpills.at(firstWRSpill), filenamewr);
+        std::string filenamets = "TSGrouped";
+        utility::TimestampCloud spillts(TSSpills.at(0), filenamets);
+        if(spillwr.points.size() > 10){ //No need to attempt alignment on very small spills
+          double dt = 0;
+
+          spillts.translate(-spillts.points.at(0));
+          spillts.translate(-spillts.points.at(skipTSEvents));
+          //One clock tick is ~8 ns
+          //spillts.scale(8.000046470962321);
+          spillts.scale(8.00004 + 0.000001*i );
+          //spillts.scale(8.6);
+          dt += spillwr.points.at(0);
+          spillwr.translate(-spillwr.points.at(0));
+          dt += spillwr.points.at(k);
+          spillwr.translate(-spillwr.points.at(k));
+
+          pairs = spillts.nnpair(spillwr);
+
+          //If succesful TS to WR alignment, add FT
+          double eff = 1.0-std::count(pairs.begin(), pairs.end(), -1)/(double)pairs.size();
+          if(eff > record){
+            record = eff;
+            TSFrequency = 8.00004 + 0.000001*i;//+0.00001;
+          }
+        }
+      }
+    }
+    reformat_log(fatal) << TSFrequency << " : ";
+    reformat_log(fatal) << record << "\n";
+  }
+ 
+  reformat_log(fatal) << "Frequency: " << std::setprecision(15) << TSFrequency << "\n";
+
+  /*
+   * ALIGN ALL SPILLS
+   *
+   */
+
+
+  for(int TSSpillNumber = 0; TSSpillNumber < TSSpills.size(); TSSpillNumber++){
+    reformat_log(fatal) << "TSSpillNumber " << TSSpillNumber << "\n";
+    
+    //Results of alignment
+    //Aligned WR to TS (the right spill has been *found*)
+    bool found = false;
+   
+    double finaldt;
+
+    utility::TimestampCloud finaltscloud;
+
+    std::vector<int> finalwrpairs;
+    utility::TimestampCloud finalwrcloud;
+    int finalwrspillindex;
+
+    bool foundFT50 = false;
+    std::vector<int> finalft50pairs;
+    int finalft50spillindex;
+    utility::TimestampCloud finalft50cloud;
+    
+    bool foundFT51 = false;
+    std::vector<int> finalft51pairs;
+    int finalft51spillindex;
+    utility::TimestampCloud finalft51cloud;
+    
+    bool foundLowPressure = false;
+    std::vector<int> finallowpressurepairs;
+    int finallowpressurespillindex;
+    utility::TimestampCloud finallowpressurecloud;
+    
+    bool foundHighPressure = false;
+    std::vector<int> finalhighpressurepairs;
+    int finalhighpressurespillindex;
+    utility::TimestampCloud finalhighpressurecloud;
+
+    uint64_t startOfSpill = 0;
+
+    /*
+     * SUBSYSTEM ALIGNMENT
+     */
+    if(!found){
+    for(int i = WRSpillOffset; i < WRSpills.size(); i++){
+      //reformat_log(fatal) << "Trying WR Spill " << i << "\n";
+      
+      //if(!found){
+      
+         
+        for(int k = 0; k < 15; k++){
+          for(int skipTSEvents = 0; skipTSEvents < 5; skipTSEvents++){
+            if(!found){
+            std::vector<int> pairs;
+            std::string filenamewr = "WRRaw";
+            utility::TimestampCloud spillwr(WRSpills.at(i), filenamewr);
+            std::string filenamets = "TSGrouped";
+            utility::TimestampCloud spillts(TSSpills.at(TSSpillNumber), filenamets);
+
+            //reformat_log(fatal) << "WR Length: " << spillwr.points.size() << "\n";
+            //reformat_log(fatal) << "TS Length: " << spillts.points.size() << "\n";
+
+            if(spillwr.points.size() > 10){ //No need to attempt alignment on very small spills
+              double dt = 0;
+
+              spillts.translate(-spillts.points.at(0));
+              spillts.translate(-spillts.points.at(skipTSEvents));
+              //One clock tick is ~8 ns
+              //spillts.scale(8.000046470962321);
+              spillts.scale(TSFrequency);
+              dt += spillwr.points.at(0);
+              spillwr.translate(-spillwr.points.at(0));
+              dt += spillwr.points.at(k);
+              spillwr.translate(-spillwr.points.at(k));
+
+              pairs = spillts.nnpair(spillwr);
+              
+              //If succesful TS to WR alignment, add FT and cherenkovs
+              if(1.0-std::count(pairs.begin(), pairs.end(), -1)/(double)pairs.size() > 0.8) {
+                finalwrspillindex = i;
+
+                startOfSpill = spillts.points.at(0);
+
+                finaltscloud = spillts;
+                finalwrcloud = spillwr;
+                finalwrpairs = pairs;
+                found = true;
+                WRSpillOffset = i + 1;
+                reformat_log(fatal) << "Spill " << i << "\n";
+                reformat_log(fatal) << 1.0-std::count(pairs.begin(), pairs.end(), -1)/(double)pairs.size() << "\n";
+
+                
+                finalft50pairs = pairTStoFT(spillts, FT50Spills, dt, finalft50spillindex, finalft50cloud);
+                if(finalft50pairs.size() > 0){
+                  foundFT50 = true;
+                }
+                finalft51pairs = pairTStoFT(spillts, FT51Spills, dt, finalft51spillindex, finalft51cloud);
+                if(finalft51pairs.size() > 0){
+                  foundFT51 = true;
+                }
+               
+                finallowpressurepairs = pairTStoFT(spillts, LowPressureSpills, dt, finallowpressurespillindex, finallowpressurecloud, true);
+                if(finallowpressurepairs.size() > 0){
+                  foundLowPressure = true;
+                }
+                
+                finalhighpressurepairs = pairTStoFT(spillts, HighPressureSpills, dt, finalhighpressurespillindex, finalhighpressurecloud, true);
+                if(finalhighpressurepairs.size() > 0){
+                  foundHighPressure = true;
+                }
+
+                reformat_log(fatal) << "Tried to align FT\n";
+
+                int completeEvent = 0;
+                if(finalft50pairs.size() > 0 && finalft51pairs.size() > 0){
+                  for(int event_i = 0; event_i < spillts.points.size(); event_i++){
+                    if(finalft51pairs.at(event_i) != -1 && finalft50pairs.at(event_i) != -1){
+                      completeEvent++;
+                    }
+                  }
+                }
+                reformat_log(fatal) << "ALL SUBSYSTEMS " << (double)completeEvent/(double)spillts.points.size() << std::endl;
+                
+                int lowpressureEvents = 0;
+                if(finallowpressurepairs.size() > 0){
+                  for(int event_i = 0; event_i < spillts.points.size(); event_i++){
+                    if(finallowpressurepairs.at(event_i) != -1){
+                      lowpressureEvents++;
+                    }                  
+                  }                    
+                }
+                reformat_log(fatal) << "LOW PRESSURE EFF " << (double)lowpressureEvents/(double)spillts.points.size() << std::endl;
+                
+                int highpressureEvents = 0;
+                if(finalhighpressurepairs.size() > 0){
+                  for(int event_i = 0; event_i < spillts.points.size(); event_i++){
+                    if(finalhighpressurepairs.at(event_i) != -1){
+                      highpressureEvents++;
+                    }                  
+                  }                    
+                }
+                reformat_log(fatal) << "HIGH PRESSURE EFF " << (double)highpressureEvents/(double)spillts.points.size() << std::endl;
+
+
+                //Build events!
+                /*
+                for(int event_i = 0; event_i < spillts.points.size(); event_i++){
+                  ldmx::EventHeader& eh = output_event.getEventHeader();
+                  eh.setRun(run_);
+                  eh.setEventNumber(i_event++);
+                  eh.setTimestamp(TTimeStamp()); // related to earliest_ts ???
+                  eh.setRealData(true); // probably smart...
+                                        
+                  output_event.add("QIEstreamUp", TSSpills.at(TSSpillNumber).at(event_i).data());
+                  //f(pairsft50.at(event_i) != -1){
+                  //  output_event.add("FT50Raw", pairsft50
+                  //}
+
+                  output_file.nextEvent(true);
+                }
+                reformat_log(fatal) << "Added " << spillts.points.size() << " events\n";
+                */  
+              }
+            }
+          }
+          }
+        }
+      //}
+    }
+    }
+   
+    /*
+     * EVENT BUILDING
+     */
+    if(found){
+      for(int event_i = 0; event_i < TSSpills.at(TSSpillNumber).size(); event_i++){
+        ldmx::EventHeader& eh = output_event.getEventHeader();
+        eh.setRun(run_);
+        eh.setEventNumber(++i_event);
+        eh.setTimestamp(TTimeStamp()); // related to earliest_ts ???
+        eh.setRealData(true); // probably smart...
+                              
+
+        //Calculate WR information
+        std::vector<uint32_t> WRdata;
+        
+        uint32_t deltaTTrigger;
+        if(finalwrpairs.at(event_i) >= 0){
+          deltaTTrigger = (uint32_t)std::clamp(std::abs((int)finaltscloud.points.at(event_i)-(int)finalwrcloud.points.at(finalwrpairs.at(event_i))),0,65535);
+        }else{
+          deltaTTrigger = 65535;
+        }
+        WRdata.push_back(deltaTTrigger);
+        
+        uint32_t deltaTDownstreamHorizontal = 65535;
+        if(foundFT50){
+          if(finalft50pairs.at(event_i) >= 0){
+            deltaTDownstreamHorizontal = (uint32_t)std::clamp(std::abs((int)finaltscloud.points.at(event_i)-(int)finalft50cloud.points.at(finalft50pairs.at(event_i))),0,65535);
+          }
+        }
+        WRdata.push_back(deltaTDownstreamHorizontal);
+       
+
+        uint32_t deltaTDownstreamVertical = 65535;
+        if(foundFT51){
+          if(finalft51pairs.at(event_i) >= 0){
+            deltaTDownstreamVertical = (uint32_t)std::clamp(std::abs((int)finaltscloud.points.at(event_i)-(int)finalft51cloud.points.at(finalft51pairs.at(event_i))),0,65535);
+          }
+        }
+        WRdata.push_back(deltaTDownstreamVertical);
+       
+        //TODO Other WR results, dummy data for now
+        uint32_t deltaTUpstreamHorizontal = 0;
+        WRdata.push_back(deltaTUpstreamHorizontal);
+        uint32_t deltaTUpstreamVertical = 0;
+        WRdata.push_back(deltaTUpstreamVertical);
+        
+        uint32_t deltaTLowPressure = 65535;
+        if(foundLowPressure){
+          if(finallowpressurepairs.at(event_i) >= 0){
+            deltaTLowPressure = (uint32_t)std::clamp(std::abs((int)finaltscloud.points.at(event_i)-(int)finallowpressurecloud.points.at(finallowpressurepairs.at(event_i))),0,65535);
+          }
+        }
+        WRdata.push_back(deltaTLowPressure);
+        
+        uint32_t deltaTHighPressure = 65535;
+        if(foundHighPressure){
+          if(finalhighpressurepairs.at(event_i) >= 0){
+            deltaTHighPressure = (uint32_t)std::clamp(std::abs((int)finaltscloud.points.at(event_i)-(int)finalhighpressurecloud.points.at(finalhighpressurepairs.at(event_i))),0,65535);
+          }
+        }
+        WRdata.push_back(deltaTHighPressure);
+
+        std::string filenamewr = "WRRaw";
+        utility::TimestampCloud realtime(WRSpills.at(finalwrspillindex), filenamewr);
+        uint64_t deltaTSpillStart = 0;
+        if(found){
+          if(finalwrpairs.at(event_i) >= 0){
+            deltaTSpillStart = finalwrcloud.points.at(event_i)-startOfSpill;
+          }
+        }
+  
+
+        uint32_t deltaTSpillStartms = (deltaTSpillStart >> 32) & 0xFFFFFFFF; //Split uint64_t into two halves
+        uint32_t deltaTSpillStartls = deltaTSpillStart & 0xFFFFFFFF;
+        WRdata.push_back(deltaTSpillStartms);
+        WRdata.push_back(deltaTSpillStartls);
+
+        uint32_t spillNumber = (uint32_t) TSSpillNumber;
+        WRdata.push_back(spillNumber);
+       
+        //Add WR data to event
+        output_event.add("WRResults", WRdata);
+
+        std::vector<uint8_t> fakeData{0}; //Empty data for when the FT is unaligned
+
+        //Add fiber tracker events
+        if(foundFT50){
+          if(finalft50pairs.at(event_i) >= 0){
+            output_event.add("FiberTrackerFT50", FT50Spills.at(finalft50spillindex).at(finalft50pairs.at(event_i)).data());
+          }
+          else{
+            output_event.add("FiberTrackerFT50", fakeData);
+          }
+        }
+        else{
+          output_event.add("FiberTrackerFT50", fakeData);
+        }
+        if(foundFT51){
+          if(finalft51pairs.at(event_i) >= 0){
+            output_event.add("FiberTrackerFT51", FT51Spills.at(finalft51spillindex).at(finalft51pairs.at(event_i)).data());
+          }
+          else{
+            output_event.add("FiberTrackerFT51", fakeData);
+          }
+        }
+        else{
+          output_event.add("FiberTrackerFT51", fakeData);
+        }
+
+        output_event.add("QIEstreamUp", TSSpills.at(TSSpillNumber).at(event_i).data());
+        //output_event.add("FiberTrackerFT50", fakeData);
+        //f(pairsft50.at(event_i) != -1){
+        //  output_event.add("FT50Raw", pairsft50
+        //}
+
+        output_file.nextEvent(true);
+      }
+    }
+    /*
     if(!foundFT50){
       reformat_log(fatal) << "TS Spill Number: " << TSSpillNumber<<", TS to FT50 efficiency: " << 0.0 << "\n";
+
+      if(false){ //If FT50 alignment required
+        continue; //Skip spill
+      }
     }
+    if(!foundFT51){
+      reformat_log(fatal) << "TS Spill Number: " << TSSpillNumber<<", TS to FT51 efficiency: " << 0.0 << "\n";
+      
+      if(false){ //If FT51 alignment required
+        continue; //Skip spill
+      }
+    }
+    */
+    //Add empty beam instrumentation data for the whole spill, only TS data remaining
     if(!found){
       reformat_log(fatal) << "Could not align TS spill" << "\n";
+      reformat_log(fatal) << "ALL SUBSYSTEMS " << 0.0 << std::endl;
+
+      if(false){ //If WR alignment required
+        continue; //Skip spill
+      }
 
       //Add empty events
     }
